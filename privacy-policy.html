@@ -67,15 +67,24 @@
         [lang="en"] .lang-en { display: inline; }
         [lang="ar"] .lang-ar { display: inline; }
         
-        /* Block level elements */
-        h1.lang-en, h2.lang-en, h3.lang-en, p.lang-en, li.lang-en, div.lang-en { display: none; }
-        h1.lang-ar, h2.lang-ar, h3.lang-ar, p.lang-ar, li.lang-ar, div.lang-ar { display: none; }
+        /* Block level elements - Strict language separation */
+        h1.lang-en, h2.lang-en, h3.lang-en, p.lang-en, li.lang-en, div.lang-en,
+        ul.lang-en, ol.lang-en, span.lang-en, strong.lang-en { display: none !important; }
         
-        [lang="en"] h1.lang-en, [lang="en"] h2.lang-en, [lang="en"] h3.lang-en, 
-        [lang="en"] p.lang-en, [lang="en"] li.lang-en, [lang="en"] div.lang-en { display: block; }
+        h1.lang-ar, h2.lang-ar, h3.lang-ar, p.lang-ar, li.lang-ar, div.lang-ar,
+        ul.lang-ar, ol.lang-ar, span.lang-ar, strong.lang-ar { display: none !important; }
         
-        [lang="ar"] h1.lang-ar, [lang="ar"] h2.lang-ar, [lang="ar"] h3.lang-ar, 
-        [lang="ar"] p.lang-ar, [lang="ar"] li.lang-ar, [lang="ar"] div.lang-ar { display: block; }
+        html[lang="en"] h1.lang-en, html[lang="en"] h2.lang-en, html[lang="en"] h3.lang-en, 
+        html[lang="en"] p.lang-en, html[lang="en"] li.lang-en, html[lang="en"] div.lang-en,
+        html[lang="en"] ul.lang-en, html[lang="en"] ol.lang-en { display: block !important; }
+        
+        html[lang="en"] span.lang-en, html[lang="en"] strong.lang-en { display: inline !important; }
+        
+        html[lang="ar"] h1.lang-ar, html[lang="ar"] h2.lang-ar, html[lang="ar"] h3.lang-ar, 
+        html[lang="ar"] p.lang-ar, html[lang="ar"] li.lang-ar, html[lang="ar"] div.lang-ar,
+        html[lang="ar"] ul.lang-ar, html[lang="ar"] ol.lang-ar { display: block !important; }
+        
+        html[lang="ar"] span.lang-ar, html[lang="ar"] strong.lang-ar { display: inline !important; }
         
         /* Animated gradient background */
         .background-gradient {
