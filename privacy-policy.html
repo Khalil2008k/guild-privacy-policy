@@ -53,7 +53,6 @@
             color: var(--text-primary);
             background: var(--background);
             overflow-x: hidden;
-            transition: background 0.3s ease, color 0.3s ease;
         }
         
         /* Arabic Font */
@@ -90,13 +89,6 @@
                 radial-gradient(circle at 80% 80%, var(--primary-glow) 0%, transparent 50%),
                 var(--background);
             z-index: -1;
-            animation: gradientShift 15s ease-in-out infinite;
-            transition: background 0.3s ease;
-        }
-        
-        @keyframes gradientShift {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
         }
         
         /* Theme & Language Controls */
@@ -122,7 +114,6 @@
             border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
             font-size: 0.9em;
             display: flex;
             align-items: center;
@@ -167,7 +158,6 @@
             height: 40px;
             color: var(--primary);
             filter: drop-shadow(0 0 20px var(--primary-glow));
-            transition: all 0.3s ease;
         }
         
         .brand-name {
@@ -175,12 +165,6 @@
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: 2px;
-            transition: color 0.3s ease;
-        }
-        
-        .app-branding:hover .brand-icon {
-            transform: scale(1.1);
-            filter: drop-shadow(0 0 30px var(--primary-glow));
         }
         
         /* Header Section */
@@ -194,7 +178,6 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 8px 32px var(--shadow);
-            transition: all 0.3s ease;
         }
         
         header::before {
@@ -221,12 +204,6 @@
             border-radius: 20px;
             margin-bottom: 20px;
             box-shadow: 0 0 40px var(--primary-glow);
-            animation: pulse 3s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 40px var(--primary-glow); }
-            50% { transform: scale(1.05); box-shadow: 0 0 60px var(--primary-glow); }
         }
         
         .logo svg {
@@ -240,14 +217,12 @@
             font-weight: 700;
             margin-bottom: 15px;
             color: var(--text-primary);
-            transition: color 0.3s ease;
         }
         
         header p {
             font-size: 1.2em;
             color: var(--text-secondary);
             font-weight: 400;
-            transition: color 0.3s ease;
         }
         
         /* Last Updated Badge */
@@ -262,7 +237,6 @@
             margin: 30px 0;
             font-size: 0.95em;
             color: var(--text-secondary);
-            transition: all 0.3s ease;
         }
         
         .last-updated::before {
@@ -281,7 +255,6 @@
             padding: 40px;
             margin-bottom: 20px;
             border-radius: 20px;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
@@ -295,7 +268,6 @@
             height: 100%;
             background: linear-gradient(180deg, var(--primary) 0%, transparent 100%);
             opacity: 0;
-            transition: opacity 0.3s ease;
         }
         
         [dir="rtl"] .content-section::before {
@@ -321,7 +293,6 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            transition: color 0.3s ease;
         }
         
         [dir="rtl"] .content-section h2 {
@@ -348,14 +319,12 @@
             font-size: 1.4em;
             font-weight: 600;
             margin: 30px 0 15px 0;
-            transition: color 0.3s ease;
         }
         
         .content-section p {
             margin-bottom: 20px;
             color: var(--text-secondary);
             font-size: 1.05em;
-            transition: color 0.3s ease;
         }
         
         .content-section ul {
@@ -375,7 +344,6 @@
             color: var(--text-secondary);
             position: relative;
             padding-left: 20px;
-            transition: color 0.3s ease;
         }
         
         [dir="rtl"] .content-section li {
@@ -402,14 +370,12 @@
         .content-section strong {
             color: var(--text-primary);
             font-weight: 600;
-            transition: color 0.3s ease;
         }
         
         .content-section a {
             color: var(--primary);
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.2s ease;
         }
         
         .content-section a:hover {
@@ -427,7 +393,6 @@
             border-radius: 16px;
             position: relative;
             box-shadow: 0 0 30px var(--primary-glow);
-            transition: all 0.3s ease;
         }
         
         [dir="rtl"] .highlight-box {
@@ -448,7 +413,6 @@
             font-size: 0.95em;
             border-top: 1px solid var(--border);
             margin-top: 60px;
-            transition: all 0.3s ease;
         }
         
         /* Footer Branding */
@@ -465,7 +429,6 @@
             height: 32px;
             color: var(--primary);
             filter: drop-shadow(0 0 15px var(--primary-glow));
-            transition: all 0.3s ease;
         }
         
         .footer-brand-name {
@@ -473,12 +436,6 @@
             font-weight: 700;
             color: var(--primary);
             letter-spacing: 2px;
-            transition: color 0.3s ease;
-        }
-        
-        .footer-branding:hover .footer-icon {
-            transform: scale(1.1);
-            filter: drop-shadow(0 0 25px var(--primary-glow));
         }
         
         footer strong {
@@ -502,7 +459,6 @@
         .footer-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            transition: color 0.2s ease;
         }
         
         .footer-links a:hover {
@@ -516,7 +472,6 @@
             padding: 30px;
             margin-bottom: 30px;
             border-radius: 20px;
-            transition: all 0.3s ease;
         }
         
         .toc h2 {
@@ -542,7 +497,6 @@
         .toc a {
             color: var(--text-secondary);
             text-decoration: none;
-            transition: all 0.2s ease;
             display: block;
             padding: 8px 12px;
             border-radius: 8px;
@@ -622,9 +576,9 @@
             }
         }
         
-        /* Smooth scroll */
+        /* No smooth scroll */
         html {
-            scroll-behavior: smooth;
+            scroll-behavior: auto;
         }
         
         /* Selection styling */
