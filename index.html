@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
     <title>Privacy Policy - GUILD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Signika+Negative:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Signika+Negative:wght@300;400;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -31,12 +31,34 @@
             --shadow: rgba(0, 0, 0, 0.5);
         }
         
+        /* Light Mode Variables */
+        [data-theme="light"] {
+            --primary: #BCFF31;
+            --primary-glow: rgba(188, 255, 49, 0.25);
+            --primary-dark: #A8E62A;
+            --background: #FAFAFA;
+            --surface: #FFFFFF;
+            --surface-elevated: #F5F5F5;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border: #E5E7EB;
+            --border-light: #D1D5DB;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
         body {
             font-family: 'Signika Negative', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.7;
             color: var(--text-primary);
             background: var(--background);
             overflow-x: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        /* Arabic Font */
+        [dir="rtl"] {
+            font-family: 'Tajawal', 'Signika Negative', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
         /* Animated gradient background */
@@ -52,11 +74,56 @@
                 var(--background);
             z-index: -1;
             animation: gradientShift 15s ease-in-out infinite;
+            transition: background 0.3s ease;
         }
         
         @keyframes gradientShift {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.6; }
+        }
+        
+        /* Theme & Language Controls */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        [dir="rtl"] .controls {
+            right: auto;
+            left: 20px;
+        }
+        
+        .control-btn {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .control-btn:hover {
+            background: var(--surface-elevated);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+        
+        .control-btn.active {
+            background: var(--primary);
+            color: #000000;
+            border-color: var(--primary);
         }
         
         .container {
@@ -74,10 +141,11 @@
             border-radius: 24px;
             padding: 60px 40px;
             text-align: center;
-            margin: 40px 0 30px 0;
+            margin: 80px 0 30px 0;
             position: relative;
             overflow: hidden;
             box-shadow: 0 8px 32px var(--shadow);
+            transition: all 0.3s ease;
         }
         
         header::before {
@@ -88,6 +156,10 @@
             right: 0;
             height: 4px;
             background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+        
+        [dir="rtl"] header::before {
+            background: linear-gradient(-90deg, var(--primary) 0%, var(--primary-dark) 100%);
         }
         
         .logo {
@@ -117,16 +189,15 @@
             font-size: 3em;
             font-weight: 700;
             margin-bottom: 15px;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
         }
         
         header p {
             font-size: 1.2em;
             color: var(--text-secondary);
             font-weight: 400;
+            transition: color 0.3s ease;
         }
         
         /* Last Updated Badge */
@@ -141,11 +212,16 @@
             margin: 30px 0;
             font-size: 0.95em;
             color: var(--text-secondary);
+            transition: all 0.3s ease;
         }
         
         .last-updated::before {
             content: '📅';
             font-size: 1.2em;
+        }
+        
+        [dir="rtl"] .last-updated {
+            flex-direction: row-reverse;
         }
         
         /* Content Sections */
@@ -172,6 +248,11 @@
             transition: opacity 0.3s ease;
         }
         
+        [dir="rtl"] .content-section::before {
+            left: auto;
+            right: 0;
+        }
+        
         .content-section:hover {
             border-color: var(--border-light);
             transform: translateY(-2px);
@@ -190,6 +271,11 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            transition: color 0.3s ease;
+        }
+        
+        [dir="rtl"] .content-section h2 {
+            flex-direction: row-reverse;
         }
         
         .section-number {
@@ -199,11 +285,12 @@
             min-width: 42px;
             height: 42px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--background);
+            color: #000000;
             border-radius: 12px;
             font-weight: 700;
             font-size: 1.1em;
             box-shadow: 0 4px 16px var(--primary-glow);
+            flex-shrink: 0;
         }
         
         .content-section h3 {
@@ -211,30 +298,45 @@
             font-size: 1.4em;
             font-weight: 600;
             margin: 30px 0 15px 0;
+            transition: color 0.3s ease;
         }
         
         .content-section p {
             margin-bottom: 20px;
             color: var(--text-secondary);
             font-size: 1.05em;
+            transition: color 0.3s ease;
         }
         
         .content-section ul {
-            margin-left: 20px;
             margin-bottom: 20px;
+        }
+        
+        [dir="ltr"] .content-section ul {
+            margin-left: 20px;
+        }
+        
+        [dir="rtl"] .content-section ul {
+            margin-right: 20px;
         }
         
         .content-section li {
             margin-bottom: 15px;
             color: var(--text-secondary);
             position: relative;
-            padding-left: 10px;
+            padding-left: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        [dir="rtl"] .content-section li {
+            padding-left: 0;
+            padding-right: 20px;
         }
         
         .content-section li::before {
             content: '';
             position: absolute;
-            left: -15px;
+            left: 0;
             top: 12px;
             width: 6px;
             height: 6px;
@@ -242,9 +344,15 @@
             border-radius: 50%;
         }
         
+        [dir="rtl"] .content-section li::before {
+            left: auto;
+            right: 0;
+        }
+        
         .content-section strong {
             color: var(--text-primary);
             font-weight: 600;
+            transition: color 0.3s ease;
         }
         
         .content-section a {
@@ -263,12 +371,18 @@
         .highlight-box {
             background: linear-gradient(135deg, var(--surface-elevated) 0%, var(--surface) 100%);
             border: 2px solid var(--primary);
-            border-left: 6px solid var(--primary);
+            border-left-width: 6px;
             padding: 25px;
             margin: 25px 0;
             border-radius: 16px;
             position: relative;
             box-shadow: 0 0 30px var(--primary-glow);
+            transition: all 0.3s ease;
+        }
+        
+        [dir="rtl"] .highlight-box {
+            border-left-width: 2px;
+            border-right-width: 6px;
         }
         
         .highlight-box strong {
@@ -285,6 +399,7 @@
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 8px 32px var(--shadow);
+            transition: all 0.3s ease;
         }
         
         .contact-box h3 {
@@ -322,6 +437,10 @@
             transition: all 0.3s ease;
         }
         
+        [dir="rtl"] .contact-link {
+            flex-direction: row-reverse;
+        }
+        
         .contact-link:hover {
             background: var(--surface-elevated);
             border-color: var(--primary);
@@ -337,6 +456,7 @@
             font-size: 0.95em;
             border-top: 1px solid var(--border);
             margin-top: 60px;
+            transition: all 0.3s ease;
         }
         
         footer strong {
@@ -374,6 +494,7 @@
             padding: 30px;
             margin-bottom: 30px;
             border-radius: 20px;
+            transition: all 0.3s ease;
         }
         
         .toc h2 {
@@ -392,6 +513,10 @@
             margin-bottom: 12px;
         }
         
+        .toc li::before {
+            display: none;
+        }
+        
         .toc a {
             color: var(--text-secondary);
             text-decoration: none;
@@ -401,16 +526,44 @@
             border-radius: 8px;
         }
         
+        [dir="rtl"] .toc a {
+            text-align: right;
+        }
+        
         .toc a:hover {
             color: var(--primary);
             background: var(--surface-elevated);
             padding-left: 20px;
         }
         
+        [dir="rtl"] .toc a:hover {
+            padding-left: 12px;
+            padding-right: 20px;
+        }
+        
+        /* Language-specific visibility */
+        .lang-en { display: block; }
+        .lang-ar { display: none; }
+        
+        [lang="ar"] .lang-en { display: none; }
+        [lang="ar"] .lang-ar { display: block; }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                top: 10px;
+                right: 10px;
+            }
+            
+            [dir="rtl"] .controls {
+                right: auto;
+                left: 10px;
+            }
+            
             header {
                 padding: 40px 25px;
+                margin-top: 140px;
             }
             
             header h1 {
@@ -440,12 +593,26 @@
         /* Selection styling */
         ::selection {
             background: var(--primary);
-            color: var(--background);
+            color: #000000;
         }
     </style>
 </head>
 <body>
     <div class="background-gradient"></div>
+    
+    <!-- Theme & Language Controls -->
+    <div class="controls">
+        <button class="control-btn" id="themeToggle" onclick="toggleTheme()">
+            <span id="themeIcon">🌙</span>
+            <span class="lang-en" id="themeTextEn">Dark</span>
+            <span class="lang-ar" id="themeTextAr">داكن</span>
+        </button>
+        <button class="control-btn" id="langToggle" onclick="toggleLanguage()">
+            <span>🌐</span>
+            <span class="lang-en">العربية</span>
+            <span class="lang-ar">English</span>
+        </button>
+    </div>
     
     <div class="container">
         <header>
@@ -456,277 +623,402 @@
                     <path d="M2 12L12 17L22 12" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h1>Privacy Policy</h1>
-            <p>GUILD - Professional Networking & Job Platform</p>
+            <h1 class="lang-en">Privacy Policy</h1>
+            <h1 class="lang-ar">سياسة الخصوصية</h1>
+            <p class="lang-en">GUILD - Professional Networking & Job Platform</p>
+            <p class="lang-ar">GUILD - منصة التواصل المهني والوظائف</p>
         </header>
         
         <div class="last-updated">
-            <strong>Last Updated:</strong> October 15, 2025
+            <strong class="lang-en">Last Updated:</strong>
+            <strong class="lang-ar">آخر تحديث:</strong>
+            <span class="lang-en">October 15, 2025</span>
+            <span class="lang-ar">١٥ أكتوبر ٢٠٢٥</span>
         </div>
         
         <!-- Table of Contents -->
         <div class="toc">
-            <h2>📋 Table of Contents</h2>
+            <h2 class="lang-en">📋 Table of Contents</h2>
+            <h2 class="lang-ar">📋 جدول المحتويات</h2>
             <ul>
-                <li><a href="#overview">1. Privacy Overview</a></li>
-                <li><a href="#collection">2. Information We Collect</a></li>
-                <li><a href="#usage">3. How We Use Your Information</a></li>
-                <li><a href="#sharing">4. Information Sharing</a></li>
-                <li><a href="#storage">5. Data Storage & Retention</a></li>
-                <li><a href="#cookies">6. Cookies & Tracking</a></li>
-                <li><a href="#rights">7. Your Privacy Rights</a></li>
-                <li><a href="#security">8. Data Security</a></li>
-                <li><a href="#children">9. Children's Privacy</a></li>
-                <li><a href="#international">10. International Data Transfers</a></li>
-                <li><a href="#changes">11. Policy Changes</a></li>
-                <li><a href="#not-collected">12. What We Do NOT Collect</a></li>
+                <li><a href="#overview" class="lang-en">1. Privacy Overview</a></li>
+                <li><a href="#overview" class="lang-ar">١. نظرة عامة على الخصوصية</a></li>
+                
+                <li><a href="#collection" class="lang-en">2. Information We Collect</a></li>
+                <li><a href="#collection" class="lang-ar">٢. المعلومات التي نجمعها</a></li>
+                
+                <li><a href="#usage" class="lang-en">3. How We Use Your Information</a></li>
+                <li><a href="#usage" class="lang-ar">٣. كيف نستخدم معلوماتك</a></li>
+                
+                <li><a href="#sharing" class="lang-en">4. Information Sharing</a></li>
+                <li><a href="#sharing" class="lang-ar">٤. مشاركة المعلومات</a></li>
+                
+                <li><a href="#storage" class="lang-en">5. Data Storage & Retention</a></li>
+                <li><a href="#storage" class="lang-ar">٥. تخزين البيانات والاحتفاظ بها</a></li>
+                
+                <li><a href="#cookies" class="lang-en">6. Cookies & Tracking</a></li>
+                <li><a href="#cookies" class="lang-ar">٦. ملفات تعريف الارتباط والتتبع</a></li>
+                
+                <li><a href="#rights" class="lang-en">7. Your Privacy Rights</a></li>
+                <li><a href="#rights" class="lang-ar">٧. حقوق الخصوصية الخاصة بك</a></li>
+                
+                <li><a href="#security" class="lang-en">8. Data Security</a></li>
+                <li><a href="#security" class="lang-ar">٨. أمن البيانات</a></li>
+                
+                <li><a href="#children" class="lang-en">9. Children's Privacy</a></li>
+                <li><a href="#children" class="lang-ar">٩. خصوصية الأطفال</a></li>
+                
+                <li><a href="#international" class="lang-en">10. International Data Transfers</a></li>
+                <li><a href="#international" class="lang-ar">١٠. نقل البيانات الدولية</a></li>
+                
+                <li><a href="#changes" class="lang-en">11. Policy Changes</a></li>
+                <li><a href="#changes" class="lang-ar">١١. تغييرات السياسة</a></li>
+                
+                <li><a href="#not-collected" class="lang-en">12. What We Do NOT Collect</a></li>
+                <li><a href="#not-collected" class="lang-ar">١٢. ما لا نجمعه</a></li>
             </ul>
         </div>
         
         <!-- Introduction -->
         <div class="content-section">
-            <h2>Introduction</h2>
-            <p>Welcome to GUILD. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, store, and protect your data when you use our mobile application and services.</p>
-            <p><strong>By using GUILD, you consent to the data practices described in this policy.</strong></p>
+            <h2 class="lang-en">Introduction</h2>
+            <h2 class="lang-ar">مقدمة</h2>
+            
+            <p class="lang-en">Welcome to GUILD. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, store, and protect your data when you use our mobile application and services.</p>
+            <p class="lang-ar">مرحباً بك في GUILD. نحن ملتزمون بحماية خصوصيتك وضمان أمن معلوماتك الشخصية. توضح سياسة الخصوصية هذه كيفية جمع معلوماتك واستخدامها وتخزينها وحمايتها عند استخدام تطبيق الهاتف المحمول والخدمات الخاصة بنا.</p>
+            
+            <p class="lang-en"><strong>By using GUILD, you consent to the data practices described in this policy.</strong></p>
+            <p class="lang-ar"><strong>باستخدام GUILD، فإنك توافق على ممارسات البيانات الموضحة في هذه السياسة.</strong></p>
         </div>
         
         <!-- Section 1: Overview -->
         <div class="content-section" id="overview">
-            <h2><span class="section-number">1</span>Privacy Overview</h2>
-            <p>GUILD is committed to protecting your privacy and ensuring the security of your personal information.</p>
-            <p>This policy outlines what information we collect, how we use it, and your rights regarding your data.</p>
-            <p>By using GUILD, you consent to the data practices described in this policy.</p>
+            <h2><span class="section-number lang-en">1</span><span class="section-number lang-ar">١</span><span class="lang-en">Privacy Overview</span><span class="lang-ar">نظرة عامة على الخصوصية</span></h2>
+            
+            <p class="lang-en">GUILD is committed to protecting your privacy and ensuring the security of your personal information. This policy outlines what information we collect, how we use it, and your rights regarding your data. By using GUILD, you consent to the data practices described in this policy.</p>
+            <p class="lang-ar">GUILD ملتزمة بحماية خصوصيتك وضمان أمن معلوماتك الشخصية. توضح هذه السياسة المعلومات التي نجمعها وكيفية استخدامها وحقوقك فيما يتعلق ببياناتك. باستخدام GUILD، فإنك توافق على ممارسات البيانات الموضحة في هذه السياسة.</p>
         </div>
         
         <!-- Section 2: Information We Collect -->
         <div class="content-section" id="collection">
-            <h2><span class="section-number">2</span>Information We Collect</h2>
+            <h2><span class="section-number lang-en">2</span><span class="section-number lang-ar">٢</span><span class="lang-en">Information We Collect</span><span class="lang-ar">المعلومات التي نجمعها</span></h2>
             
-            <h3>2.1 Account Information</h3>
+            <h3 class="lang-en">2.1 Account Information</h3>
+            <h3 class="lang-ar">٢.١ معلومات الحساب</h3>
             <ul>
-                <li><strong>Personal Details:</strong> Name, email address, phone number, profile picture, and professional information</li>
-                <li><strong>Purpose:</strong> To create and manage your account, enable authentication, and facilitate communication</li>
-                <li><strong>Storage:</strong> Securely stored in Firebase Authentication and Firestore</li>
+                <li class="lang-en"><strong>Personal Details:</strong> Name, email address, phone number, profile picture, and professional information</li>
+                <li class="lang-ar"><strong>التفاصيل الشخصية:</strong> الاسم، عنوان البريد الإلكتروني، رقم الهاتف، صورة الملف الشخصي، والمعلومات المهنية</li>
+                
+                <li class="lang-en"><strong>Purpose:</strong> To create and manage your account, enable authentication, and facilitate communication</li>
+                <li class="lang-ar"><strong>الغرض:</strong> لإنشاء حسابك وإدارته، وتمكين المصادقة، وتسهيل التواصل</li>
+                
+                <li class="lang-en"><strong>Storage:</strong> Securely stored in Firebase Authentication and Firestore</li>
+                <li class="lang-ar"><strong>التخزين:</strong> يتم تخزينها بشكل آمن في Firebase Authentication و Firestore</li>
             </ul>
             
-            <h3>2.2 Usage Data</h3>
+            <h3 class="lang-en">2.2 Usage Data</h3>
+            <h3 class="lang-ar">٢.٢ بيانات الاستخدام</h3>
             <ul>
-                <li><strong>Activity Information:</strong> Pages visited, features used, session duration, and interaction patterns</li>
-                <li><strong>Purpose:</strong> To understand user behavior, improve services, and optimize user experience</li>
-                <li><strong>Collection Method:</strong> Firebase Analytics</li>
+                <li class="lang-en"><strong>Activity Information:</strong> Pages visited, features used, session duration, and interaction patterns</li>
+                <li class="lang-ar"><strong>معلومات النشاط:</strong> الصفحات التي تمت زيارتها، الميزات المستخدمة، مدة الجلسة، وأنماط التفاعل</li>
+                
+                <li class="lang-en"><strong>Purpose:</strong> To understand user behavior, improve services, and optimize user experience</li>
+                <li class="lang-ar"><strong>الغرض:</strong> لفهم سلوك المستخدم، تحسين الخدمات، وتحسين تجربة المستخدم</li>
             </ul>
             
-            <h3>2.3 Device Information</h3>
+            <h3 class="lang-en">2.3 Device Information</h3>
+            <h3 class="lang-ar">٢.٣ معلومات الجهاز</h3>
             <ul>
-                <li><strong>Technical Data:</strong> Device type, operating system, browser information, app version, and IP address</li>
-                <li><strong>Purpose:</strong> Technical support, app optimization, and security monitoring</li>
-                <li><strong>Usage:</strong> Aggregated for performance analysis</li>
+                <li class="lang-en"><strong>Technical Data:</strong> Device type, operating system, browser information, app version, and IP address</li>
+                <li class="lang-ar"><strong>البيانات التقنية:</strong> نوع الجهاز، نظام التشغيل، معلومات المتصفح، إصدار التطبيق، وعنوان IP</li>
             </ul>
             
-            <h3>2.4 Location Data</h3>
+            <h3 class="lang-en">2.4 Location Data</h3>
+            <h3 class="lang-ar">٢.٤ بيانات الموقع</h3>
             <ul>
-                <li><strong>Approximate Location:</strong> City/region from IP address or user-provided location</li>
-                <li><strong>GPS Coordinates:</strong> Only when searching for nearby jobs (with your permission)</li>
-                <li><strong>Important:</strong> We do NOT track your location continuously. Location is only used when the app is open and you're actively searching for jobs</li>
-            </ul>
-            
-            <h3>2.5 Payment Information</h3>
-            <ul>
-                <li><strong>Transaction Data:</strong> Guild Coins balance and transaction history</li>
-                <li><strong>Payment Details:</strong> Processed by secure third-party payment processors (we do NOT store credit card information)</li>
-                <li><strong>Current Status:</strong> Guild Coins system (beta) - no real payment data collected yet</li>
-            </ul>
-            
-            <h3>2.6 User-Generated Content</h3>
-            <ul>
-                <li><strong>Profile Content:</strong> Bio, skills, work history, portfolio items</li>
-                <li><strong>Job Data:</strong> Jobs posted, applications submitted, guild memberships</li>
-                <li><strong>Communications:</strong> Chat messages, file attachments, timestamps</li>
-                <li><strong>Media:</strong> Profile photos, job-related images, documents</li>
+                <li class="lang-en"><strong>Important:</strong> We do NOT track your location continuously. Location is only used when the app is open and you're actively searching for jobs</li>
+                <li class="lang-ar"><strong>مهم:</strong> نحن لا نتتبع موقعك بشكل مستمر. يتم استخدام الموقع فقط عندما يكون التطبيق مفتوحاً وتبحث بنشاط عن وظائف</li>
             </ul>
         </div>
         
         <!-- Section 3: How We Use Your Information -->
         <div class="content-section" id="usage">
-            <h2><span class="section-number">3</span>How We Use Your Information</h2>
+            <h2><span class="section-number lang-en">3</span><span class="section-number lang-ar">٣</span><span class="lang-en">How We Use Your Information</span><span class="lang-ar">كيف نستخدم معلوماتك</span></h2>
             <ul>
-                <li><strong>Service Delivery:</strong> To provide and improve our services, including job matching, guild functionality, and professional networking</li>
-                <li><strong>Communication:</strong> To communicate with you about your account, transactions, platform updates, and job opportunities</li>
-                <li><strong>Security:</strong> To ensure platform security, prevent fraud, detect abuse, and protect user safety</li>
-                <li><strong>Analytics:</strong> To analyze usage patterns, understand user preferences, and improve user experience</li>
-                <li><strong>Personalization:</strong> To customize content and recommendations based on your interests and activity</li>
-                <li><strong>Legal Compliance:</strong> To comply with legal obligations and enforce our terms of service</li>
+                <li class="lang-en"><strong>Service Delivery:</strong> To provide and improve our services, including job matching, guild functionality, and professional networking</li>
+                <li class="lang-ar"><strong>تقديم الخدمة:</strong> لتوفير وتحسين خدماتنا، بما في ذلك مطابقة الوظائف، ووظائف النقابة، والتواصل المهني</li>
+                
+                <li class="lang-en"><strong>Communication:</strong> To communicate with you about your account, transactions, platform updates, and job opportunities</li>
+                <li class="lang-ar"><strong>التواصل:</strong> للتواصل معك بشأن حسابك، المعاملات، تحديثات المنصة، وفرص العمل</li>
+                
+                <li class="lang-en"><strong>Security:</strong> To ensure platform security, prevent fraud, detect abuse, and protect user safety</li>
+                <li class="lang-ar"><strong>الأمان:</strong> لضمان أمن المنصة، منع الاحتيال، اكتشاف الإساءة، وحماية سلامة المستخدم</li>
             </ul>
         </div>
         
         <!-- Section 4: Information Sharing -->
         <div class="content-section" id="sharing">
-            <h2><span class="section-number">4</span>Information Sharing</h2>
+            <h2><span class="section-number lang-en">4</span><span class="section-number lang-ar">٤</span><span class="lang-en">Information Sharing</span><span class="lang-ar">مشاركة المعلومات</span></h2>
             
             <div class="highlight-box">
-                <strong>🔒 We do NOT sell your personal information to third parties.</strong>
+                <strong class="lang-en">🔒 We do NOT sell your personal information to third parties.</strong>
+                <strong class="lang-ar">🔒 نحن لا نبيع معلوماتك الشخصية لأطراف ثالثة.</strong>
             </div>
             
-            <h3>4.1 When We Share Information</h3>
             <ul>
-                <li><strong>Service Providers:</strong> We share data with trusted service providers who help us operate the platform (Firebase/Google Cloud, payment processors, analytics providers, cloud storage services)</li>
-                <li><strong>Other Users:</strong> Profile information you choose to make public is visible to other GUILD users for networking and job matching purposes</li>
-                <li><strong>Legal Requirements:</strong> We may disclose information if required by law, court order, or to protect our rights and user safety</li>
-                <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user data may be transferred (you will be notified)</li>
-            </ul>
-            
-            <h3>4.2 Third-Party Services</h3>
-            <ul>
-                <li><strong>Firebase (Google):</strong> Authentication, database, storage, analytics, cloud messaging</li>
-                <li><strong>Sentry:</strong> Error monitoring and crash reporting (optional)</li>
-                <li><strong>Payment Processors:</strong> For processing transactions (future implementation)</li>
+                <li class="lang-en"><strong>Service Providers:</strong> We share data with trusted service providers who help us operate the platform (Firebase/Google Cloud, payment processors, analytics providers)</li>
+                <li class="lang-ar"><strong>مزودو الخدمة:</strong> نشارك البيانات مع مزودي الخدمة الموثوقين الذين يساعدوننا في تشغيل المنصة (Firebase/Google Cloud، معالجات الدفع، مزودي التحليلات)</li>
             </ul>
         </div>
         
         <!-- Section 5: Data Storage & Retention -->
         <div class="content-section" id="storage">
-            <h2><span class="section-number">5</span>Data Storage & Retention</h2>
+            <h2><span class="section-number lang-en">5</span><span class="section-number lang-ar">٥</span><span class="lang-en">Data Storage & Retention</span><span class="lang-ar">تخزين البيانات والاحتفاظ بها</span></h2>
             <ul>
-                <li><strong>Security Measures:</strong> Your data is stored securely using industry-standard encryption (AES-256), SSL/TLS for transmission, and secure cloud infrastructure (Firebase/Google Cloud)</li>
-                <li><strong>Retention Period:</strong> We retain your information for as long as your account is active or as needed to provide services</li>
-                <li><strong>Account Deletion:</strong> You can request deletion of your data at any time. Data will be deleted within 30 days of account closure</li>
-                <li><strong>Backup Data:</strong> Some data may remain in backups for up to 90 days but will not be accessible or used</li>
-                <li><strong>Legal Obligations:</strong> We may retain certain data to comply with legal, regulatory, or contractual requirements</li>
+                <li class="lang-en"><strong>Security Measures:</strong> Your data is stored securely using industry-standard encryption (AES-256), SSL/TLS for transmission</li>
+                <li class="lang-ar"><strong>التدابير الأمنية:</strong> يتم تخزين بياناتك بشكل آمن باستخدام التشفير المعياري (AES-256)، SSL/TLS للنقل</li>
+                
+                <li class="lang-en"><strong>Account Deletion:</strong> You can request deletion of your data at any time. Data will be deleted within 30 days</li>
+                <li class="lang-ar"><strong>حذف الحساب:</strong> يمكنك طلب حذف بياناتك في أي وقت. سيتم حذف البيانات خلال 30 يوماً</li>
             </ul>
         </div>
         
         <!-- Section 6: Cookies & Tracking -->
         <div class="content-section" id="cookies">
-            <h2><span class="section-number">6</span>Cookies & Tracking Technologies</h2>
+            <h2><span class="section-number lang-en">6</span><span class="section-number lang-ar">٦</span><span class="lang-en">Cookies & Tracking Technologies</span><span class="lang-ar">ملفات تعريف الارتباط وتقنيات التتبع</span></h2>
             <ul>
-                <li><strong>Purpose:</strong> We use cookies and similar technologies to enhance your experience, remember preferences, and analyze platform usage</li>
-                <li><strong>Types:</strong> Session cookies (temporary), persistent cookies (saved preferences), analytics cookies (usage tracking)</li>
-                <li><strong>Control:</strong> You can control cookie settings through your browser preferences</li>
-                <li><strong>Impact:</strong> Some features may not work properly if cookies are disabled</li>
+                <li class="lang-en"><strong>Purpose:</strong> We use cookies to enhance your experience, remember preferences, and analyze platform usage</li>
+                <li class="lang-ar"><strong>الغرض:</strong> نستخدم ملفات تعريف الارتباط لتحسين تجربتك، تذكر التفضيلات، وتحليل استخدام المنصة</li>
             </ul>
         </div>
         
         <!-- Section 7: Your Privacy Rights -->
         <div class="content-section" id="rights">
-            <h2><span class="section-number">7</span>Your Privacy Rights</h2>
-            <p>You have the following rights regarding your personal data:</p>
+            <h2><span class="section-number lang-en">7</span><span class="section-number lang-ar">٧</span><span class="lang-en">Your Privacy Rights</span><span class="lang-ar">حقوق الخصوصية الخاصة بك</span></h2>
             <ul>
-                <li><strong>Access:</strong> Request a copy of your personal data</li>
-                <li><strong>Correction:</strong> Update or correct your information through account settings</li>
-                <li><strong>Deletion:</strong> Request deletion of your personal data ("right to be forgotten")</li>
-                <li><strong>Portability:</strong> Request your data in a portable, machine-readable format</li>
-                <li><strong>Opt-Out:</strong> Opt-out of marketing communications and non-essential data collection</li>
-                <li><strong>Restriction:</strong> Request restriction of processing in certain circumstances</li>
-                <li><strong>Objection:</strong> Object to processing of your data for specific purposes</li>
+                <li class="lang-en"><strong>Access:</strong> Request a copy of your personal data</li>
+                <li class="lang-ar"><strong>الوصول:</strong> طلب نسخة من بياناتك الشخصية</li>
+                
+                <li class="lang-en"><strong>Correction:</strong> Update or correct your information through account settings</li>
+                <li class="lang-ar"><strong>التصحيح:</strong> تحديث أو تصحيح معلوماتك من خلال إعدادات الحساب</li>
+                
+                <li class="lang-en"><strong>Deletion:</strong> Request deletion of your personal data</li>
+                <li class="lang-ar"><strong>الحذف:</strong> طلب حذف بياناتك الشخصية</li>
             </ul>
-            
-            <p><strong>How to Exercise Your Rights:</strong> Contact us at <a href="mailto:privacy@guild.qa">privacy@guild.qa</a> or use the in-app privacy settings.</p>
         </div>
         
         <!-- Section 8: Data Security -->
         <div class="content-section" id="security">
-            <h2><span class="section-number">8</span>Data Security</h2>
+            <h2><span class="section-number lang-en">8</span><span class="section-number lang-ar">٨</span><span class="lang-en">Data Security</span><span class="lang-ar">أمن البيانات</span></h2>
             <ul>
-                <li><strong>Encryption:</strong> All data transmission is encrypted using SSL/TLS protocols. Data at rest is encrypted using AES-256</li>
-                <li><strong>Access Controls:</strong> Strict access controls and authentication mechanisms protect your data</li>
-                <li><strong>Security Audits:</strong> Regular security reviews and vulnerability assessments</li>
-                <li><strong>Employee Training:</strong> Our team is trained on data protection and privacy best practices</li>
-                <li><strong>Incident Response:</strong> We have procedures in place to respond to security incidents and notify affected users</li>
+                <li class="lang-en"><strong>Encryption:</strong> All data transmission is encrypted using SSL/TLS protocols. Data at rest is encrypted using AES-256</li>
+                <li class="lang-ar"><strong>التشفير:</strong> يتم تشفير جميع عمليات نقل البيانات باستخدام بروتوكولات SSL/TLS. يتم تشفير البيانات المخزنة باستخدام AES-256</li>
             </ul>
             
             <div class="highlight-box">
-                <strong>⚠️ Important:</strong> While we implement robust security measures, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security.
+                <strong class="lang-en">⚠️ Important:</strong>
+                <strong class="lang-ar">⚠️ مهم:</strong>
+                <span class="lang-en"> While we implement robust security measures, no method of transmission over the internet is 100% secure.</span>
+                <span class="lang-ar"> بينما نطبق تدابير أمنية قوية، لا توجد طريقة نقل عبر الإنترنت آمنة بنسبة 100٪.</span>
             </div>
         </div>
         
         <!-- Section 9: Children's Privacy -->
         <div class="content-section" id="children">
-            <h2><span class="section-number">9</span>Children's Privacy</h2>
+            <h2><span class="section-number lang-en">9</span><span class="section-number lang-ar">٩</span><span class="lang-en">Children's Privacy</span><span class="lang-ar">خصوصية الأطفال</span></h2>
             <ul>
-                <li><strong>Age Requirement:</strong> GUILD is not intended for users under 18 years of age</li>
-                <li><strong>Data Collection:</strong> We do not knowingly collect personal information from children under 18</li>
-                <li><strong>Parental Notice:</strong> If we become aware that we have collected data from a child under 18, we will take steps to delete that information immediately</li>
-                <li><strong>Contact:</strong> If you believe we have inadvertently collected data from a minor, please contact us at <a href="mailto:privacy@guild.qa">privacy@guild.qa</a></li>
+                <li class="lang-en"><strong>Age Requirement:</strong> GUILD is not intended for users under 18 years of age</li>
+                <li class="lang-ar"><strong>متطلبات العمر:</strong> GUILD غير مخصص للمستخدمين دون سن 18 عاماً</li>
+                
+                <li class="lang-en"><strong>Data Collection:</strong> We do not knowingly collect personal information from children under 18</li>
+                <li class="lang-ar"><strong>جمع البيانات:</strong> نحن لا نجمع عن قصد معلومات شخصية من الأطفال دون سن 18 عاماً</li>
             </ul>
         </div>
         
         <!-- Section 10: International Data Transfers -->
         <div class="content-section" id="international">
-            <h2><span class="section-number">10</span>International Data Transfers</h2>
+            <h2><span class="section-number lang-en">10</span><span class="section-number lang-ar">١٠</span><span class="lang-en">International Data Transfers</span><span class="lang-ar">نقل البيانات الدولية</span></h2>
             <ul>
-                <li><strong>Global Operations:</strong> Your information may be transferred to and processed in countries other than your own, including the United States</li>
-                <li><strong>Data Protection:</strong> We ensure appropriate safeguards are in place to protect your data during international transfers</li>
-                <li><strong>Standards:</strong> We comply with applicable data protection laws, including GDPR for European users</li>
-                <li><strong>Service Providers:</strong> Our cloud infrastructure providers (Google Cloud/Firebase) maintain data centers worldwide with appropriate security measures</li>
+                <li class="lang-en"><strong>Global Operations:</strong> Your information may be transferred to and processed in countries other than your own</li>
+                <li class="lang-ar"><strong>العمليات العالمية:</strong> قد يتم نقل معلوماتك ومعالجتها في بلدان أخرى غير بلدك</li>
             </ul>
         </div>
         
         <!-- Section 11: Policy Changes -->
         <div class="content-section" id="changes">
-            <h2><span class="section-number">11</span>Changes to This Privacy Policy</h2>
+            <h2><span class="section-number lang-en">11</span><span class="section-number lang-ar">١١</span><span class="lang-en">Changes to This Privacy Policy</span><span class="lang-ar">تغييرات على سياسة الخصوصية هذه</span></h2>
             <ul>
-                <li><strong>Updates:</strong> We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or business operations</li>
-                <li><strong>Notification:</strong> We will notify you of significant changes via email or in-app notification at least 30 days before they take effect</li>
-                <li><strong>Review:</strong> We encourage you to review this policy periodically</li>
-                <li><strong>Continued Use:</strong> Your continued use of GUILD after changes take effect constitutes acceptance of the updated policy</li>
-                <li><strong>Effective Date:</strong> The "Last Updated" date at the top of this policy indicates when it was last revised</li>
+                <li class="lang-en"><strong>Updates:</strong> We may update this Privacy Policy from time to time</li>
+                <li class="lang-ar"><strong>التحديثات:</strong> قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر</li>
+                
+                <li class="lang-en"><strong>Notification:</strong> We will notify you of significant changes via email or in-app notification at least 30 days before they take effect</li>
+                <li class="lang-ar"><strong>الإخطار:</strong> سنخطرك بالتغييرات المهمة عبر البريد الإلكتروني أو الإخطار داخل التطبيق قبل 30 يوماً على الأقل من دخولها حيز التنفيذ</li>
             </ul>
         </div>
         
         <!-- Section 12: Data Not Collected -->
         <div class="content-section" id="not-collected">
-            <h2><span class="section-number">12</span>What We Do NOT Collect</h2>
-            <p>For transparency, here's what we explicitly do NOT collect:</p>
+            <h2><span class="section-number lang-en">12</span><span class="section-number lang-ar">١٢</span><span class="lang-en">What We Do NOT Collect</span><span class="lang-ar">ما لا نجمعه</span></h2>
+            <p class="lang-en">For transparency, here's what we explicitly do NOT collect:</p>
+            <p class="lang-ar">من أجل الشفافية، إليك ما لا نجمعه صراحة:</p>
             <ul>
-                <li>❌ Browsing history outside the GUILD app</li>
-                <li>❌ Contacts list from your device</li>
-                <li>❌ Microphone access (unless required for future video calls)</li>
-                <li>❌ Precise GPS tracking (only approximate location)</li>
-                <li>❌ Children's data (app requires 18+ age)</li>
-                <li>❌ Advertising identifiers for targeted ads</li>
-                <li>❌ Health or fitness data</li>
-                <li>❌ Financial account information (bank details, credit card numbers)</li>
-                <li>❌ SMS or call logs</li>
+                <li class="lang-en">❌ Browsing history outside the GUILD app</li>
+                <li class="lang-ar">❌ سجل التصفح خارج تطبيق GUILD</li>
+                
+                <li class="lang-en">❌ Contacts list from your device</li>
+                <li class="lang-ar">❌ قائمة جهات الاتصال من جهازك</li>
+                
+                <li class="lang-en">❌ Precise GPS tracking (only approximate location)</li>
+                <li class="lang-ar">❌ تتبع GPS الدقيق (فقط الموقع التقريبي)</li>
+                
+                <li class="lang-en">❌ Children's data (app requires 18+ age)</li>
+                <li class="lang-ar">❌ بيانات الأطفال (التطبيق يتطلب عمر 18+)</li>
+                
+                <li class="lang-en">❌ Health or fitness data</li>
+                <li class="lang-ar">❌ بيانات الصحة أو اللياقة البدنية</li>
+                
+                <li class="lang-en">❌ Financial account information (bank details, credit cards)</li>
+                <li class="lang-ar">❌ معلومات الحساب المالي (تفاصيل البنك، بطاقات الائتمان)</li>
             </ul>
         </div>
         
         <!-- Contact Section -->
         <div class="contact-box">
-            <h3>📧 Contact Us</h3>
-            <p>If you have questions about this Privacy Policy or want to exercise your privacy rights, please contact us:</p>
+            <h3 class="lang-en">📧 Contact Us</h3>
+            <h3 class="lang-ar">📧 اتصل بنا</h3>
+            
+            <p class="lang-en">If you have questions about this Privacy Policy or want to exercise your privacy rights, please contact us:</p>
+            <p class="lang-ar">إذا كانت لديك أسئلة حول سياسة الخصوصية هذه أو تريد ممارسة حقوق الخصوصية الخاصة بك، يرجى الاتصال بنا:</p>
             
             <div class="contact-links">
                 <a href="mailto:privacy@guild.qa" class="contact-link">
                     <span>✉️</span>
-                    <strong>Privacy Team:</strong> privacy@guild.qa
+                    <span>
+                        <strong class="lang-en">Privacy Team:</strong>
+                        <strong class="lang-ar">فريق الخصوصية:</strong>
+                        privacy@guild.qa
+                    </span>
                 </a>
                 <a href="mailto:support@guild.qa" class="contact-link">
                     <span>💬</span>
-                    <strong>General Support:</strong> support@guild.qa
+                    <span>
+                        <strong class="lang-en">General Support:</strong>
+                        <strong class="lang-ar">الدعم العام:</strong>
+                        support@guild.qa
+                    </span>
                 </a>
                 <a href="mailto:legal@guild.qa" class="contact-link">
                     <span>⚖️</span>
-                    <strong>Legal Inquiries:</strong> legal@guild.qa
+                    <span>
+                        <strong class="lang-en">Legal Inquiries:</strong>
+                        <strong class="lang-ar">الاستفسارات القانونية:</strong>
+                        legal@guild.qa
+                    </span>
                 </a>
             </div>
             
             <p style="margin-top: 25px; color: var(--text-tertiary); font-size: 0.95em;">
-                <strong>Response Time:</strong> We aim to respond to all privacy inquiries within 30 days.
+                <strong class="lang-en">Response Time:</strong>
+                <strong class="lang-ar">وقت الاستجابة:</strong>
+                <span class="lang-en"> We aim to respond to all privacy inquiries within 30 days.</span>
+                <span class="lang-ar"> نهدف إلى الرد على جميع استفسارات الخصوصية في غضون 30 يوماً.</span>
             </p>
         </div>
         
         <footer>
             <p><strong>GUILD</strong></p>
-            <p style="color: var(--text-secondary); margin-top: 5px;">Professional Networking & Job Platform</p>
-            <p style="margin-top: 20px;">© 2025 GUILD. All rights reserved.</p>
+            <p style="color: var(--text-secondary); margin-top: 5px;" class="lang-en">Professional Networking & Job Platform</p>
+            <p style="color: var(--text-secondary); margin-top: 5px;" class="lang-ar">منصة التواصل المهني والوظائف</p>
+            <p style="margin-top: 20px;">© 2025 GUILD. <span class="lang-en">All rights reserved.</span><span class="lang-ar">جميع الحقوق محفوظة.</span></p>
             <div class="footer-links">
-                <a href="#overview">Privacy Policy</a>
+                <a href="#overview" class="lang-en">Privacy Policy</a>
+                <a href="#overview" class="lang-ar">سياسة الخصوصية</a>
                 <span style="color: var(--text-tertiary);">|</span>
-                <a href="#">Terms of Service</a>
+                <a href="#" class="lang-en">Terms of Service</a>
+                <a href="#" class="lang-ar">شروط الخدمة</a>
                 <span style="color: var(--text-tertiary);">|</span>
-                <a href="mailto:support@guild.qa">Contact</a>
+                <a href="mailto:support@guild.qa" class="lang-en">Contact</a>
+                <a href="mailto:support@guild.qa" class="lang-ar">اتصل</a>
             </div>
         </footer>
     </div>
+    
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('guild-theme', newTheme);
+            
+            // Update button
+            const themeIcon = document.getElementById('themeIcon');
+            const themeTextEn = document.getElementById('themeTextEn');
+            const themeTextAr = document.getElementById('themeTextAr');
+            const themeBtn = document.getElementById('themeToggle');
+            
+            if (newTheme === 'light') {
+                themeIcon.textContent = '☀️';
+                themeTextEn.textContent = 'Light';
+                themeTextAr.textContent = 'فاتح';
+                themeBtn.classList.add('active');
+            } else {
+                themeIcon.textContent = '🌙';
+                themeTextEn.textContent = 'Dark';
+                themeTextAr.textContent = 'داكن';
+                themeBtn.classList.remove('active');
+            }
+        }
+        
+        // Language Toggle
+        function toggleLanguage() {
+            const html = document.documentElement;
+            const currentLang = html.getAttribute('lang');
+            const newLang = currentLang === 'ar' ? 'en' : 'ar';
+            const newDir = newLang === 'ar' ? 'rtl' : 'ltr';
+            
+            html.setAttribute('lang', newLang);
+            html.setAttribute('dir', newDir);
+            localStorage.setItem('guild-lang', newLang);
+            
+            // Update button state
+            const langBtn = document.getElementById('langToggle');
+            if (newLang === 'ar') {
+                langBtn.classList.add('active');
+            } else {
+                langBtn.classList.remove('active');
+            }
+        }
+        
+        // Initialize theme and language from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('guild-theme') || 'dark';
+            const savedLang = localStorage.getItem('guild-lang') || 'en';
+            
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.documentElement.setAttribute('lang', savedLang);
+            document.documentElement.setAttribute('dir', savedLang === 'ar' ? 'rtl' : 'ltr');
+            
+            // Update theme button
+            const themeIcon = document.getElementById('themeIcon');
+            const themeTextEn = document.getElementById('themeTextEn');
+            const themeTextAr = document.getElementById('themeTextAr');
+            const themeBtn = document.getElementById('themeToggle');
+            
+            if (savedTheme === 'light') {
+                themeIcon.textContent = '☀️';
+                themeTextEn.textContent = 'Light';
+                themeTextAr.textContent = 'فاتح';
+                themeBtn.classList.add('active');
+            }
+            
+            // Update language button
+            if (savedLang === 'ar') {
+                document.getElementById('langToggle').classList.add('active');
+            }
+        });
+    </script>
 </body>
 </html>
