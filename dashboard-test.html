@@ -187,45 +187,79 @@
             border-radius: 20px;
             padding: 2rem;
             box-shadow: var(--glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .gcc-regions {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 1rem;
-            height: 100%;
-            min-height: 400px;
-        }
-
-        .region {
-            background: var(--surface-light);
-            border: 1px solid var(--primary);
-            border-radius: 12px;
-            padding: 1rem;
+        .gcc-map-container {
             position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--surface-light) 25%, transparent 25%), 
+                        linear-gradient(-45deg, var(--surface-light) 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, var(--surface-light) 75%), 
+                        linear-gradient(-45deg, transparent 75%, var(--surface-light) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .gcc-countries {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .country {
+            position: absolute;
+            background: var(--surface);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 0.5rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-width: 80px;
+            min-height: 60px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .region:hover {
-            box-shadow: var(--glow);
-            transform: scale(1.02);
+        .country:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary-light);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
+            transform: scale(1.05);
         }
 
-        .region-name {
-            font-size: 1.1rem;
+        .country.active {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .country.active .country-name {
+            color: var(--primary-light);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .country-name {
+            font-size: 0.8rem;
             font-weight: 600;
             color: var(--primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
-        .region-stats {
-            font-size: 0.8rem;
+        .country-stats {
+            font-size: 0.7rem;
             color: var(--text-secondary);
             text-align: center;
         }
@@ -507,52 +541,76 @@
         <div class="map-container">
             <div class="map-background"></div>
             <div class="gcc-map">
-                <div class="gcc-regions">
-                    <div class="region" data-region="qatar">
-                        <div class="region-name">Qatar</div>
-                        <div class="region-stats">1,234 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point orange" style="top: 20%; left: 30%;"></div>
-                            <div class="data-point cyan" style="top: 60%; right: 20%;"></div>
-                            <div class="data-point green" style="bottom: 30%; left: 40%;"></div>
+                <div class="gcc-map-container">
+                    <div class="gcc-countries">
+                        <!-- Saudi Arabia (Large, Central) -->
+                        <div class="country" data-country="saudi" style="top: 25%; left: 25%; width: 200px; height: 150px;">
+                            <div class="country-name">Saudi Arabia</div>
+                            <div class="country-stats">3,789 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point yellow" style="top: 30%; left: 20%;"></div>
+                                <div class="data-point orange" style="bottom: 25%; right: 30%;"></div>
+                                <div class="data-point cyan" style="top: 60%; left: 50%;"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="region" data-region="uae">
-                        <div class="region-name">UAE</div>
-                        <div class="region-stats">2,456 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point purple" style="top: 25%; right: 25%;"></div>
-                            <div class="data-point red" style="bottom: 40%; left: 30%;"></div>
+                        
+                        <!-- UAE (East of Saudi Arabia) -->
+                        <div class="country" data-country="uae" style="top: 35%; right: 15%; width: 120px; height: 100px;">
+                            <div class="country-name">UAE</div>
+                            <div class="country-stats">2,456 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point purple" style="top: 25%; right: 25%;"></div>
+                                <div class="data-point red" style="bottom: 40%; left: 30%;"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="region" data-region="saudi">
-                        <div class="region-name">Saudi Arabia</div>
-                        <div class="region-stats">3,789 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point yellow" style="top: 40%; left: 20%;"></div>
-                            <div class="data-point orange" style="bottom: 20%; right: 30%;"></div>
+                        
+                        <!-- Qatar (Peninsula, East of Saudi Arabia) -->
+                        <div class="country" data-country="qatar" style="top: 20%; right: 25%; width: 80px; height: 60px;">
+                            <div class="country-name">Qatar</div>
+                            <div class="country-stats">1,234 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point orange" style="top: 20%; left: 30%;"></div>
+                                <div class="data-point cyan" style="top: 60%; right: 20%;"></div>
+                                <div class="data-point green" style="bottom: 30%; left: 40%;"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="region" data-region="kuwait">
-                        <div class="region-name">Kuwait</div>
-                        <div class="region-stats">987 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point cyan" style="top: 30%; left: 50%;"></div>
+                        
+                        <!-- Kuwait (North of Saudi Arabia) -->
+                        <div class="country" data-country="kuwait" style="top: 5%; left: 45%; width: 70px; height: 50px;">
+                            <div class="country-name">Kuwait</div>
+                            <div class="country-stats">987 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point cyan" style="top: 30%; left: 50%;"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="region" data-region="bahrain">
-                        <div class="region-name">Bahrain</div>
-                        <div class="region-stats">654 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point green" style="top: 50%; right: 40%;"></div>
+                        
+                        <!-- Bahrain (Island, East of Saudi Arabia) -->
+                        <div class="country" data-country="bahrain" style="top: 15%; right: 35%; width: 50px; height: 40px;">
+                            <div class="country-name">Bahrain</div>
+                            <div class="country-stats">654 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point green" style="top: 50%; right: 40%;"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="region" data-region="oman">
-                        <div class="region-name">Oman</div>
-                        <div class="region-stats">1,567 Active Users</div>
-                        <div class="data-points">
-                            <div class="data-point purple" style="bottom: 30%; left: 25%;"></div>
-                            <div class="data-point red" style="top: 60%; right: 35%;"></div>
+                        
+                        <!-- Oman (Southeast, East of UAE) -->
+                        <div class="country" data-country="oman" style="bottom: 20%; right: 5%; width: 100px; height: 80px;">
+                            <div class="country-name">Oman</div>
+                            <div class="country-stats">1,567 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point purple" style="bottom: 30%; left: 25%;"></div>
+                                <div class="data-point red" style="top: 60%; right: 35%;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Yemen (South of Saudi Arabia) -->
+                        <div class="country" data-country="yemen" style="bottom: 5%; left: 30%; width: 120px; height: 60px;">
+                            <div class="country-name">Yemen</div>
+                            <div class="country-stats">892 Active Users</div>
+                            <div class="data-points">
+                                <div class="data-point yellow" style="top: 40%; left: 30%;"></div>
+                                <div class="data-point orange" style="bottom: 20%; right: 40%;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -860,13 +918,38 @@
         // Search functionality
         document.querySelector('.search-input').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            document.querySelectorAll('.region').forEach(region => {
-                const regionName = region.dataset.region.toLowerCase();
-                if (regionName.includes(searchTerm)) {
-                    region.style.display = 'flex';
+            document.querySelectorAll('.country').forEach(country => {
+                const countryName = country.dataset.country.toLowerCase();
+                const countryText = country.querySelector('.country-name').textContent.toLowerCase();
+                if (countryName.includes(searchTerm) || countryText.includes(searchTerm)) {
+                    country.style.display = 'flex';
+                    country.style.opacity = '1';
                 } else {
-                    region.style.display = 'none';
+                    country.style.display = 'none';
+                    country.style.opacity = '0.3';
                 }
+            });
+        });
+
+        // Country click functionality
+        document.querySelectorAll('.country').forEach(country => {
+            country.addEventListener('click', function() {
+                // Remove active state from all countries
+                document.querySelectorAll('.country').forEach(c => c.classList.remove('active'));
+                
+                // Add active state to clicked country
+                this.classList.add('active');
+                
+                // Add visual feedback
+                this.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1.05)';
+                }, 200);
+                
+                // Show country details (you can expand this)
+                const countryName = this.querySelector('.country-name').textContent;
+                const countryStats = this.querySelector('.country-stats').textContent;
+                console.log(`Selected: ${countryName} - ${countryStats}`);
             });
         });
 
