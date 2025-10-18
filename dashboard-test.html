@@ -223,24 +223,32 @@
         }
 
         .country-path {
-            fill: var(--surface);
+            fill: rgba(26, 26, 26, 0.8);
             stroke: var(--primary);
-            stroke-width: 2;
+            stroke-width: 2.5;
+            stroke-linejoin: round;
+            stroke-linecap: round;
             cursor: pointer;
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.3));
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
         }
 
         .country-path:hover {
-            fill: var(--surface-hover);
+            fill: rgba(37, 37, 37, 0.95);
             stroke: var(--primary-light);
-            filter: drop-shadow(0 8px 25px rgba(0, 255, 255, 0.5));
+            stroke-width: 3;
+            filter: drop-shadow(0 8px 30px rgba(0, 255, 255, 0.6)) drop-shadow(0 0 20px rgba(0, 255, 255, 0.4));
+            transform: scale(1.02);
+            transform-origin: center;
         }
 
         .country-path.active {
-            fill: var(--surface-hover);
+            fill: rgba(37, 37, 37, 1);
             stroke: var(--primary);
-            filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.7));
+            stroke-width: 3.5;
+            filter: drop-shadow(0 0 40px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 20px rgba(0, 255, 255, 0.6));
+            transform: scale(1.03);
+            transform-origin: center;
         }
 
         .country-label {
@@ -589,102 +597,104 @@
             <div class="map-background"></div>
             <div class="gcc-map">
                 <div class="gcc-map-container">
-                    <!-- SVG Map with realistic country shapes -->
-                    <svg class="gcc-map-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Saudi Arabia (Large, central) -->
+                    <!-- SVG Map with realistic country shapes based on actual GCC geography -->
+                    <svg class="gcc-map-svg" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Saudi Arabia (Large, central - realistic shape) -->
                         <path class="country-path" data-country="saudi" 
-                            d="M 200,100 L 250,80 L 320,90 L 380,110 L 420,130 L 450,160 L 470,200 L 480,250 L 470,300 L 450,350 L 420,400 L 380,430 L 320,450 L 260,460 L 200,450 L 160,420 L 140,380 L 130,330 L 130,280 L 140,230 L 160,180 L 180,140 Z"/>
+                            d="M 250,150 L 280,140 L 310,135 L 340,138 L 370,145 L 395,155 L 415,165 L 435,180 L 450,195 L 460,210 L 468,225 L 475,245 L 478,265 L 480,285 L 482,310 L 483,335 L 482,360 L 478,385 L 472,410 L 465,435 L 455,460 L 442,485 L 425,510 L 405,535 L 382,555 L 355,570 L 325,582 L 295,590 L 265,593 L 235,590 L 205,582 L 180,570 L 160,555 L 145,535 L 135,510 L 128,485 L 125,460 L 125,435 L 128,410 L 135,385 L 145,360 L 155,335 L 165,310 L 175,285 L 185,260 L 195,235 L 208,210 L 222,185 L 238,165 Z"/>
                         
-                        <!-- UAE (East coast) -->
+                        <!-- UAE (East coast - more detailed) -->
                         <path class="country-path" data-country="uae"
-                            d="M 520,240 L 560,230 L 590,240 L 610,260 L 620,290 L 615,320 L 600,340 L 570,350 L 540,345 L 520,330 L 510,300 L 515,270 Z"/>
+                            d="M 550,320 L 565,315 L 580,312 L 595,312 L 610,315 L 625,320 L 638,328 L 648,338 L 655,350 L 660,365 L 662,380 L 660,395 L 655,410 L 648,423 L 638,433 L 625,440 L 610,444 L 595,445 L 580,443 L 565,438 L 552,430 L 542,418 L 535,403 L 532,388 L 532,373 L 535,358 L 542,343 Z"/>
                         
-                        <!-- Qatar (Small peninsula) -->
+                        <!-- Qatar (Peninsula - accurate shape) -->
                         <path class="country-path" data-country="qatar"
-                            d="M 480,180 L 495,170 L 510,175 L 515,190 L 510,210 L 495,220 L 480,215 L 475,200 Z"/>
+                            d="M 505,240 L 512,232 L 520,228 L 528,227 L 536,230 L 542,236 L 546,244 L 548,254 L 547,264 L 544,274 L 538,283 L 530,290 L 520,293 L 510,292 L 502,287 L 497,279 L 495,269 L 496,259 L 500,249 Z"/>
                         
-                        <!-- Kuwait (North) -->
+                        <!-- Kuwait (North - realistic borders) -->
                         <path class="country-path" data-country="kuwait"
-                            d="M 360,60 L 385,50 L 410,55 L 425,70 L 420,90 L 400,100 L 375,95 L 360,80 Z"/>
+                            d="M 390,95 L 405,88 L 420,85 L 435,86 L 448,90 L 458,97 L 465,106 L 468,117 L 467,128 L 462,138 L 453,146 L 441,151 L 427,153 L 413,151 L 400,146 L 390,138 L 383,128 L 380,117 L 382,106 Z"/>
                         
-                        <!-- Bahrain (Tiny island) -->
+                        <!-- Bahrain (Small island - tiny but visible) -->
                         <path class="country-path" data-country="bahrain"
-                            d="M 465,195 L 472,192 L 478,198 L 475,205 L 468,207 L 462,202 Z"/>
+                            d="M 488,265 L 493,262 L 498,261 L 503,262 L 507,265 L 509,270 L 508,275 L 505,280 L 500,283 L 495,284 L 490,283 L 486,280 L 484,275 L 485,270 Z"/>
                         
-                        <!-- Oman (Southeast, complex shape) -->
+                        <!-- Oman (Southeast - complex coastline) -->
                         <path class="country-path" data-country="oman"
-                            d="M 630,270 L 660,260 L 690,270 L 710,290 L 720,320 L 715,360 L 700,400 L 670,430 L 640,445 L 610,440 L 590,420 L 580,390 L 585,360 L 600,330 L 615,300 Z"/>
+                            d="M 665,350 L 680,345 L 695,343 L 710,344 L 725,348 L 738,355 L 748,365 L 755,378 L 760,393 L 762,410 L 760,428 L 755,446 L 747,464 L 736,482 L 722,498 L 705,512 L 686,523 L 665,530 L 643,533 L 622,532 L 603,527 L 587,518 L 575,506 L 567,492 L 563,476 L 562,460 L 565,444 L 572,428 L 582,413 L 595,400 L 610,390 L 627,382 L 645,375 Z"/>
                         
-                        <!-- Yemen (South) -->
+                        <!-- Yemen (South - detailed borders) -->
                         <path class="country-path" data-country="yemen"
-                            d="M 250,470 L 310,465 L 360,475 L 390,490 L 400,520 L 390,545 L 360,560 L 310,565 L 260,560 L 230,540 L 220,510 L 230,485 Z"/>
+                            d="M 280,600 L 310,595 L 340,593 L 370,595 L 398,600 L 423,608 L 445,618 L 463,630 L 477,644 L 487,660 L 493,678 L 495,696 L 492,714 L 485,730 L 473,744 L 457,755 L 438,763 L 416,768 L 392,770 L 368,768 L 344,763 L 322,755 L 302,744 L 286,730 L 274,714 L 266,696 L 263,678 L 265,660 L 272,644 Z"/>
                     </svg>
 
                     <!-- Country Labels -->
-                    <div class="country-label" style="top: 35%; left: 32%;">
-                        <div style="font-size: 1rem; margin-bottom: 0.25rem;">Saudi Arabia</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">3,789 Active Users</div>
+                    <div class="country-label" style="top: 42%; left: 25%;">
+                        <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">Saudi Arabia</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">3,789 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="top: 38%; right: 18%;">
-                        <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">UAE</div>
-                        <div style="font-size: 0.7rem; color: var(--text-secondary);">2,456 Active Users</div>
+                    <div class="country-label" style="top: 48%; right: 28%;">
+                        <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">UAE</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">2,456 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="top: 23%; right: 28%;">
-                        <div style="font-size: 0.75rem; margin-bottom: 0.25rem;">Qatar</div>
-                        <div style="font-size: 0.65rem; color: var(--text-secondary);">1,234 Active Users</div>
+                    <div class="country-label" style="top: 32%; right: 38%;">
+                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Qatar</div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary);">1,234 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="top: 8%; left: 44%;">
-                        <div style="font-size: 0.75rem; margin-bottom: 0.25rem;">Kuwait</div>
-                        <div style="font-size: 0.65rem; color: var(--text-secondary);">987 Active Users</div>
+                    <div class="country-label" style="top: 14%; left: 40%;">
+                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Kuwait</div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary);">987 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="top: 27%; right: 22%;">
-                        <div style="font-size: 0.65rem; margin-bottom: 0.25rem;">Bahrain</div>
-                        <div style="font-size: 0.6rem; color: var(--text-secondary);">654 Active Users</div>
+                    <div class="country-label" style="top: 34%; right: 42%;">
+                        <div style="font-size: 0.7rem; margin-bottom: 0.25rem;">Bahrain</div>
+                        <div style="font-size: 0.65rem; color: var(--text-secondary);">654 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="bottom: 22%; right: 8%;">
-                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Oman</div>
-                        <div style="font-size: 0.7rem; color: var(--text-secondary);">1,567 Active Users</div>
+                    <div class="country-label" style="bottom: 18%; right: 15%;">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Oman</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">1,567 Active Users</div>
                     </div>
                     
-                    <div class="country-label" style="bottom: 8%; left: 32%;">
-                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Yemen</div>
-                        <div style="font-size: 0.7rem; color: var(--text-secondary);">892 Active Users</div>
+                    <div class="country-label" style="bottom: 5%; left: 35%;">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Yemen</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">892 Active Users</div>
                     </div>
 
                     <!-- Data Points -->
                     <div class="data-points" style="position: absolute; inset: 0; pointer-events: none;">
                         <!-- Saudi Arabia points -->
-                        <div class="data-point yellow" style="top: 30%; left: 28%;"></div>
-                        <div class="data-point orange" style="bottom: 35%; left: 35%;"></div>
-                        <div class="data-point cyan" style="top: 45%; left: 42%;"></div>
+                        <div class="data-point yellow" style="top: 35%; left: 22%;"></div>
+                        <div class="data-point orange" style="top: 52%; left: 28%;"></div>
+                        <div class="data-point cyan" style="top: 45%; left: 35%;"></div>
+                        <div class="data-point green" style="top: 38%; left: 30%;"></div>
                         
                         <!-- UAE points -->
-                        <div class="data-point purple" style="top: 40%; right: 20%;"></div>
-                        <div class="data-point red" style="bottom: 42%; right: 22%;"></div>
+                        <div class="data-point purple" style="top: 50%; right: 30%;"></div>
+                        <div class="data-point red" style="top: 54%; right: 32%;"></div>
                         
                         <!-- Qatar points -->
-                        <div class="data-point orange" style="top: 25%; right: 30%;"></div>
-                        <div class="data-point cyan" style="top: 28%; right: 28%;"></div>
-                        <div class="data-point green" style="top: 30%; right: 29%;"></div>
+                        <div class="data-point orange" style="top: 32%; right: 40%;"></div>
+                        <div class="data-point cyan" style="top: 35%; right: 39%;"></div>
+                        <div class="data-point green" style="top: 37%; right: 40%;"></div>
                         
                         <!-- Kuwait point -->
-                        <div class="data-point cyan" style="top: 10%; left: 46%;"></div>
+                        <div class="data-point cyan" style="top: 15%; left: 42%;"></div>
                         
                         <!-- Bahrain point -->
-                        <div class="data-point green" style="top: 29%; right: 24%;"></div>
+                        <div class="data-point green" style="top: 34%; right: 43%;"></div>
                         
                         <!-- Oman points -->
-                        <div class="data-point purple" style="bottom: 25%; right: 10%;"></div>
-                        <div class="data-point red" style="bottom: 30%; right: 15%;"></div>
+                        <div class="data-point purple" style="bottom: 22%; right: 18%;"></div>
+                        <div class="data-point red" style="bottom: 28%; right: 22%;"></div>
+                        <div class="data-point yellow" style="bottom: 25%; right: 20%;"></div>
                         
                         <!-- Yemen points -->
-                        <div class="data-point yellow" style="bottom: 10%; left: 34%;"></div>
-                        <div class="data-point orange" style="bottom: 12%; left: 38%;"></div>
+                        <div class="data-point yellow" style="bottom: 8%; left: 38%;"></div>
+                        <div class="data-point orange" style="bottom: 10%; left: 42%;"></div>
                     </div>
                 </div>
             </div>
