@@ -1,0 +1,11 @@
+{
+  "label": "final",
+  "timestamp": "2025-10-08T01:16:43.702Z",
+  "memory": {
+    "rss": 42684416,
+    "heapTotal": 11857920,
+    "heapUsed": 7485240,
+    "external": 1628403,
+    "arrayBuffers": 10655
+  }
+}

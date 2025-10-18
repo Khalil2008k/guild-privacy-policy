@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="32" failures="32" errors="0" time="1.219">
+  <testsuite name="PHASE 7: CHAOS ENGINEERING TESTS (401-500)" errors="0" failures="32" skipped="0" timestamp="2025-10-10T07:00:52" time="1.166" tests="32">
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 401: Network latency simulation" time="0.001">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 402: Network packet loss simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 403: Network timeout scenarios" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 404: Connection reset simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 405: DNS resolution failures" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 406: SSL/TLS handshake failures" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 407: Bandwidth throttling simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 408: Network partition simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 409: Load balancer failure simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 401-410: Network Chaos" name="Test 410: CDN failure simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 411: Service unavailability simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 412: Service degradation simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 413: Service restart simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 414: Service overload simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 415: Service dependency failure" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 416: Service version mismatch" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 417: Service configuration drift" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 418: Service resource exhaustion" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 419: Service cascading failure" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 411-420: Service Chaos" name="Test 420: Service recovery simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 421: Database connection pool exhaustion" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 422: Database query timeout simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 423: Database deadlock simulation" time="0.001">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 424: Database replication lag simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 425: Database failover simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 421-450: Database Chaos" name="Test 426-450: Additional Database Chaos Tests" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 451: Memory leak simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 452: CPU spike simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 453: Disk space exhaustion simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 454: System resource contention" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 455: System clock drift simulation" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="PHASE 7: CHAOS ENGINEERING TESTS (401-500) › Tests 451-500: System Chaos" name="Test 456-500: Additional System Chaos Tests" time="0">
+      <failure>AggregateError: Error
+    at AxiosError.Object.&lt;anonymous&gt;.AxiosError.from (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\adapters\http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at ClientRequest.eventHandlers.&lt;computed&gt; (C:\Users\Admin\GUILD\GUILD-3\node_modules\follow-redirects\index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at Socket.socketErrorListener (node:_http_client:574:5)
+    at Socket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at Axios.request (C:\Users\Admin\GUILD\GUILD-3\node_modules\axios\lib\core\Axios.js:45:41)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

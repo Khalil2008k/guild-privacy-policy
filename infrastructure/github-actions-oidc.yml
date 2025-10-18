@@ -1,0 +1,263 @@
+
+// GitHub Actions with OIDC Federated Authentication
+name: Guild Platform CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+
+env:
+  REGISTRY: gcr.io
+  IMAGE_NAME: guild-production/guild-api
+
+jobs:
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Code quality checks
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Run dependency check
+        run: npm run depcheck
+
+      - name: Run bundle analysis
+        run: npm run analyze:bundle
+
+  # Build and push
+  build-and-push:
+    name: Build and Push
+    runs-on: ubuntu-latest
+    needs: quality-check
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-oidc
+          role-session-name: GitHubActions
+          aws-region: us-east-1
+
+      - name: Login to GCR
+        run: |
+          echo "${{ secrets.GCR_JSON_KEY }}" | docker login -u _json_key --password-stdin https://gcr.io
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            gcr.io/guild-production/guild-api:${{ github.sha }}
+            gcr.io/guild-production/guild-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate deployment metadata
+        id: meta
+        run: |
+          echo "tags=gcr.io/guild-production/guild-api:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: staging
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-oidc
+          role-session-name: GitHubActions
+          aws-region: us-east-1
+
+      - name: Deploy to staging
+        run: |
+          helm upgrade --install guild-staging ./infrastructure/helm/guild-platform \
+            --namespace guild-staging \
+            --set image.tag=${{ needs.build-and-push.outputs.image-tag }} \
+            --wait
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run E2E tests
+        run: npm run test:e2e:ci
+        env:
+          BASE_URL: https://staging.guild.com
+
+      - name: Run load tests
+        run: npm run test:load
+        env:
+          TARGET_URL: https://staging.guild.com
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [integration-tests, build-and-push]
+    environment: production
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-oidc
+          role-session-name: GitHubActions
+          aws-region: us-east-1
+
+      - name: Deploy to production
+        run: |
+          # Progressive deployment with Argo Rollouts
+          kubectl argo rollouts set image guild-api-rollout guild-api=gcr.io/guild-production/guild-api:${{ needs.build-and-push.outputs.image-tag }} -n guild-production
+
+          # Monitor rollout progress
+          kubectl argo rollouts get rollout guild-api-rollout -n guild-production -w
+
+  # Post-deployment verification
+  post-deploy-verification:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    steps:
+      - name: Verify deployment health
+        run: |
+          curl -f https://api.guild.com/health || exit 1
+          curl -f https://app.guild.com/health || exit 1
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+        env:
+          BASE_URL: https://app.guild.com
+
+      - name: Check monitoring dashboards
+        run: |
+          # Verify Prometheus metrics
+          curl -f http://prometheus.monitoring.svc.cluster.local:9090/-/healthy || exit 1
+
+  # Notification
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [deploy-production, post-deploy-verification]
+    if: always()
+    steps:
+      - name: Send notification
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            MESSAGE="✅ Deployment successful for ${{ github.sha }}"
+          else
+            MESSAGE="❌ Deployment failed for ${{ github.sha }}"
+          fi
+
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{"text":"$MESSAGE\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# IAM Role for GitHub Actions OIDC
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:guild/platform:*"
+        }
+      }
+    }
+  ]
+}

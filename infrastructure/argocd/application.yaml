@@ -1,0 +1,172 @@
+
+// Argo CD Application for GitOps Continuous Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guild-platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/guild/platform
+    targetRevision: HEAD
+    path: infrastructure/helm/guild-platform
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: image.tag
+          value: $ARGOCD_APP_REVISION
+        - name: ingress.host
+          value: app.guild.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guild-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 10
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: guild-api
+      jsonPointers:
+        - /spec/replicas
+  info:
+    - name: 'url'
+      value: 'https://app.guild.com'
+    - name: 'health'
+      value: 'https://app.guild.com/health'
+
+---
+# Argo CD Application for Staging Environment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guild-platform-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/guild/platform
+    targetRevision: develop
+    path: infrastructure/helm/guild-platform
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+      parameters:
+        - name: image.tag
+          value: $ARGOCD_APP_REVISION
+        - name: ingress.host
+          value: staging.guild.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guild-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 1m
+
+---
+# Argo CD Project Configuration
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: guild-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Guild Platform Project
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  sourceRepos:
+    - 'https://github.com/guild/platform'
+    - 'https://github.com/guild/infrastructure'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: guild-devops
+      description: Guild DevOps Team
+      policies:
+        - p, proj:guild-project:*, *, *, allow
+      groups:
+        - guild-devops-team
+
+---
+# Argo CD ApplicationSet for Multi-Environment Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guild-platform-multienv
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - environment: staging
+            revision: develop
+            host: staging.guild.com
+          - environment: production
+            revision: main
+            host: app.guild.com
+  template:
+    metadata:
+      name: 'guild-platform-{{environment}}'
+      namespace: argocd
+    spec:
+      project: guild-project
+      source:
+        repoURL: https://github.com/guild/platform
+        targetRevision: '{{revision}}'
+        path: infrastructure/helm/guild-platform
+        helm:
+          valueFiles:
+            - values.yaml
+            - 'values-{{environment}}.yaml'
+          parameters:
+            - name: image.tag
+              value: $ARGOCD_APP_REVISION
+            - name: ingress.host
+              value: '{{host}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'guild-{{environment}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,36 @@
+config:
+  target: "http://192.168.1.36:4000"
+  phases:
+    - duration: 300
+      arrivalRate: 50
+      name: "API Performance Test"
+
+scenarios:
+  - name: "Jobs API Test"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/v1/jobs"
+      - get:
+          url: "/api/v1/jobs?category=Technology"
+      - get:
+          url: "/api/v1/jobs?limit=50"
+
+  - name: "Chat API Test"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/chat/conversations"
+      - post:
+          url: "/api/v1/chat/message"
+          json:
+            conversationId: "perf-test"
+            message: "Performance test"
+
+  - name: "User API Test"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/user/profile"
+      - get:
+          url: "/api/v1/user/stats"

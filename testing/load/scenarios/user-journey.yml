@@ -1,0 +1,14 @@
+config:
+  target: "http://192.168.1.36:4000"
+  phases:
+    # Simple test
+    - duration: 10
+      arrivalRate: 1
+      name: "Test run"
+
+scenarios:
+  # Simple health check test
+  - name: "Health Check"
+    flow:
+      - get:
+          url: "/api/v1/health"

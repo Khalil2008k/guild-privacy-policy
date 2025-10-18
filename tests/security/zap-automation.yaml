@@ -1,0 +1,278 @@
+# OWASP ZAP Automation Framework
+# Full security scan configuration for Guild API
+# Run: docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap.sh -cmd -autorun /zap/wrk/zap-automation.yaml
+
+env:
+  contexts:
+    - name: "Guild API Context"
+      urls:
+        - "http://host.docker.internal:4000"
+      includePaths:
+        - "http://host.docker.internal:4000/api/.*"
+      excludePaths:
+        - "http://host.docker.internal:4000/api/auth/logout"
+        - "http://host.docker.internal:4000/api/admin/.*"
+      authentication:
+        method: "json"
+        parameters:
+          loginUrl: "http://host.docker.internal:4000/api/auth/login"
+          loginRequestData: '{"email":"security-test@guild.com","password":"SecurityTest123!"}'
+        verification:
+          method: "response"
+          pollFrequency: 60
+          pollUnits: "requests"
+          pollUrl: "http://host.docker.internal:4000/api/users/me"
+          pollPostData: ""
+      sessionManagement:
+        method: "cookie"
+        parameters: {}
+      technology:
+        exclude: []
+
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+  vars:
+    base_url: "http://host.docker.internal:4000"
+    api_prefix: "/api"
+    test_user_email: "security-test@guild.com"
+    test_user_password: "SecurityTest123!"
+
+jobs:
+  # Job 1: Passive Scan Configuration
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+      maxBodySizeInBytesToScan: 10000
+    rules:
+      - id: 10015  # Incomplete or No Cache-control Header Set
+        threshold: "low"
+      - id: 10021  # X-Content-Type-Options Header Missing
+        threshold: "low"
+      - id: 10035  # Strict-Transport-Security Header Missing
+        threshold: "low"
+      - id: 10036  # HTTP Server Response Header
+        threshold: "low"
+      - id: 10037  # Server Leaks Information via "X-Powered-By" HTTP Response Header
+        threshold: "low"
+      - id: 10054  # Cookie Without SameSite Attribute
+        threshold: "low"
+      - id: 10055  # CSP Header Not Set
+        threshold: "medium"
+      - id: 10096  # Timestamp Disclosure
+        threshold: "low"
+      - id: 10098  # Cross-Domain Misconfiguration
+        threshold: "medium"
+
+  # Job 2: Spider - Crawl the API
+  - type: spider
+    parameters:
+      context: "Guild API Context"
+      user: "security-test@guild.com"
+      maxDuration: 10
+      maxDepth: 5
+      maxChildren: 10
+      acceptCookies: true
+      handleODataParametersVisited: false
+      handleParameters: "USE_ALL"
+      maxParseSizeBytes: 2621440
+      parseComments: true
+      parseGit: true
+      parseRobotsTxt: true
+      parseSVNEntries: true
+      parseSitemapXml: true
+      postForm: true
+      processForm: true
+      requestWaitTime: 200
+      sendRefererHeader: true
+      threadCount: 2
+      userAgent: "OWASP ZAP Security Scanner"
+
+  # Job 3: AJAX Spider - For React/SPA
+  - type: spiderAjax
+    parameters:
+      context: "Guild API Context"
+      user: "security-test@guild.com"
+      maxDuration: 10
+      maxCrawlDepth: 5
+      numberOfBrowsers: 2
+      browserId: "firefox-headless"
+      clickDefaultElems: true
+      clickElemsOnce: true
+      eventWait: 1000
+      maxCrawlStates: 0
+      randomInputs: true
+      reloadWait: 1000
+
+  # Job 4: Passive Scan - Wait for completion
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  # Job 5: Active Scan - Deep security testing
+  - type: activeScan
+    parameters:
+      context: "Guild API Context"
+      user: "security-test@guild.com"
+      maxRuleDurationInMins: 10
+      maxScanDurationInMins: 30
+      addQueryParam: false
+      defaultPolicy: "API-Minimal"
+      delayInMs: 0
+      handleAntiCSRFTokens: true
+      injectPluginIdInHeader: false
+      scanHeadersAllRequests: true
+      threadPerHost: 2
+    policyDefinition:
+      defaultStrength: "MEDIUM"
+      defaultThreshold: "MEDIUM"
+      rules:
+        # SQL Injection
+        - id: 40018
+          name: "SQL Injection"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Cross Site Scripting (XSS)
+        - id: 40012
+          name: "Cross Site Scripting (Reflected)"
+          threshold: "LOW"
+          strength: "HIGH"
+        - id: 40014
+          name: "Cross Site Scripting (Persistent)"
+          threshold: "LOW"
+          strength: "HIGH"
+        - id: 40016
+          name: "Cross Site Scripting (Persistent - Prime)"
+          threshold: "LOW"
+          strength: "HIGH"
+        - id: 40017
+          name: "Cross Site Scripting (Persistent - Spider)"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Path Traversal
+        - id: 6
+          name: "Path Traversal"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Remote File Inclusion
+        - id: 7
+          name: "Remote File Inclusion"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Server Side Include
+        - id: 40009
+          name: "Server Side Include"
+          threshold: "LOW"
+          strength: "MEDIUM"
+        # CRLF Injection
+        - id: 40003
+          name: "CRLF Injection"
+          threshold: "LOW"
+          strength: "MEDIUM"
+        # Parameter Tampering
+        - id: 40008
+          name: "Parameter Tampering"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Server Side Request Forgery
+        - id: 40046
+          name: "Server Side Request Forgery"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Remote OS Command Injection
+        - id: 90020
+          name: "Remote OS Command Injection"
+          threshold: "LOW"
+          strength: "HIGH"
+        # XML External Entity Attack
+        - id: 90023
+          name: "XML External Entity Attack"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Authentication bypass
+        - id: 10102
+          name: "Authentication Request Identified"
+          threshold: "LOW"
+          strength: "MEDIUM"
+        # JWT vulnerabilities
+        - id: 10101
+          name: "JWT None Algorithm"
+          threshold: "LOW"
+          strength: "HIGH"
+        # Insecure deserialization
+        - id: 90033
+          name: "Loosely Scoped Cookie"
+          threshold: "LOW"
+          strength: "MEDIUM"
+
+  # Job 6: API Scan - OpenAPI/GraphQL specific
+  - type: openapi
+    parameters:
+      context: "Guild API Context"
+      targetUrl: "http://host.docker.internal:4000/api/docs/openapi.json"
+    tests:
+      # Test for common API vulnerabilities
+      - type: "improper-assets-management"
+        risk: "HIGH"
+      - type: "broken-authentication"
+        risk: "HIGH"
+      - type: "broken-object-level-authorization"
+        risk: "HIGH"
+      - type: "mass-assignment"
+        risk: "MEDIUM"
+      - type: "security-misconfiguration"
+        risk: "MEDIUM"
+      - type: "injection"
+        risk: "HIGH"
+      - type: "improper-inventory-management"
+        risk: "LOW"
+      - type: "insufficient-logging"
+        risk: "LOW"
+
+  # Job 7: Report Generation
+  - type: report
+    parameters:
+      template: "traditional-html-plus"
+      reportDir: "/zap/wrk/test-reports/security"
+      reportFile: "zap-security-report"
+      reportTitle: "Guild Platform Security Scan"
+      reportDescription: "Comprehensive OWASP ZAP security assessment of Guild API"
+      displayReport: false
+    risks:
+      - "high"
+      - "medium"
+      - "low"
+      - "info"
+
+  - type: report
+    parameters:
+      template: "traditional-json-plus"
+      reportDir: "/zap/wrk/test-reports/security"
+      reportFile: "zap-security-report"
+      reportTitle: "Guild Platform Security Scan (JSON)"
+      reportDescription: "Machine-readable security assessment"
+      displayReport: false
+
+  - type: report
+    parameters:
+      template: "traditional-xml"
+      reportDir: "/zap/wrk/test-reports/security"
+      reportFile: "zap-security-report"
+      reportTitle: "Guild Platform Security Scan (XML)"
+      reportDescription: "XML format for CI/CD integration"
+      displayReport: false
+
+  # Job 8: Exit with appropriate status code
+  - type: outputSummary
+    parameters:
+      format: "long"
+      summaryFile: "/zap/wrk/test-reports/security/zap-summary.txt"
+
+
+
+
+
+

@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-10-07T15:50:44.179Z",
+  "mode": "fast",
+  "totalTests": 4,
+  "passed": 0,
+  "failed": 4,
+  "skipped": 0,
+  "duration": 35543,
+  "suites": [
+    {
+      "id": "validation",
+      "name": "Code Validation",
+      "critical": true,
+      "passed": false,
+      "exitCode": 2,
+      "duration": 474,
+      "timestamp": "2025-10-07T15:50:44.655Z"
+    },
+    {
+      "id": "unit",
+      "name": "Unit & Integration Tests",
+      "critical": true,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 34368,
+      "timestamp": "2025-10-07T15:51:19.024Z"
+    },
+    {
+      "id": "security",
+      "name": "API Security Tests",
+      "critical": true,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 333,
+      "timestamp": "2025-10-07T15:51:19.358Z"
+    },
+    {
+      "id": "firebase",
+      "name": "Firebase Emulator Tests",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 366,
+      "timestamp": "2025-10-07T15:51:19.724Z"
+    }
+  ]
+}

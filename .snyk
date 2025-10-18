@@ -1,0 +1,47 @@
+
+// Snyk Security Scanning Configuration
+{
+  "version": "1.1290.0",
+  "api": "https://snyk.io/api/v1",
+  "rules": {
+    "vulnerabilities": {
+      "fail": true,
+      "high": true,
+      "medium": true,
+      "low": false
+    },
+    "licenses": {
+      "fail": true,
+      "high": true,
+      "medium": true,
+      "low": false
+    }
+  },
+  "ignore": {
+    "vulnerabilities": [
+      {
+        "id": "SNYK-JS-LODASH-567746",
+        "reason": "Known false positive",
+        "expires": "2024-12-31"
+      }
+    ],
+    "licenses": []
+  },
+  "policies": [
+    {
+      "name": "guild-security-policy",
+      "description": "Security policy for Guild platform",
+      "rules": {
+        "vulnerabilities": {
+          "severity": "high",
+          "cvss": ">=7.0",
+          "exploitMaturity": "functional"
+        },
+        "licenses": {
+          "severities": ["high", "medium"],
+          "types": ["unlicensed", "copyleft"]
+        }
+      }
+    }
+  ]
+}

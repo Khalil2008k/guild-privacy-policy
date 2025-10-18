@@ -1,0 +1,33 @@
+{"users": [
+{
+  "localId": "d94kK9YWrgdevASG58BZ5NQDJWt1",
+  "email": "admin@guild.app",
+  "emailVerified": false,
+  "passwordHash": "ZoeifTsqz01f1+E8EvfOn3Spl0WBHGoXcLKeCksK70kRolb8yEzry4YAR6H2HQHLQxCjaGVn7mJ98QxzsjcFDg==",
+  "salt": "Tc1qAeck8oB5Uw==",
+  "createdAt": "1757578879243",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "vRwWb9umldZWkj7ftDe33hLrg9E3",
+  "email": "mazen.1998@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "urcYgsZSAzvwQzvOpETF/AqNW2LgrymDQ36fWlmXp4IT0YvGtIatcnXb/ZEq61EWKlLWRjmdQOPMrEgPziv7Gg==",
+  "salt": "4p7JH2ynqcnZaw==",
+  "lastSignedInAt": "1757406365999",
+  "createdAt": "1757406275933",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "x8SoHLVBlOMYFWfJOpF7zPHnKmj2",
+  "email": "red1210995@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "fODpYmGeA5JUUHXyhOB/dkkycuaDay7ZoWyNuztkKK+9PPFPGNgqJcYdu/zRGCTCn7d5wBuK6O6jKPas5PY4vQ==",
+  "salt": "n8pMQ1bYhD5Baw==",
+  "displayName": "Mazen Ahmed",
+  "lastSignedInAt": "1757512022652",
+  "createdAt": "1757355756028",
+  "providerUserInfo": []
+}]}

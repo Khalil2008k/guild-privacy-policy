@@ -1,0 +1,15 @@
+{
+  "extends": ["react-app"],
+  "rules": {
+    "import/no-unresolved": "off",
+    "import/namespace": "off",
+    "import/default": "off",
+    "security/detect-sql-injection": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/consistent-type-imports": "off",
+    "react/no-unescaped-entities": "off",
+    "react-native/no-color-literals": "off",
+    "jsx-a11y/label-has-associated-control": "off",
+    "no-case-declarations": "off"
+  }
+}

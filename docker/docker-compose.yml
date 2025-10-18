@@ -1,0 +1,279 @@
+
+// Multi-Stage Docker Compose for Development and Production
+version: '3.8'
+
+networks:
+  guild-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+  # Database Layer
+  postgres:
+    image: postgres:15-alpine
+    container_name: guild-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: guild
+      POSTGRES_USER: guild_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guild_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - guild-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guild_user -d guild"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: guild-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-guild_redis_password}
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+    networks:
+      - guild-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Search and Analytics
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: guild-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - guild-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: guild-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./docker/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - guild-network
+    depends_on:
+      - guild-api
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: guild-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-guild_grafana_password}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - guild-network
+    depends_on:
+      - prometheus
+
+  # Application Services
+  guild-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: guild-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://guild_user:guild_secure_password@guild-postgres:5432/guild
+      - REDIS_URL=redis://:guild_redis_password@guild-redis:6379
+      - ELASTICSEARCH_URL=http://guild-elasticsearch:9200
+      - FIREBASE_PROJECT_ID=guild-production
+    ports:
+      - "8080:8080"
+    networks:
+      - guild-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  guild-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: guild-worker
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - WORKER_TYPE=background
+      - DATABASE_URL=postgresql://guild_user:guild_secure_password@guild-postgres:5432/guild
+      - REDIS_URL=redis://:guild_redis_password@guild-redis:6379
+    networks:
+      - guild-network
+    depends_on:
+      - guild-api
+      - postgres
+      - redis
+    command: npm run worker
+
+  guild-admin:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+      target: production
+    container_name: guild-admin
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://guild-api:8080
+      - REACT_APP_FIREBASE_CONFIG=${FIREBASE_CONFIG}
+    ports:
+      - "3001:80"
+    networks:
+      - guild-network
+    depends_on:
+      - guild-api
+
+  guild-mobile:
+    build:
+      context: .
+      dockerfile: Dockerfile.mobile
+      target: production
+    container_name: guild-mobile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - EXPO_WEB_PORT=3002
+    ports:
+      - "3002:3002"
+    networks:
+      - guild-network
+
+  # Load Testing
+  jmeter-master:
+    image: justb4/jmeter:latest
+    container_name: guild-jmeter-master
+    restart: 'no'
+    environment:
+      - JMETER_MODE=MASTER
+      - JMETER_SLAVES=jmeter-slave1,jmeter-slave2
+    volumes:
+      - ./testing/load:/test
+    networks:
+      - guild-network
+    command: jmeter -n -t /test/guild-load-test.jmx -R jmeter-slave1,jmeter-slave2 -l /test/results.jtl
+
+  jmeter-slave1:
+    image: justb4/jmeter:latest
+    container_name: guild-jmeter-slave1
+    restart: 'no'
+    environment:
+      - JMETER_MODE=SLAVE
+      - JMETER_SERVER_RMI_PORT=1099
+    networks:
+      - guild-network
+
+  jmeter-slave2:
+    image: justb4/jmeter:latest
+    container_name: guild-jmeter-slave2
+    restart: 'no'
+    environment:
+      - JMETER_MODE=SLAVE
+      - JMETER_SERVER_RMI_PORT=1099
+    networks:
+      - guild-network
+
+  # Security Testing
+  zap:
+    image: owasp/zap2docker-stable:latest
+    container_name: guild-zap
+    restart: 'no'
+    environment:
+      - ZAP_PORT=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./testing/security:/zap/wrk
+    networks:
+      - guild-network
+    command: zap.sh -daemon -port 8080 -config api.disablekey=true
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: guild-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - guild-network
+    depends_on:
+      - guild-api
+      - guild-admin
+      - guild-mobile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

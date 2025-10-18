@@ -1,0 +1,26 @@
+{
+  "ignores": [
+    "@types/*",
+    "typescript",
+    "eslint",
+    "prettier",
+    "husky",
+    "lint-staged",
+    "jest",
+    "@testing-library/*",
+    "ts-jest",
+    "ts-node"
+  ],
+  "skipMissing": false,
+  "specials": [
+    "bin",
+    "commitizen",
+    "commitlint",
+    "eslint",
+    "husky",
+    "lint-staged",
+    "prettier",
+    "stylelint",
+    "ts-node"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "guild-infrastructure",
+  "runtime": "nodejs",
+  "description": "Infrastructure as Code for Guild Platform",
+  "config": {
+    "gcp:project": "guild-production",
+    "gcp:region": "us-central1",
+    "aws:region": "us-east-1",
+    "azure:location": "East US"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/gcp": "^7.0.0",
+    "@pulumi/aws": "^6.0.0",
+    "@pulumi/azure": "^5.0.0",
+    "@pulumi/firebase": "^5.0.0"
+  }
+}

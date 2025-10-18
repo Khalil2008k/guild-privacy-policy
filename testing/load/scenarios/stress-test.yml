@@ -1,0 +1,46 @@
+config:
+  target: "http://192.168.1.36:4000"
+  phases:
+    - duration: 300
+      arrivalRate: 100
+      name: "Stress test - 100 users"
+    - duration: 600
+      arrivalRate: 100
+      rampTo: 500
+      name: "Ramp to 500 users"
+  processor: "./processors/auth.js"
+
+scenarios:
+  - name: "Heavy Firebase Load"
+    weight: 50
+    flow:
+      - loop:
+          - post:
+              url: "/api/v1/auth/login"
+              json:
+                email: "stress{{ $randomNumber(1, 1000) }}@test.com"
+                password: "testpass123"
+          - get:
+              url: "/api/v1/jobs"
+          - get:
+              url: "/api/v1/user/profile"
+        count: 10
+
+  - name: "Chat Stress Test"
+    weight: 50
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "chat{{ $randomNumber(1, 1000) }}@test.com"
+            password: "testpass123"
+      - loop:
+          - post:
+              url: "/api/v1/chat/message"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              json:
+                conversationId: "stress-chat-{{ $randomNumber(1, 50) }}"
+                message: "Stress test message {{ $timestamp }}"
+          - think: 0.5
+        count: 20

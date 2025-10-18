@@ -1,0 +1,3337 @@
+﻿
+> guild-2@1.0.0 test
+> jest
+
+node.exe : PASS BROKEN_APP_BACKUP/src/utils/__tests__/validation.test.ts
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS BROKEN_APP...idation.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+PASS tests/__tests__/chat.test.ts
+PASS src/utils/__tests__/validation.test.ts
+PASS src/contexts/__tests__/ThemeContext.test.tsx
+PASS src/config/__tests__/environment.test.ts
+PASS src/hooks/__tests__/useFormValidation.test.ts
+FAIL tests/__tests__/payments.test.ts
+  ΓùÅ Console
+
+    console.log
+      ≡ƒöì i18n module [ios]: Starting initialization...
+
+      at Object.log (src/i18n/index.ts:46:9)
+
+    console.log
+      i18n setup complete (async initialization in progress)
+
+      at Object.log (src/i18n/index.ts:73:9)
+
+    console.log
+      ≡ƒîì Environment initialized: {
+        environment: 'development',
+        apiUrl: 'http://192.168.1.34:5000/api',
+        features: {
+          enableAnalytics: false,
+          enableCrashlytics: false,
+          enablePerformanceMonitoring: true,
+          enableDebugMode: true,
+          enableTestData: true,
+          enableBetaFeatures: true,
+          enableAppCheck: false
+        },
+        logging: { level: 'debug', enableConsole: true, enableRemote: false }
+      }
+
+      at log (src/config/environment.ts:289:13)
+
+    console.log
+      Γ£à i18n [ios] initialized successfully
+
+      at log (src/i18n/index.ts:67:13)
+
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Job Payments ΓÇ║ should fail payment if insufficient balance
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Insufficient balance"
+    Received message:   "Failed to process job payment"
+
+          172 |     if (!response.ok) {
+          173 |       const error = await response.json();
+        > 174 |       throw new Error(error.message || 'Failed to process job payment');
+              |             ^
+          175 |     }
+          176 |
+          177 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:174:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/payments.test.ts:100:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Transaction Verification ΓÇ║ should detect fraudulent transactions
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Transaction flagged as suspicious"
+    Received message:   "Failed to process payment"
+
+          303 |     if (!response.ok) {
+          304 |       const error = await response.json();
+        > 305 |       throw new Error(error.message || 'Failed to process payment');
+              |             ^
+          306 |     }
+          307 |
+          308 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:305:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/payments.test.ts:184:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Payment Recovery ΓÇ║ should retry failed payment
+
+    Failed to retry payment
+
+      321 |
+      322 |     if (!response.ok) {
+    > 323 |       throw new Error('Failed to retry payment');
+          |             ^
+      324 |     }
+      325 |
+      326 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:323:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS backend/src/services/__tests__/UserService.test.ts
+FAIL tests/__tests__/auth.test.ts
+  ΓùÅ Console
+
+    console.log
+      ≡ƒöì i18n module [ios]: Starting initialization...
+
+      at Object.log (src/i18n/index.ts:46:9)
+
+    console.log
+      i18n setup complete (async initialization in progress)
+
+      at Object.log (src/i18n/index.ts:73:9)
+
+    console.log
+      ≡ƒîì Environment initialized: {
+        environment: 'development',
+        apiUrl: 'http://192.168.1.34:5000/api',
+        features: {
+          enableAnalytics: false,
+          enableCrashlytics: false,
+          enablePerformanceMonitoring: true,
+          enableDebugMode: true,
+          enableTestData: true,
+          enableBetaFeatures: true,
+          enableAppCheck: false
+        },
+        logging: { level: 'debug', enableConsole: true, enableRemote: false }
+      }
+
+      at log (src/config/environment.ts:289:13)
+
+    console.log
+      Γ£à i18n [ios] initialized successfully
+
+      at log (src/i18n/index.ts:67:13)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Registration ΓÇ║ should fail registration with existing email
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Email already in use"
+    Received message:   "Registration failed"
+
+          76 |     if (!response.ok) {
+          77 |       const error = await response.json();
+        > 78 |       throw new Error(error.message || 'Registration failed');
+             |             ^
+          79 |     }
+          80 |
+          81 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:78:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:71:60)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Registration ΓÇ║ should validate phone number format
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid phone number"
+    Received message:   "Registration failed"
+
+          76 |     if (!response.ok) {
+          77 |       const error = await response.json();
+        > 78 |       throw new Error(error.message || 'Registration failed');
+             |             ^
+          79 |     }
+          80 |
+          81 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:78:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:81:60)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Sign In ΓÇ║ should fail sign in with incorrect password
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid credentials"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:113:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Sign In ΓÇ║ should fail sign in with non-existent user
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "User not found"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:126:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should fail 2FA verification with invalid code
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid verification code"
+    Received message:   "Failed to verify 2FA code"
+
+          376 |     if (!response.ok) {
+          377 |       const error = await response.json();
+        > 378 |       throw new Error(error.message || 'Failed to verify 2FA code');
+              |             ^
+          379 |     }
+          380 |
+          381 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:378:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:173:65)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should fail 2FA verification with expired code
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Verification code expired"
+    Received message:   "Failed to verify 2FA code"
+
+          376 |     if (!response.ok) {
+          377 |       const error = await response.json();
+        > 378 |       throw new Error(error.message || 'Failed to verify 2FA code');
+              |             ^
+          379 |     }
+          380 |
+          381 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:378:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:181:65)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should rate limit 2FA code requests
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Too many requests"
+    Received message:   "Failed to send 2FA code"
+
+          356 |     if (!response.ok) {
+          357 |       const error = await response.json();
+        > 358 |       throw new Error(error.message || 'Failed to send 2FA code');
+              |             ^
+          359 |     }
+          360 |
+          361 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:358:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:189:69)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Password Reset ΓÇ║ should fail password reset for non-existent email
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "User not found"
+    Received message:   "Failed to send password reset email"
+
+          144 |     if (!response.ok) {
+          145 |       const error = await response.json();
+        > 146 |       throw new Error(error.message || 'Failed to send password reset email');
+              |             ^
+          147 |     }
+          148 |
+          149 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:146:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:210:89)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Password Reset ΓÇ║ should fail password reset with invalid token
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid reset token"
+    Received message:   "Failed to reset password"
+
+          168 |     if (!response.ok) {
+          169 |       const error = await response.json();
+        > 170 |       throw new Error(error.message || 'Failed to reset password');
+              |             ^
+          171 |     }
+          172 |
+          173 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:170:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:228:93)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Session Management ΓÇ║ should invalidate expired token
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Token expired"
+    Received message:   "Invalid session"
+
+          395 |     if (!response.ok) {
+          396 |       const error = await response.json();
+        > 397 |       throw new Error(error.message || 'Invalid session');
+              |             ^
+          398 |     }
+          399 |
+          400 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:397:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:251:74)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should enable biometric authentication
+
+    TypeError: authService.enableBiometric is not a function
+
+      276 |   describe('Biometric Authentication', () => {
+      277 |     test('should enable biometric authentication', async () => {
+    > 278 |       const result = await authService.enableBiometric();
+          |                                        ^
+      279 |
+      280 |       expect(result.enabled).toBe(true);
+      281 |     });
+
+      at Object.enableBiometric (tests/__tests__/auth.test.ts:278:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should authenticate with biometrics
+
+    TypeError: authService.authenticateWithBiometric is not a function
+
+      282 |
+      283 |     test('should authenticate with biometrics', async () => {
+    > 284 |       const result = await authService.authenticateWithBiometric();
+          |                                        ^
+      285 |
+      286 |       expect(result.success).toBe(true);
+      287 |     });
+
+      at Object.authenticateWithBiometric (tests/__tests__/auth.test.ts:284:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should disable biometric authentication
+
+    TypeError: authService.disableBiometric is not a function
+
+      288 |
+      289 |     test('should disable biometric authentication', async () => {
+    > 290 |       const result = await authService.disableBiometric();
+          |                                        ^
+      291 |
+      292 |       expect(result.disabled).toBe(true);
+      293 |     });
+
+      at Object.disableBiometric (tests/__tests__/auth.test.ts:290:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Account Security ΓÇ║ should detect and prevent brute force attacks
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Too many failed attempts"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:319:17)
+          at Generator.throw (<anonymous>)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _throw (node_modules/@babel/runtime/helpers/asyncToGenerator.js:20:9)
+
+FAIL tests/__tests__/jobs.test.ts
+  ΓùÅ Console
+
+    console.log
+      ≡ƒîì Environment initialized: {
+        environment: 'development',
+        apiUrl: 'http://192.168.1.34:5000/api',
+        features: {
+          enableAnalytics: false,
+          enableCrashlytics: false,
+          enablePerformanceMonitoring: true,
+          enableDebugMode: true,
+          enableTestData: true,
+          enableBetaFeatures: true,
+          enableAppCheck: false
+        },
+        logging: { level: 'debug', enableConsole: true, enableRemote: false }
+      }
+
+      at log (src/config/environment.ts:289:13)
+
+    console.log
+      ≡ƒöì i18n module [ios]: Starting initialization...
+
+      at Object.log (src/i18n/index.ts:46:9)
+
+    console.log
+      i18n setup complete (async initialization in progress)
+
+      at Object.log (src/i18n/index.ts:73:9)
+
+    console.log
+      Γ£à i18n [ios] initialized successfully
+
+      at log (src/i18n/index.ts:67:13)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Creating job with data: {
+        title: 'Build Mobile App',
+        description: 'Need a React Native developer',
+        category: 'Development',
+        budget: 5000,
+        currency: 'QR',
+        location: 'Doha, Qatar',
+        requiredSkills: [ 'React Native', 'TypeScript' ],
+        urgent: false
+      }
+
+      at JobService.log (src/services/jobService.ts:118:15)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Creating job with data: { title: '', description: '' }
+
+      at JobService.log (src/services/jobService.ts:118:15)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Creating job with data: {
+        id: 'job-123',
+        title: 'Test Job',
+        description: 'This is a test job',
+        category: 'Development',
+        budget: -100,
+        currency: 'QR',
+        location: 'Doha, Qatar',
+        latitude: 25.2854,
+        longitude: 51.531,
+        status: 'open',
+        postedBy: 'user-123',
+        postedAt: 2025-10-13T19:14:58.658Z,
+        expiresAt: 2025-11-12T19:14:58.658Z,
+        requiredSkills: [ 'JavaScript', 'React Native' ],
+        urgent: false
+      }
+
+      at JobService.log (src/services/jobService.ts:118:15)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Creating job with data: {
+        id: 'job-123',
+        title: 'Test Job',
+        description: 'This is a test job',
+        category: 'Development',
+        budget: 500,
+        currency: 'QR',
+        location: 'Doha, Qatar',
+        latitude: 25.2854,
+        longitude: 51.531,
+        status: 'open',
+        postedBy: 'user-123',
+        postedAt: 2025-10-13T19:14:58.664Z,
+        expiresAt: 2025-11-12T19:14:58.664Z,
+        requiredSkills: [ 'JavaScript', 'React Native' ],
+        urgent: false
+      }
+
+      at JobService.log (src/services/jobService.ts:118:15)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Creating job with data: {
+        id: 'job-123',
+        title: 'Test Job',
+        description: 'This is a test job',
+        category: 'Development',
+        budget: 500,
+        currency: 'QR',
+        location: 'Doha, Qatar',
+        latitude: 25.2854,
+        longitude: 51.531,
+        status: 'open',
+        postedBy: 'user-123',
+        postedAt: 2025-10-13T19:14:58.667Z,
+        expiresAt: 2025-11-12T19:14:58.667Z,
+        requiredSkills: [ 'JavaScript', 'React Native' ],
+        urgent: false
+      }
+
+      at JobService.log (src/services/jobService.ts:118:15)
+
+    console.log
+      ≡ƒöÑ JOB SERVICE: Getting open jobs...
+
+      at JobService.log (src/services/jobService.ts:439:15)
+
+    console.log
+      ≡ƒô▒ Notification would be sent: {
+        userId: 'job-123',
+        title: 'Job Cancelled',
+        body: 'The job has been cancelled.'
+      }
+
+      at JobService.log (src/services/jobService.ts:558:15)
+
+    console.log
+      ≡ƒô▒ Notification would be sent: {
+        userId: 'job-123',
+        title: 'Job Cancelled',
+        body: 'The job has been cancelled.'
+      }
+
+      at JobService.log (src/services/jobService.ts:558:15)
+
+    console.log
+      ≡ƒô▒ Notification would be sent: {
+        userId: 'job-123',
+        title: 'Job Cancelled',
+        body: 'The job has been cancelled.'
+      }
+
+      at JobService.log (src/services/jobService.ts:558:15)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should successfully create a new job
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('≡ƒöÑ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:39:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should validate required fields
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Title is required"
+    Received message:   "Cannot read properties of undefined (reading 'currentUser')"
+
+          119 |       
+          120 |       // Check authentication first
+        > 121 |       const currentUser = auth.currentUser;
+              |                                ^
+          122 |       
+          123 |       if (!currentUser) {
+          124 |         console.error('≡ƒöÑ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:52:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:52:66)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should validate budget is positive
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Budget must be positive"
+    Received message:   "Cannot read properties of undefined (reading 'currentUser')"
+
+          119 |       
+          120 |       // Check authentication first
+        > 121 |       const currentUser = auth.currentUser;
+              |                                ^
+          122 |       
+          123 |       if (!currentUser) {
+          124 |         console.error('≡ƒöÑ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:58:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:58:59)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should set expiry date to 30 days
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('≡ƒöÑ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:72:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should create job with location coordinates
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('≡ƒöÑ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:92:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should fetch open jobs
+
+    Failed to get open jobs
+
+      485 |     } catch (error) {
+      486 |       console.error('Error getting open jobs:', error);
+    > 487 |       throw new Error('Failed to get open jobs');
+          |             ^
+      488 |     }
+      489 |   }
+      490 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:487:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter jobs by category
+
+    Failed to get jobs by category
+
+      641 |     } catch (error) {
+      642 |       console.error('Error getting jobs by category:', error);
+    > 643 |       throw new Error('Failed to get jobs by category');
+          |             ^
+      644 |     }
+      645 |   }
+      646 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:643:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter jobs by location radius
+
+    Failed to get nearby jobs
+
+      674 |     } catch (error) {
+      675 |       console.error('Error getting nearby jobs:', error);
+    > 676 |       throw new Error('Failed to get nearby jobs');
+          |             ^
+      677 |     }
+      678 |   }
+      679 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:676:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should search jobs by keywords
+
+    Failed to search jobs
+
+      711 |     } catch (error) {
+      712 |       console.error('Error searching jobs:', error);
+    > 713 |       throw new Error('Failed to search jobs');
+          |             ^
+      714 |     }
+      715 |   }
+      716 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:713:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter by budget range
+
+    Failed to get jobs by budget
+
+      740 |     } catch (error) {
+      741 |       console.error('Error getting jobs by budget:', error);
+    > 742 |       throw new Error('Failed to get jobs by budget');
+          |             ^
+      743 |     }
+      744 |   }
+      745 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:742:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should successfully accept a job
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should fail to accept already accepted job
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Job already accepted"
+    Received message:   "Cannot read properties of undefined (reading 'exists')"
+
+          748 |     try {
+          749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+        > 750 |       if (!jobDoc.exists()) {
+              |                   ^
+          751 |         throw new Error('Job not found');
+          752 |       }
+          753 |
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:208:61)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should fail to accept expired job
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Job has expired"
+    Received message:   "Cannot read properties of undefined (reading 'exists')"
+
+          748 |     try {
+          749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+        > 750 |       if (!jobDoc.exists()) {
+              |                   ^
+          751 |         throw new Error('Job not found');
+          752 |       }
+          753 |
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:216:61)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should create contract on job acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should notify job poster when accepted
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should mark job as completed
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      796 |       
+      797 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 798 |       if (!jobDoc.exists()) {
+          |                   ^
+      799 |         throw new Error('Job not found');
+      800 |       }
+      801 |       
+
+      at JobService.exists (src/services/jobService.ts:798:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should release payment on job completion
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      796 |       
+      797 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 798 |       if (!jobDoc.exists()) {
+          |                   ^
+      799 |         throw new Error('Job not found');
+      800 |       }
+      801 |       
+
+      at JobService.exists (src/services/jobService.ts:798:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should auto-release payment after 7-14 days
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      824 |     try {
+      825 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 826 |       if (!jobDoc.exists()) {
+          |                   ^
+      827 |         throw new Error('Job not found');
+      828 |       }
+      829 |       
+
+      at JobService.exists (src/services/jobService.ts:826:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should cancel job before acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'cancelled')
+
+      335 |       const result = await jobService.cancelJob('job-123');
+      336 |
+    > 337 |       expect(result.cancelled).toBe(true);
+          |                     ^
+      338 |       expect(result.refunded).toBe(false);
+      339 |     });
+      340 |
+
+      at Object.cancelled (tests/__tests__/jobs.test.ts:337:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should refund payment on cancellation after acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'cancelled')
+
+      350 |       const result = await jobService.cancelJob('job-123');
+      351 |
+    > 352 |       expect(result.cancelled).toBe(true);
+          |                     ^
+      353 |       expect(result.refunded).toBe(true);
+      354 |       expect(result.refundAmount).toBe(500);
+      355 |     });
+
+      at Object.cancelled (tests/__tests__/jobs.test.ts:352:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should apply cancellation fee for late cancellation
+
+    TypeError: Cannot read properties of undefined (reading 'cancellationFee')
+
+      366 |       const result = await jobService.cancelJob('job-123');
+      367 |
+    > 368 |       expect(result.cancellationFee).toBe(50);
+          |                     ^
+      369 |       expect(result.refundAmount).toBe(450);
+      370 |     });
+      371 |   });
+
+      at Object.cancellationFee (tests/__tests__/jobs.test.ts:368:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Expiry ΓÇ║ should auto-expire jobs after 30 days
+
+    TypeError: Cannot read properties of undefined (reading 'docs')
+
+      919 |       );
+      920 |       const snapshot = await getDocs(q);
+    > 921 |       const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+          |                             ^
+      922 |       
+      923 |       const expiredJobs = jobs.filter(job => {
+      924 |         const createdAt = job.createdAt ? new Date(job.createdAt) : null;
+
+      at JobService.docs (src/services/jobService.ts:921:29)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Expiry ΓÇ║ should refund payment on job expiry
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      951 |     try {
+      952 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 953 |       if (!jobDoc.exists()) {
+          |                   ^
+      954 |         throw new Error('Job not found');
+      955 |       }
+      956 |       
+
+      at JobService.exists (src/services/jobService.ts:953:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Reviews & Ratings ΓÇ║ should prevent duplicate reviews
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"review": {"comment": undefined, "createdAt": 2025-10-13T19:14:58.713Z, "id": 
+"review-job-123", "jobId": "job-123", "rating": 5, "type": "worker"}}
+
+      449 |       );
+      450 |
+    > 451 |       await expect(
+          |             ^
+      452 |         jobService.rateWorker('job-123', { rating: 5 })
+      453 |       ).rejects.toThrow('Review already submitted');
+      454 |     });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.expect (tests/__tests__/jobs.test.ts:451:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+PASS src/components/__tests__/Button.test.tsx
+PASS src/app/(auth)/__tests__/sign-in.test.tsx
+PASS src/services/__tests__/apiGateway.test.ts
+PASS tests/__tests__/performance.test.ts
+PASS backend/src/routes/__tests__/auth.test.ts
+PASS src/app/(modals)/__tests__/wallet.test.tsx
+FAIL backend/src/__tests__/middleware/auth.test.ts
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject request with malformed token
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "NO_TOKEN",
+    -   "error": "Access denied. Authentication required.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      86 |
+      87 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 88 |       expect(res.json).toHaveBeenCalledWith({
+         |                        ^
+      89 |         error: 'Access denied. Authentication required.',
+      90 |         code: 'NO_TOKEN'
+      91 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:88:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject request with invalid JWT
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "MALFORMED_TOKEN",
+    -   "error": "Malformed token.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      105 |
+      106 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 107 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      108 |         error: 'Malformed token.',
+      109 |         code: 'MALFORMED_TOKEN'
+      110 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:107:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject expired token
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "TOKEN_EXPIRED",
+    -   "error": "Token has expired.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      128 |
+      129 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 130 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      131 |         error: 'Token has expired.',
+      132 |         code: 'TOKEN_EXPIRED'
+      133 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:130:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject token with invalid payload
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "INVALID_PAYLOAD",
+    -   "error": "Invalid token format.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      143 |
+      144 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 145 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      146 |         error: 'Invalid token format.',
+      147 |         code: 'INVALID_PAYLOAD'
+      148 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:145:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject when user not found
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "USER_NOT_FOUND",
+    -   "error": "User not found.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      159 |
+      160 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 161 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      162 |         error: 'User not found.',
+      163 |         code: 'USER_NOT_FOUND'
+      164 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:161:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject inactive user
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "ACCOUNT_INACTIVE",
+    -   "error": "Account is inactive.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      182 |
+      183 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 184 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      185 |         error: 'Account is inactive.',
+      186 |         code: 'ACCOUNT_INACTIVE'
+      187 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:184:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should authenticate valid user successfully
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: {"currentRank": "G", "email": "test@example.com", "id": "user-123", "isActive": true, "isVerified": 
+true, "lastLoginAt": 2025-10-13T19:14:58.845Z}
+    Received: undefined
+
+      207 |       await authenticateToken(req, res as Response, mockNext);
+      208 |
+    > 209 |       expect(req.user).toEqual(mockUser);
+          |                        ^
+      210 |       expect(mockNext).toHaveBeenCalled();
+      211 |       expect(res.status).not.toHaveBeenCalled();
+      212 |       expect(mockLogger.debug).toHaveBeenCalledWith(
+
+      at Object.toEqual (backend/src/__tests__/middleware/auth.test.ts:209:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should handle database errors gracefully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 500
+    Received: 401
+
+    Number of calls: 1
+
+      225 |       await authenticateToken(req as AuthenticatedRequest, res as Response, mockNext);
+      226 |
+    > 227 |       expect(res.status).toHaveBeenCalledWith(500);
+          |                          ^
+      228 |       expect(res.json).toHaveBeenCalledWith({
+      229 |         error: 'Authentication service unavailable.',
+      230 |         code: 'AUTH_SERVICE_ERROR'
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:227:26)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should verify JWT with correct options
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "valid-jwt", "test-secret", {"algorithms": ["HS256"], "audience": "test-audience", "issuer": 
+"test-issuer"}
+
+    Number of calls: 0
+
+      252 |       await authenticateToken(req as AuthenticatedRequest, res as Response, mockNext);
+      253 |
+    > 254 |       expect(mockJwt.verify).toHaveBeenCalledWith('valid-jwt', 'test-secret', {
+          |                              ^
+      255 |         algorithms: ['HS256'],
+      256 |         issuer: 'test-issuer',
+      257 |         audience: 'test-audience'
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:254:30)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should update last login timestamp
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"data": {"lastLoginAt": Any<Date>}, "where": {"id": "user-123"}}
+
+    Number of calls: 0
+
+      280 |       await new Promise(resolve => setTimeout(resolve, 10));
+      281 |
+    > 282 |       expect(mockPrisma.user.update).toHaveBeenCalledWith({
+          |                                      ^
+      283 |         where: { id: 'user-123' },
+      284 |         data: { lastLoginAt: expect.any(Date) }
+      285 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:282:38)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ JWT_SECRET validation ΓÇ║ should exit process if JWT_SECRET is not set
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 1
+
+    Number of calls: 0
+
+      296 |       jest.resetModules();
+      297 |       
+    > 298 |       expect(process.exit).toHaveBeenCalledWith(1);
+          |                            ^
+      299 |       
+      300 |       // Restore
+      301 |       process.exit = originalExit;
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:298:28)
+
+PASS src/app/(main)/__tests__/home.test.tsx
+PASS backend/src/services/__tests__/JobService.test.ts
+  ΓùÅ Console
+
+    console.log
+      info: ≡ƒöÑ Firebase Admin initialized successfully 
+{"service":"guild-backend","timestamp":"2025-10-13T19:14:58.284Z"}
+
+      at Console.log (backend/node_modules/winston/lib/winston/transports/console.js:82:15)
+
+    console.log
+      info: ≡ƒÆ░ Using Guild Coin system (PSP disabled for beta) 
+{"service":"guild-backend","timestamp":"2025-10-13T19:14:59.151Z"}
+
+      at Console.log (backend/node_modules/winston/lib/winston/transports/console.js:82:15)
+
+FAIL backend/src/__tests__/integration/GIDSystem.integration.test.ts
+  ΓùÅ GID System Integration Tests ΓÇ║ Complete User Registration Flow ΓÇ║ should create GID during user registration
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Complete User Registration Flow ΓÇ║ should prevent duplicate GID creation
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ GID Data Linking & Retrieval ΓÇ║ should link all user data to GID
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ GID Data Linking & Retrieval ΓÇ║ should retrieve complete user data by GID
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "Retrieval Test User"
+    Received: undefined
+
+      136 |       const container = await gidService.getGIDContainer(gid);
+      137 |
+    > 138 |       expect(container?.personalInfo.name).toBe('Retrieval Test User');
+          |                                            ^
+      139 |       expect(container?.platformData.currentRank).toBe('F');
+      140 |       expect(container?.platformData.activityHistory.jobsCompleted).toBe(10);
+      141 |     });
+
+      at Object.toBe (backend/src/__tests__/integration/GIDSystem.integration.test.ts:138:44)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Ranking System Integration ΓÇ║ should update user rank through GID
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    +   "lastUpdated": 2025-10-13T19:14:59.193Z,
+        "platformData.currentRank": "S",
+    -   "platformData.lastUpdated": Any<Date>,
+    +   "platformData.lastUpdated": 2025-10-13T19:14:59.193Z,
+      },
+
+    Number of calls: 1
+
+      180 |       await gidService.updateUserRank(gid, 'S');
+      181 |
+    > 182 |       expect(mockDb.collection().doc().update).toHaveBeenCalledWith({
+          |                                                ^
+      183 |         'platformData.currentRank': 'S',
+      184 |         'platformData.lastUpdated': expect.any(Date)
+      185 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/integration/GIDSystem.integration.test.ts:182:48)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Guild Affiliation Management ΓÇ║ should manage guild memberships through GID
+
+    GID container not found
+
+      377 |       const container = await this.getGIDContainer(gid);
+      378 |       if (!container) {
+    > 379 |         throw new Error('GID container not found');
+          |               ^
+      380 |       }
+      381 |
+      382 |       const guilds = container.platformData.guilds;
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:379:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Performance & Scalability ΓÇ║ should handle bulk GID operations efficiently
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Performance & Scalability ΓÇ║ should maintain data consistency across operations
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Privacy & Security ΓÇ║ should maintain audit trail for all GID operations
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Integration with Existing Systems ΓÇ║ should integrate with user registration 
+flow
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL backend/src/services/firebase/__tests__/GIDService.test.ts
+  ΓùÅ GID Service - Comprehensive Testing ΓÇ║ GID Data Retrieval ΓÇ║ should retrieve GID data from cache on second call
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 2
+    Received number of calls: 1
+
+      162 |       const cachedData = await gidService.getGIDData(gid);
+      163 |
+    > 164 |       expect(mockDb.collection).toHaveBeenCalledTimes(2); // Two calls to collection method
+          |                                 ^
+      165 |       expect(mockDb.get).toHaveBeenCalledTimes(1); // But only one actual DB get
+      166 |       expect(cachedData).toBeTruthy();
+      167 |     });
+
+      at Object.toHaveBeenCalledTimes (backend/src/services/firebase/__tests__/GIDService.test.ts:164:33)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL src/__tests__/integration/systemIntegration.test.ts (15.701 s)
+  ΓùÅ Console
+
+    console.log
+      [2025-10-13T19:14:58.899Z] [WARN] API request retry {
+        requestId: 'req_1760382897887_4hibpc22y',
+        attempt: 1,
+        maxRetries: 3,
+        error: 'Rate limit exceeded. Try again in 60 seconds'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:00.914Z] [WARN] API request retry {
+        requestId: 'req_1760382897887_4hibpc22y',
+        attempt: 2,
+        maxRetries: 3,
+        error: 'Rate limit exceeded. Try again in 60 seconds'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:04.932Z] [WARN] API request retry {
+        requestId: 'req_1760382897887_4hibpc22y',
+        attempt: 3,
+        maxRetries: 3,
+        error: 'Rate limit exceeded. Try again in 60 seconds'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:04.934Z] [ERROR] API request failed {
+        requestId: 'req_1760382897887_4hibpc22y',
+        method: 'GET',
+        endpoint: '/test',
+        duration: 7047,
+        error: 'Rate limit exceeded. Try again in 60 seconds',
+        status: 'error'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Generator.throw (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:05.958Z] [WARN] API request retry {
+        requestId: 'req_1760382904952_p3n99es7s',
+        attempt: 1,
+        maxRetries: 3,
+        error: 'Network request failed'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:07.964Z] [WARN] API request retry {
+        requestId: 'req_1760382904952_p3n99es7s',
+        attempt: 2,
+        maxRetries: 3,
+        error: 'Network request failed'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.978Z] [WARN] API request retry {
+        requestId: 'req_1760382904952_p3n99es7s',
+        attempt: 3,
+        maxRetries: 3,
+        error: 'Network request failed'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at _loop.next (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.979Z] [ERROR] API request failed {
+        requestId: 'req_1760382904952_p3n99es7s',
+        method: 'GET',
+        endpoint: '/test',
+        duration: 7027,
+        error: 'Network request failed',
+        status: 'error'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Generator.throw (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.987Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_pu1jhnmbp',
+        method: 'GET',
+        endpoint: '/test/0',
+        duration: 0,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_tsg7zyfzm',
+        method: 'GET',
+        endpoint: '/test/1',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_rn24tygg6',
+        method: 'GET',
+        endpoint: '/test/2',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_hpmzxrtyn',
+        method: 'GET',
+        endpoint: '/test/3',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_nvzovxesi',
+        method: 'GET',
+        endpoint: '/test/4',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_zwjjdoz2c',
+        method: 'GET',
+        endpoint: '/test/5',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.988Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_77x87sgqp',
+        method: 'GET',
+        endpoint: '/test/6',
+        duration: 1,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.989Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_dhzcw0ucz',
+        method: 'GET',
+        endpoint: '/test/7',
+        duration: 2,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.989Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_wrh8s4lc1',
+        method: 'GET',
+        endpoint: '/test/8',
+        duration: 2,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.989Z] [INFO] API request completed {
+        requestId: 'req_1760382911987_difreor9w',
+        method: 'GET',
+        endpoint: '/test/9',
+        duration: 2,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+    console.log
+      [2025-10-13T19:15:11.990Z] [DEBUG] Returning cached request { requestKey: 'GET_/test-endpoint_' }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Array.from (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.991Z] [DEBUG] Returning cached request { requestKey: 'GET_/test-endpoint_' }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Array.from (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.992Z] [DEBUG] Returning cached request { requestKey: 'GET_/test-endpoint_' }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Array.from (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.993Z] [DEBUG] Returning cached request { requestKey: 'GET_/test-endpoint_' }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+          at Array.from (<anonymous>)
+
+    console.log
+      [2025-10-13T19:15:11.994Z] [INFO] API request completed {
+        requestId: 'req_1760382911990_ks7caim3r',
+        method: 'GET',
+        endpoint: '/test-endpoint',
+        duration: 4,
+        status: 'success'
+      }
+
+      at Logger.apply [as formatMessage] (src/utils/logger.ts:37:18)
+
+  ΓùÅ System Integration Tests ΓÇ║ API Gateway Integration ΓÇ║ should handle secure API requests with validation
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      130 |     it('should handle secure API requests with validation', async () => {
+      131 |       // Mock authentication token
+    > 132 |       jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                  ^
+      133 |
+      134 |       // Test API request with input validation
+      135 |       const jobData = {
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:132:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ System Integration Tests ΓÇ║ Cross-System Data Flow ΓÇ║ should maintain data consistency across systems
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      282 |     it('should maintain data consistency across systems', async () => {
+      283 |       // Mock authentication token
+    > 284 |       jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                  ^
+      285 |
+      286 |       const userId = 'test-user-123';
+      287 |       const jobData = {
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:284:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ System Integration Tests ΓÇ║ Error Handling Integration ΓÇ║ should handle authentication errors
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      345 |     it('should handle authentication errors', async () => {
+      346 |       // Mock no auth token available
+    > 347 |       jest.spyOn(require('../services/secureStorage').secureStorage, 'getItem').mockResolvedValue(null);
+          |                  ^
+      348 |
+      349 |       const response = await api.get('/protected-resource', { requireAuth: true });
+      350 |       
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:347:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ End-to-End User Journeys ΓÇ║ should handle complete user registration and job posting flow
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      509 |     // 3. User posts a job
+      510 |     // Mock authentication token for API call
+    > 511 |     jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                ^
+      512 |
+      513 |     const jobData = {
+      514 |       title: 'Mobile App Developer',
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:511:16)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due 
+to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure 
+that .unref() was called on them.
+Summary of all failing tests
+FAIL tests/__tests__/payments.test.ts
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Job Payments ΓÇ║ should fail payment if insufficient balance
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Insufficient balance"
+    Received message:   "Failed to process job payment"
+
+          172 |     if (!response.ok) {
+          173 |       const error = await response.json();
+        > 174 |       throw new Error(error.message || 'Failed to process job payment');
+              |             ^
+          175 |     }
+          176 |
+          177 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:174:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/payments.test.ts:100:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Transaction Verification ΓÇ║ should detect fraudulent transactions
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Transaction flagged as suspicious"
+    Received message:   "Failed to process payment"
+
+          303 |     if (!response.ok) {
+          304 |       const error = await response.json();
+        > 305 |       throw new Error(error.message || 'Failed to process payment');
+              |             ^
+          306 |     }
+          307 |
+          308 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:305:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/payments.test.ts:184:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Payment System Tests (Guild Coins) ΓÇ║ Payment Recovery ΓÇ║ should retry failed payment
+
+    Failed to retry payment
+
+      321 |
+      322 |     if (!response.ok) {
+    > 323 |       throw new Error('Failed to retry payment');
+          |             ^
+      324 |     }
+      325 |
+      326 |     return response.json();
+
+      at PaymentService.<anonymous> (src/services/paymentService.ts:323:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL tests/__tests__/auth.test.ts
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Registration ΓÇ║ should fail registration with existing email
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Email already in use"
+    Received message:   "Registration failed"
+
+          76 |     if (!response.ok) {
+          77 |       const error = await response.json();
+        > 78 |       throw new Error(error.message || 'Registration failed');
+             |             ^
+          79 |     }
+          80 |
+          81 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:78:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:71:60)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Registration ΓÇ║ should validate phone number format
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid phone number"
+    Received message:   "Registration failed"
+
+          76 |     if (!response.ok) {
+          77 |       const error = await response.json();
+        > 78 |       throw new Error(error.message || 'Registration failed');
+             |             ^
+          79 |     }
+          80 |
+          81 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:78:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:81:60)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Sign In ΓÇ║ should fail sign in with incorrect password
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid credentials"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:113:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ User Sign In ΓÇ║ should fail sign in with non-existent user
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "User not found"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:126:17)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should fail 2FA verification with invalid code
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid verification code"
+    Received message:   "Failed to verify 2FA code"
+
+          376 |     if (!response.ok) {
+          377 |       const error = await response.json();
+        > 378 |       throw new Error(error.message || 'Failed to verify 2FA code');
+              |             ^
+          379 |     }
+          380 |
+          381 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:378:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:173:65)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should fail 2FA verification with expired code
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Verification code expired"
+    Received message:   "Failed to verify 2FA code"
+
+          376 |     if (!response.ok) {
+          377 |       const error = await response.json();
+        > 378 |       throw new Error(error.message || 'Failed to verify 2FA code');
+              |             ^
+          379 |     }
+          380 |
+          381 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:378:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:181:65)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Two-Factor Authentication ΓÇ║ should rate limit 2FA code requests
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Too many requests"
+    Received message:   "Failed to send 2FA code"
+
+          356 |     if (!response.ok) {
+          357 |       const error = await response.json();
+        > 358 |       throw new Error(error.message || 'Failed to send 2FA code');
+              |             ^
+          359 |     }
+          360 |
+          361 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:358:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:189:69)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Password Reset ΓÇ║ should fail password reset for non-existent email
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "User not found"
+    Received message:   "Failed to send password reset email"
+
+          144 |     if (!response.ok) {
+          145 |       const error = await response.json();
+        > 146 |       throw new Error(error.message || 'Failed to send password reset email');
+              |             ^
+          147 |     }
+          148 |
+          149 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:146:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:210:89)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Password Reset ΓÇ║ should fail password reset with invalid token
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Invalid reset token"
+    Received message:   "Failed to reset password"
+
+          168 |     if (!response.ok) {
+          169 |       const error = await response.json();
+        > 170 |       throw new Error(error.message || 'Failed to reset password');
+              |             ^
+          171 |     }
+          172 |
+          173 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:170:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:228:93)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Session Management ΓÇ║ should invalidate expired token
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Token expired"
+    Received message:   "Invalid session"
+
+          395 |     if (!response.ok) {
+          396 |       const error = await response.json();
+        > 397 |       throw new Error(error.message || 'Invalid session');
+              |             ^
+          398 |     }
+          399 |
+          400 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:397:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:251:74)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should enable biometric authentication
+
+    TypeError: authService.enableBiometric is not a function
+
+      276 |   describe('Biometric Authentication', () => {
+      277 |     test('should enable biometric authentication', async () => {
+    > 278 |       const result = await authService.enableBiometric();
+          |                                        ^
+      279 |
+      280 |       expect(result.enabled).toBe(true);
+      281 |     });
+
+      at Object.enableBiometric (tests/__tests__/auth.test.ts:278:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should authenticate with biometrics
+
+    TypeError: authService.authenticateWithBiometric is not a function
+
+      282 |
+      283 |     test('should authenticate with biometrics', async () => {
+    > 284 |       const result = await authService.authenticateWithBiometric();
+          |                                        ^
+      285 |
+      286 |       expect(result.success).toBe(true);
+      287 |     });
+
+      at Object.authenticateWithBiometric (tests/__tests__/auth.test.ts:284:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Biometric Authentication ΓÇ║ should disable biometric authentication
+
+    TypeError: authService.disableBiometric is not a function
+
+      288 |
+      289 |     test('should disable biometric authentication', async () => {
+    > 290 |       const result = await authService.disableBiometric();
+          |                                        ^
+      291 |
+      292 |       expect(result.disabled).toBe(true);
+      293 |     });
+
+      at Object.disableBiometric (tests/__tests__/auth.test.ts:290:40)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Authentication Flow Tests ΓÇ║ Account Security ΓÇ║ should detect and prevent brute force attacks
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Too many failed attempts"
+    Received message:   "Sign in failed"
+
+          101 |     if (!response.ok) {
+          102 |       const error = await response.json();
+        > 103 |       throw new Error(error.message || 'Sign in failed');
+              |             ^
+          104 |     }
+          105 |
+          106 |     return response.json();
+
+      at AuthService.<anonymous> (src/services/authService.ts:103:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/auth.test.ts:319:17)
+          at Generator.throw (<anonymous>)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _throw (node_modules/@babel/runtime/helpers/asyncToGenerator.js:20:9)
+
+FAIL tests/__tests__/jobs.test.ts
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should successfully create a new job
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('∩┐╜∩┐╜ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:39:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should validate required fields
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Title is required"
+    Received message:   "Cannot read properties of undefined (reading 'currentUser')"
+
+          119 |       
+          120 |       // Check authentication first
+        > 121 |       const currentUser = auth.currentUser;
+              |                                ^
+          122 |       
+          123 |       if (!currentUser) {
+          124 |         console.error('∩┐╜∩┐╜ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:52:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:52:66)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should validate budget is positive
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Budget must be positive"
+    Received message:   "Cannot read properties of undefined (reading 'currentUser')"
+
+          119 |       
+          120 |       // Check authentication first
+        > 121 |       const currentUser = auth.currentUser;
+              |                                ^
+          122 |       
+          123 |       if (!currentUser) {
+          124 |         console.error('∩┐╜∩┐╜ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:58:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:58:59)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should set expiry date to 30 days
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('∩┐╜∩┐╜ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:72:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Creation ΓÇ║ should create job with location coordinates
+
+    TypeError: Cannot read properties of undefined (reading 'currentUser')
+
+      119 |       
+      120 |       // Check authentication first
+    > 121 |       const currentUser = auth.currentUser;
+          |                                ^
+      122 |       
+      123 |       if (!currentUser) {
+      124 |         console.error('∩┐╜∩┐╜ JOB SERVICE: No authenticated user found');
+
+      at JobService.currentUser (src/services/jobService.ts:121:32)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at JobService.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at JobService.apply [as createJob] (src/services/jobService.ts:116:18)
+      at Object.createJob (tests/__tests__/jobs.test.ts:92:39)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should fetch open jobs
+
+    Failed to get open jobs
+
+      485 |     } catch (error) {
+      486 |       console.error('Error getting open jobs:', error);
+    > 487 |       throw new Error('Failed to get open jobs');
+          |             ^
+      488 |     }
+      489 |   }
+      490 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:487:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter jobs by category
+
+    Failed to get jobs by category
+
+      641 |     } catch (error) {
+      642 |       console.error('Error getting jobs by category:', error);
+    > 643 |       throw new Error('Failed to get jobs by category');
+          |             ^
+      644 |     }
+      645 |   }
+      646 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:643:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter jobs by location radius
+
+    Failed to get nearby jobs
+
+      674 |     } catch (error) {
+      675 |       console.error('Error getting nearby jobs:', error);
+    > 676 |       throw new Error('Failed to get nearby jobs');
+          |             ^
+      677 |     }
+      678 |   }
+      679 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:676:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should search jobs by keywords
+
+    Failed to search jobs
+
+      711 |     } catch (error) {
+      712 |       console.error('Error searching jobs:', error);
+    > 713 |       throw new Error('Failed to search jobs');
+          |             ^
+      714 |     }
+      715 |   }
+      716 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:713:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Discovery ΓÇ║ should filter by budget range
+
+    Failed to get jobs by budget
+
+      740 |     } catch (error) {
+      741 |       console.error('Error getting jobs by budget:', error);
+    > 742 |       throw new Error('Failed to get jobs by budget');
+          |             ^
+      743 |     }
+      744 |   }
+      745 |
+
+      at JobService.<anonymous> (src/services/jobService.ts:742:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should successfully accept a job
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should fail to accept already accepted job
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Job already accepted"
+    Received message:   "Cannot read properties of undefined (reading 'exists')"
+
+          748 |     try {
+          749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+        > 750 |       if (!jobDoc.exists()) {
+              |                   ^
+          751 |         throw new Error('Job not found');
+          752 |       }
+          753 |
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:208:61)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should fail to accept expired job
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Job has expired"
+    Received message:   "Cannot read properties of undefined (reading 'exists')"
+
+          748 |     try {
+          749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+        > 750 |       if (!jobDoc.exists()) {
+              |                   ^
+          751 |         throw new Error('Job not found');
+          752 |       }
+          753 |
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.toThrow (tests/__tests__/jobs.test.ts:216:61)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should create contract on job acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Application & Acceptance ΓÇ║ should notify job poster when accepted
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      748 |     try {
+      749 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 750 |       if (!jobDoc.exists()) {
+          |                   ^
+      751 |         throw new Error('Job not found');
+      752 |       }
+      753 |       
+
+      at JobService.exists (src/services/jobService.ts:750:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should mark job as completed
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      796 |       
+      797 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 798 |       if (!jobDoc.exists()) {
+          |                   ^
+      799 |         throw new Error('Job not found');
+      800 |       }
+      801 |       
+
+      at JobService.exists (src/services/jobService.ts:798:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should release payment on job completion
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      796 |       
+      797 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 798 |       if (!jobDoc.exists()) {
+          |                   ^
+      799 |         throw new Error('Job not found');
+      800 |       }
+      801 |       
+
+      at JobService.exists (src/services/jobService.ts:798:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Completion & Payment ΓÇ║ should auto-release payment after 7-14 days
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      824 |     try {
+      825 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 826 |       if (!jobDoc.exists()) {
+          |                   ^
+      827 |         throw new Error('Job not found');
+      828 |       }
+      829 |       
+
+      at JobService.exists (src/services/jobService.ts:826:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should cancel job before acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'cancelled')
+
+      335 |       const result = await jobService.cancelJob('job-123');
+      336 |
+    > 337 |       expect(result.cancelled).toBe(true);
+          |                     ^
+      338 |       expect(result.refunded).toBe(false);
+      339 |     });
+      340 |
+
+      at Object.cancelled (tests/__tests__/jobs.test.ts:337:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should refund payment on cancellation after acceptance
+
+    TypeError: Cannot read properties of undefined (reading 'cancelled')
+
+      350 |       const result = await jobService.cancelJob('job-123');
+      351 |
+    > 352 |       expect(result.cancelled).toBe(true);
+          |                     ^
+      353 |       expect(result.refunded).toBe(true);
+      354 |       expect(result.refundAmount).toBe(500);
+      355 |     });
+
+      at Object.cancelled (tests/__tests__/jobs.test.ts:352:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Cancellation ΓÇ║ should apply cancellation fee for late cancellation
+
+    TypeError: Cannot read properties of undefined (reading 'cancellationFee')
+
+      366 |       const result = await jobService.cancelJob('job-123');
+      367 |
+    > 368 |       expect(result.cancellationFee).toBe(50);
+          |                     ^
+      369 |       expect(result.refundAmount).toBe(450);
+      370 |     });
+      371 |   });
+
+      at Object.cancellationFee (tests/__tests__/jobs.test.ts:368:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Expiry ΓÇ║ should auto-expire jobs after 30 days
+
+    TypeError: Cannot read properties of undefined (reading 'docs')
+
+      919 |       );
+      920 |       const snapshot = await getDocs(q);
+    > 921 |       const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+          |                             ^
+      922 |       
+      923 |       const expiredJobs = jobs.filter(job => {
+      924 |         const createdAt = job.createdAt ? new Date(job.createdAt) : null;
+
+      at JobService.docs (src/services/jobService.ts:921:29)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Expiry ΓÇ║ should refund payment on job expiry
+
+    TypeError: Cannot read properties of undefined (reading 'exists')
+
+      951 |     try {
+      952 |       const jobDoc = await getDoc(doc(this.jobsCollection, jobId));
+    > 953 |       if (!jobDoc.exists()) {
+          |                   ^
+      954 |         throw new Error('Job not found');
+      955 |       }
+      956 |       
+
+      at JobService.exists (src/services/jobService.ts:953:19)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Job Lifecycle Tests ΓÇ║ Job Reviews & Ratings ΓÇ║ should prevent duplicate reviews
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"review": {"comment": undefined, "createdAt": 2025-10-13T19:14:58.713Z, "id": 
+"review-job-123", "jobId": "job-123", "rating": 5, "type": "worker"}}
+
+      449 |       );
+      450 |
+    > 451 |       await expect(
+          |             ^
+      452 |         jobService.rateWorker('job-123', { rating: 5 })
+      453 |       ).rejects.toThrow('Review already submitted');
+      454 |     });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.expect (tests/__tests__/jobs.test.ts:451:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+FAIL backend/src/__tests__/middleware/auth.test.ts
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject request with malformed token
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "NO_TOKEN",
+    -   "error": "Access denied. Authentication required.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      86 |
+      87 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 88 |       expect(res.json).toHaveBeenCalledWith({
+         |                        ^
+      89 |         error: 'Access denied. Authentication required.',
+      90 |         code: 'NO_TOKEN'
+      91 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:88:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject request with invalid JWT
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "MALFORMED_TOKEN",
+    -   "error": "Malformed token.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      105 |
+      106 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 107 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      108 |         error: 'Malformed token.',
+      109 |         code: 'MALFORMED_TOKEN'
+      110 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:107:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject expired token
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "TOKEN_EXPIRED",
+    -   "error": "Token has expired.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      128 |
+      129 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 130 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      131 |         error: 'Token has expired.',
+      132 |         code: 'TOKEN_EXPIRED'
+      133 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:130:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject token with invalid payload
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "INVALID_PAYLOAD",
+    -   "error": "Invalid token format.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      143 |
+      144 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 145 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      146 |         error: 'Invalid token format.',
+      147 |         code: 'INVALID_PAYLOAD'
+      148 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:145:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject when user not found
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "USER_NOT_FOUND",
+    -   "error": "User not found.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      159 |
+      160 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 161 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      162 |         error: 'User not found.',
+      163 |         code: 'USER_NOT_FOUND'
+      164 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:161:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should reject inactive user
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "code": "ACCOUNT_INACTIVE",
+    -   "error": "Account is inactive.",
+    +   "code": "INVALID_TOKEN",
+    +   "error": "Invalid token.",
+      },
+
+    Number of calls: 1
+
+      182 |
+      183 |       expect(res.status).toHaveBeenCalledWith(401);
+    > 184 |       expect(res.json).toHaveBeenCalledWith({
+          |                        ^
+      185 |         error: 'Account is inactive.',
+      186 |         code: 'ACCOUNT_INACTIVE'
+      187 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:184:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should authenticate valid user successfully
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: {"currentRank": "G", "email": "test@example.com", "id": "user-123", "isActive": true, "isVerified": 
+true, "lastLoginAt": 2025-10-13T19:14:58.845Z}
+    Received: undefined
+
+      207 |       await authenticateToken(req, res as Response, mockNext);
+      208 |
+    > 209 |       expect(req.user).toEqual(mockUser);
+          |                        ^
+      210 |       expect(mockNext).toHaveBeenCalled();
+      211 |       expect(res.status).not.toHaveBeenCalled();
+      212 |       expect(mockLogger.debug).toHaveBeenCalledWith(
+
+      at Object.toEqual (backend/src/__tests__/middleware/auth.test.ts:209:24)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should handle database errors gracefully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 500
+    Received: 401
+
+    Number of calls: 1
+
+      225 |       await authenticateToken(req as AuthenticatedRequest, res as Response, mockNext);
+      226 |
+    > 227 |       expect(res.status).toHaveBeenCalledWith(500);
+          |                          ^
+      228 |       expect(res.json).toHaveBeenCalledWith({
+      229 |         error: 'Authentication service unavailable.',
+      230 |         code: 'AUTH_SERVICE_ERROR'
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:227:26)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should verify JWT with correct options
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "valid-jwt", "test-secret", {"algorithms": ["HS256"], "audience": "test-audience", "issuer": 
+"test-issuer"}
+
+    Number of calls: 0
+
+      252 |       await authenticateToken(req as AuthenticatedRequest, res as Response, mockNext);
+      253 |
+    > 254 |       expect(mockJwt.verify).toHaveBeenCalledWith('valid-jwt', 'test-secret', {
+          |                              ^
+      255 |         algorithms: ['HS256'],
+      256 |         issuer: 'test-issuer',
+      257 |         audience: 'test-audience'
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:254:30)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ authenticateToken ΓÇ║ should update last login timestamp
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"data": {"lastLoginAt": Any<Date>}, "where": {"id": "user-123"}}
+
+    Number of calls: 0
+
+      280 |       await new Promise(resolve => setTimeout(resolve, 10));
+      281 |
+    > 282 |       expect(mockPrisma.user.update).toHaveBeenCalledWith({
+          |                                      ^
+      283 |         where: { id: 'user-123' },
+      284 |         data: { lastLoginAt: expect.any(Date) }
+      285 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:282:38)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ Authentication Middleware ΓÇ║ JWT_SECRET validation ΓÇ║ should exit process if JWT_SECRET is not set
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 1
+
+    Number of calls: 0
+
+      296 |       jest.resetModules();
+      297 |       
+    > 298 |       expect(process.exit).toHaveBeenCalledWith(1);
+          |                            ^
+      299 |       
+      300 |       // Restore
+      301 |       process.exit = originalExit;
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/middleware/auth.test.ts:298:28)
+
+FAIL backend/src/__tests__/integration/GIDSystem.integration.test.ts
+  ΓùÅ GID System Integration Tests ΓÇ║ Complete User Registration Flow ΓÇ║ should create GID during user registration
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Complete User Registration Flow ΓÇ║ should prevent duplicate GID creation
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ GID Data Linking & Retrieval ΓÇ║ should link all user data to GID
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ GID Data Linking & Retrieval ΓÇ║ should retrieve complete user data by GID
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "Retrieval Test User"
+    Received: undefined
+
+      136 |       const container = await gidService.getGIDContainer(gid);
+      137 |
+    > 138 |       expect(container?.personalInfo.name).toBe('Retrieval Test User');
+          |                                            ^
+      139 |       expect(container?.platformData.currentRank).toBe('F');
+      140 |       expect(container?.platformData.activityHistory.jobsCompleted).toBe(10);
+      141 |     });
+
+      at Object.toBe (backend/src/__tests__/integration/GIDSystem.integration.test.ts:138:44)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Ranking System Integration ΓÇ║ should update user rank through GID
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    +   "lastUpdated": 2025-10-13T19:14:59.193Z,
+        "platformData.currentRank": "S",
+    -   "platformData.lastUpdated": Any<Date>,
+    +   "platformData.lastUpdated": 2025-10-13T19:14:59.193Z,
+      },
+
+    Number of calls: 1
+
+      180 |       await gidService.updateUserRank(gid, 'S');
+      181 |
+    > 182 |       expect(mockDb.collection().doc().update).toHaveBeenCalledWith({
+          |                                                ^
+      183 |         'platformData.currentRank': 'S',
+      184 |         'platformData.lastUpdated': expect.any(Date)
+      185 |       });
+
+      at Object.toHaveBeenCalledWith (backend/src/__tests__/integration/GIDSystem.integration.test.ts:182:48)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Guild Affiliation Management ΓÇ║ should manage guild memberships through GID
+
+    GID container not found
+
+      377 |       const container = await this.getGIDContainer(gid);
+      378 |       if (!container) {
+    > 379 |         throw new Error('GID container not found');
+          |               ^
+      380 |       }
+      381 |
+      382 |       const guilds = container.platformData.guilds;
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:379:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Performance & Scalability ΓÇ║ should handle bulk GID operations efficiently
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Performance & Scalability ΓÇ║ should maintain data consistency across operations
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Privacy & Security ΓÇ║ should maintain audit trail for all GID operations
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ GID System Integration Tests ΓÇ║ Integration with Existing Systems ΓÇ║ should integrate with user registration 
+flow
+
+    GID_COLLISION_DETECTED
+
+      149 |       if (existingGID) {
+      150 |         logger.error('GID collision detected', { gid, existingUserId: existingGID.userId, newUserId: 
+userId });
+    > 151 |         throw new Error('GID_COLLISION_DETECTED');
+          |               ^
+      152 |       }
+      153 |
+      154 |       // Create GID data
+
+      at GIDService.<anonymous> (backend/src/services/firebase/GIDService.ts:151:15)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL backend/src/services/firebase/__tests__/GIDService.test.ts
+  ΓùÅ GID Service - Comprehensive Testing ΓÇ║ GID Data Retrieval ΓÇ║ should retrieve GID data from cache on second call
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 2
+    Received number of calls: 1
+
+      162 |       const cachedData = await gidService.getGIDData(gid);
+      163 |
+    > 164 |       expect(mockDb.collection).toHaveBeenCalledTimes(2); // Two calls to collection method
+          |                                 ^
+      165 |       expect(mockDb.get).toHaveBeenCalledTimes(1); // But only one actual DB get
+      166 |       expect(cachedData).toBeTruthy();
+      167 |     });
+
+      at Object.toHaveBeenCalledTimes (backend/src/services/firebase/__tests__/GIDService.test.ts:164:33)
+      at asyncGeneratorStep (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (backend/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL src/__tests__/integration/systemIntegration.test.ts (15.701 s)
+  ΓùÅ System Integration Tests ΓÇ║ API Gateway Integration ΓÇ║ should handle secure API requests with validation
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      130 |     it('should handle secure API requests with validation', async () => {
+      131 |       // Mock authentication token
+    > 132 |       jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                  ^
+      133 |
+      134 |       // Test API request with input validation
+      135 |       const jobData = {
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:132:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ System Integration Tests ΓÇ║ Cross-System Data Flow ΓÇ║ should maintain data consistency across systems
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      282 |     it('should maintain data consistency across systems', async () => {
+      283 |       // Mock authentication token
+    > 284 |       jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                  ^
+      285 |
+      286 |       const userId = 'test-user-123';
+      287 |       const jobData = {
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:284:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ System Integration Tests ΓÇ║ Error Handling Integration ΓÇ║ should handle authentication errors
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      345 |     it('should handle authentication errors', async () => {
+      346 |       // Mock no auth token available
+    > 347 |       jest.spyOn(require('../services/secureStorage').secureStorage, 'getItem').mockResolvedValue(null);
+          |                  ^
+      348 |
+      349 |       const response = await api.get('/protected-resource', { requireAuth: true });
+      350 |       
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:347:18)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ End-to-End User Journeys ΓÇ║ should handle complete user registration and job posting flow
+
+    Cannot find module '../services/secureStorage' from 'src/__tests__/integration/systemIntegration.test.ts'
+
+      509 |     // 3. User posts a job
+      510 |     // Mock authentication token for API call
+    > 511 |     jest.spyOn(require('../services/secureStorage').secureStorage, 
+'getItem').mockResolvedValue('mock-auth-token');
+          |                ^
+      512 |
+      513 |     const jobData = {
+      514 |       title: 'Mobile App Developer',
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (src/__tests__/integration/systemIntegration.test.ts:511:16)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+Test Suites: 7 failed, 15 passed, 22 total
+Tests:       67 failed, 241 passed, 308 total
+Snapshots:   0 total
+Time:        16.654 s
+Ran all test suites.

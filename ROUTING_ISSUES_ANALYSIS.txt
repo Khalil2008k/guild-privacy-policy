@@ -1,0 +1,151 @@
+# 🚨 COMPREHENSIVE ROUTING ISSUES ANALYSIS - UPDATED
+
+## 📋 CRITICAL ISSUES IDENTIFIED
+
+### 🔥 MISSING ROUTE REGISTRATIONS
+
+#### 1. **CONFIRMED MISSING**: `add-job`
+- **File**: ✅ `src/app/(modals)/add-job.tsx` EXISTS
+- **Layout**: ❌ **NOT REGISTERED** in `src/app/(modals)/_layout.tsx`
+- **Referenced by**: 
+  - `src/app/(main)/home.tsx:189` → `router.push('/(modals)/add-job')`
+- **Impact**: HOME SCREEN "ADD JOB" BUTTON BREAKS WITH "UNMATCHED ROUTE"
+
+### 🔍 ROUTE REGISTRATION AUDIT RESULTS
+
+#### ✅ **REGISTERED ROUTES** (17 routes in layout):
+1. `job-posting` ✅
+2. `job/[id]` ✅  
+3. `offer-submission` ✅
+4. `escrow-payment` ✅
+5. `chat/[jobId]` ✅
+6. `wallet/[userId]` ✅
+7. `apply/[jobId]` ✅
+8. `create-guild` ✅
+9. `guild` ✅
+10. `guilds` ✅
+11. `guild-map` ✅
+12. `leads-feed` ✅
+13. `my-jobs` ✅
+14. `notifications` ✅
+15. `profile-settings` ✅
+16. `settings` ✅
+17. `wallet` ✅
+
+#### ❌ **MISSING FROM LAYOUT** (1 route):
+1. **`add-job`** - FILE EXISTS BUT NOT REGISTERED
+
+#### 📁 **ACTUAL FILES IN (modals) DIRECTORY** (18 files):
+1. `_layout.tsx` (layout file)
+2. `add-job.tsx` ❌ **MISSING FROM LAYOUT**
+3. `apply/[jobId].tsx` ✅
+4. `chat/[jobId].tsx` ✅
+5. `create-guild.tsx` ✅
+6. `escrow-payment.tsx` ✅
+7. `guild-map.tsx` ✅
+8. `guild.tsx` ✅
+9. `guilds.tsx` ✅
+10. `job/[id].tsx` ✅
+11. `job-posting.tsx` ✅
+12. `leads-feed.tsx` ✅
+13. `my-jobs.tsx` ✅
+14. `notifications.tsx` ✅
+15. `offer-submission.tsx` ✅
+16. `profile-settings.tsx` ✅
+17. `settings.tsx` ✅
+18. `wallet/[userId].tsx` ✅
+19. `wallet.tsx` ✅
+
+### 🔍 NAVIGATION INCONSISTENCIES FOUND
+
+#### 2. **ROUTE NAMING CONFUSION**:
+- **Issue**: Same functionality, different routes
+- **Example**: 
+  - `home.tsx` → `router.push('/(modals)/add-job')` (MISSING)
+  - `jobs.tsx` → `router.push('/(modals)/job-posting')` (EXISTS)
+- **Impact**: User confusion, broken functionality
+
+### ⚠️ RUNTIME ERRORS DETECTED
+
+#### 3. **COMPONENT IMPORT ISSUES**:
+- **Error**: `React.jsx: type is invalid -- expected a string but got: undefined`
+- **Location**: `RootLayout(./_layout.tsx)`
+- **Potential Cause**: Remaining `@/` alias imports causing phantom cache issues
+
+#### 4. **REMAINING ALIAS IMPORTS** (8 instances):
+```
+src\app\(modals)\add-job.tsx:
+- import { useTheme } from '@/contexts/ThemeContext';
+- import { useI18n } from '@/contexts/I18nProvider';
+- import { validateJobForm, sanitizeInput, RateLimiter } from '@/utils/validation';
+
+src\app\(modals)\wallet.tsx:
+- import { useTheme } from '@/contexts/ThemeContext';
+- import { useI18n } from '@/contexts/I18nProvider';
+- import { RTLText, RTLView } from '@/app/components/primitives/primitives';
+- import AppBottomNavigation from '@/app/components/AppBottomNavigation';
+```
+
+#### 5. **VALIDATION ERRORS**:
+- **Error**: `TypeError: Cannot read property 'email' of undefined`
+- **Location**: Auth screens
+- **Status**: Validation system appears correct, likely context timing issue
+
+#### 6. **ICON RENDERING ERRORS**:
+- **Error**: `TypeError: Cannot read property 'S' of undefined, js engine: hermes`
+- **Cause**: Lucide icon import issues (3 files still using lucide)
+- **Files**: `home.tsx`, `AppBottomNavigation.tsx`, `splash.tsx`
+
+### 🔄 NAVIGATION PATTERN ANALYSIS
+
+#### 7. **INCONSISTENT BACK NAVIGATION**:
+- **Pattern A**: `router.back()` (most modals)
+- **Pattern B**: `router.push('/(main)/home')` (some settings)
+- **Impact**: Inconsistent user experience
+
+#### 8. **DYNAMIC ROUTE EDGE CASES**:
+- **Routes**: `job/[id]`, `chat/[chatId]`, `wallet/[userId]`, `apply/[jobId]`
+- **Issue**: No validation for invalid IDs
+- **Impact**: Potential crashes or broken states
+
+### 📊 ROUTE USAGE ANALYSIS
+
+#### **MOST REFERENCED ROUTES**:
+1. `job/[id]` - 6 references ✅
+2. `settings` - 4 references ✅
+3. `notifications` - 4 references ✅
+4. `guilds` - 4 references ✅
+5. `wallet` - 3 references ✅
+6. `add-job` - 1 reference ❌ **BROKEN**
+
+## 🎯 IMMEDIATE FIXES REQUIRED
+
+### **CRITICAL (Must Fix Now)**:
+1. ✅ **Add missing `add-job` route registration**
+2. ✅ **Fix remaining `@/` alias imports**
+3. ✅ **Resolve component import issues**
+
+### **HIGH PRIORITY**:
+4. ✅ **Standardize navigation patterns**
+5. ✅ **Add dynamic route validation**
+6. ✅ **Fix icon import issues**
+
+### **MEDIUM PRIORITY**:
+7. ✅ **Add error boundaries for routes**
+8. ✅ **Implement route parameter validation**
+
+## 📈 ROUTING HEALTH SCORE
+
+- **Total Routes**: 18 files
+- **Registered**: 17 routes (94.4%)
+- **Missing**: 1 route (5.6%)
+- **Broken References**: 1 critical
+- **Health Score**: 🔴 **CRITICAL** (1 blocking issue)
+
+## 🔧 NEXT ACTIONS
+
+1. **IMMEDIATE**: Fix `add-job` route registration
+2. **IMMEDIATE**: Clean up remaining `@/` imports  
+3. **HIGH**: Investigate component import errors
+4. **HIGH**: Standardize navigation patterns
+5. **MEDIUM**: Add route validation and error handling

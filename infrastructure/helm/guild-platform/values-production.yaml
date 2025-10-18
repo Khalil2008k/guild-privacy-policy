@@ -1,0 +1,58 @@
+
+// Production Environment Overrides
+# Database configuration
+postgresql:
+  primary:
+    persistence:
+      size: "500Gi"
+      storageClass: "premium-rwo"
+
+# Redis configuration
+redis:
+  master:
+    persistence:
+      size: "100Gi"
+  replica:
+    replicaCount: 3
+
+# Elasticsearch configuration
+elasticsearch:
+  persistence:
+    size: "1Ti"
+
+# Monitoring
+prometheus:
+  server:
+    persistentVolume:
+      size: "200Gi"
+
+grafana:
+  persistence:
+    size: "100Gi"
+
+# Application scaling
+guild-api:
+  replicaCount: 10
+  autoscaling:
+    minReplicas: 10
+    maxReplicas: 50
+
+# Resource allocation
+resources:
+  limits:
+    cpu: 4000m
+    memory: 8Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+# High availability
+highAvailability:
+  enabled: true
+
+# Disaster recovery
+disasterRecovery:
+  enabled: true
+  backupRegions:
+    - us-west1
+    - us-east1

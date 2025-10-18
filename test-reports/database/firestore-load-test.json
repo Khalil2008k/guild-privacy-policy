@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-10-08T00:46:36.283Z",
+  "duration": "88.02s",
+  "configuration": {
+    "jobsToCreate": 10000,
+    "batchSize": 500,
+    "concurrentBatches": 10,
+    "usersToCreate": 1000,
+    "offersPerJob": 3,
+    "transactionsToTest": 500
+  },
+  "results": {
+    "writeOperations": 10000,
+    "readOperations": 550,
+    "avgWriteTime": "0.00ms",
+    "avgQueryTime": "305.82ms",
+    "transactionSuccesses": 461,
+    "transactionFailures": 66,
+    "errors": 66
+  },
+  "verdict": "FAIL"
+}

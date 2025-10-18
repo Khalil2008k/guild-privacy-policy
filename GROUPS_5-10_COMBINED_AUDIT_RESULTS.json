@@ -1,0 +1,273 @@
+{
+  "summary": {
+    "totalTests": 31,
+    "totalPassed": 25,
+    "totalFailed": 1,
+    "totalWarnings": 5,
+    "totalCritical": 1,
+    "overallPassRate": "80.6%",
+    "overallCompleteness": "85%"
+  },
+  "groups": [
+    {
+      "group": "group5",
+      "total": 6,
+      "passed": 4,
+      "failed": 1,
+      "warnings": 1,
+      "critical": 1,
+      "details": [
+        {
+          "status": "WARN",
+          "test": "Wallet screens exist",
+          "message": "Wallet screens missing"
+        },
+        {
+          "status": "PASS",
+          "test": "Stripe integration (paymentTokenService)"
+        },
+        {
+          "status": "CRITICAL",
+          "test": "Escrow service exists",
+          "message": "Escrow service missing"
+        },
+        {
+          "status": "PASS",
+          "test": "Wallet API routes"
+        },
+        {
+          "status": "PASS",
+          "test": "Transaction logging"
+        },
+        {
+          "status": "PASS",
+          "test": "PCI DSS compliance (no card storage)"
+        }
+      ],
+      "metrics": {
+        "walletScreens": 0,
+        "stripeIntegration": true,
+        "escrowService": false
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "66.7%",
+      "completeness": "89%"
+    },
+    {
+      "group": "group6",
+      "total": 5,
+      "passed": 4,
+      "failed": 0,
+      "warnings": 1,
+      "critical": 0,
+      "details": [
+        {
+          "status": "PASS",
+          "test": "Search functionality"
+        },
+        {
+          "status": "PASS",
+          "test": "Analytics screens"
+        },
+        {
+          "status": "PASS",
+          "test": "Maps integration"
+        },
+        {
+          "status": "PASS",
+          "test": "Dispute resolution screens"
+        },
+        {
+          "status": "WARN",
+          "test": "Referral system",
+          "message": "No referral system"
+        }
+      ],
+      "metrics": {
+        "analyticsScreens": 1
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "80.0%",
+      "completeness": "99%"
+    },
+    {
+      "group": "group7",
+      "total": 5,
+      "passed": 4,
+      "failed": 0,
+      "warnings": 1,
+      "critical": 0,
+      "details": [
+        {
+          "status": "WARN",
+          "test": "KYC verification screen",
+          "message": "No KYC screen"
+        },
+        {
+          "status": "PASS",
+          "test": "Identity verification model"
+        },
+        {
+          "status": "PASS",
+          "test": "HTTPS/TLS configuration"
+        },
+        {
+          "status": "PASS",
+          "test": "Input sanitization"
+        },
+        {
+          "status": "PASS",
+          "test": "OWASP security middleware"
+        }
+      ],
+      "metrics": {
+        "owaspSecurity": true
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "80.0%",
+      "completeness": "99%"
+    },
+    {
+      "group": "group8",
+      "total": 5,
+      "passed": 3,
+      "failed": 0,
+      "warnings": 2,
+      "critical": 0,
+      "details": [
+        {
+          "status": "PASS",
+          "test": "Prisma schema completeness"
+        },
+        {
+          "status": "PASS",
+          "test": "Firestore collections structure"
+        },
+        {
+          "status": "PASS",
+          "test": "Foreign key constraints"
+        },
+        {
+          "status": "WARN",
+          "test": "Database migrations",
+          "message": "No migrations folder"
+        },
+        {
+          "status": "WARN",
+          "test": "Backup strategy (Cloud Functions)",
+          "message": "No automated backup function"
+        }
+      ],
+      "metrics": {
+        "prismaModels": 16,
+        "firestoreCollections": [
+          "chats",
+          "notifications"
+        ],
+        "foreignKeys": 26
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "60.0%",
+      "completeness": "98%"
+    },
+    {
+      "group": "group9",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "warnings": 0,
+      "critical": 0,
+      "details": [
+        {
+          "status": "PASS",
+          "test": "Test files exist"
+        },
+        {
+          "status": "PASS",
+          "test": "Jest configuration"
+        },
+        {
+          "status": "PASS",
+          "test": "E2E test framework"
+        },
+        {
+          "status": "PASS",
+          "test": "API integration tests"
+        }
+      ],
+      "metrics": {
+        "testFiles": {
+          "frontend": 11,
+          "backend": 4,
+          "scripts": 23,
+          "total": 38
+        }
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "100.0%",
+      "completeness": "100%"
+    },
+    {
+      "group": "group10",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "warnings": 0,
+      "critical": 0,
+      "details": [
+        {
+          "status": "PASS",
+          "test": "Theme system (light/dark)"
+        },
+        {
+          "status": "PASS",
+          "test": "i18n support (AR/EN)"
+        },
+        {
+          "status": "PASS",
+          "test": "Docker configuration"
+        },
+        {
+          "status": "PASS",
+          "test": "Environment configuration"
+        },
+        {
+          "status": "PASS",
+          "test": "Total screen count (expected 85+)"
+        },
+        {
+          "status": "PASS",
+          "test": "Performance monitoring"
+        }
+      ],
+      "metrics": {
+        "i18n": {
+          "arabic": true,
+          "rtl": true
+        },
+        "docker": true,
+        "screenCount": {
+          "main": 6,
+          "modals": 61,
+          "auth": 19,
+          "total": 86
+        }
+      },
+      "gaps": [],
+      "security": [],
+      "performance": [],
+      "passRate": "100.0%",
+      "completeness": "100%"
+    }
+  ]
+}

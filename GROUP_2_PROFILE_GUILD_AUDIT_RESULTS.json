@@ -1,0 +1,218 @@
+{
+  "summary": {
+    "total": 25,
+    "passed": 16,
+    "failed": 0,
+    "warnings": 9,
+    "critical": 0,
+    "passRate": "64.0%",
+    "completeness": "91%"
+  },
+  "metrics": {
+    "profileScreenCount": 2,
+    "profileScreens": [
+      "profile.tsx",
+      "profile-settings.tsx"
+    ],
+    "guildScreenCount": 11,
+    "guildScreens": [
+      "create-guild.tsx",
+      "guild-analytics.tsx",
+      "guild-court.tsx",
+      "guild-creation-wizard.tsx",
+      "guild-map-complex-backup.tsx",
+      "guild-map.tsx",
+      "guild-master.tsx",
+      "guild-member.tsx",
+      "guild-vice-master.tsx",
+      "guild.tsx",
+      "guilds.tsx"
+    ],
+    "guildContextFunctions": 5,
+    "rankLevels": [
+      "G",
+      "F",
+      "E",
+      "D",
+      "C",
+      "B",
+      "A",
+      "S"
+    ],
+    "userRankFields": [
+      "currentRank",
+      "skillLevel",
+      "completedTasks",
+      "totalEarnings"
+    ],
+    "rankStatsFields": [
+      "completedTasks",
+      "totalEarnings",
+      "skillLevel"
+    ],
+    "guildModelFields": 7,
+    "guildMemberRBAC": {
+      "role": true,
+      "level": true
+    },
+    "guildRoles": [
+      "GUILD_MASTER",
+      "VICE_MASTER",
+      "MEMBER"
+    ],
+    "guildRoutesPath": "backend/src/routes/guilds.ts",
+    "guildServiceMethods": [
+      "create",
+      "read",
+      "update",
+      "removeMember"
+    ],
+    "defaultGuildLevel": 3,
+    "permissionMiddleware": {
+      "path": "backend/src/middleware/auth.ts",
+      "requireRole": true,
+      "requirePermission": true,
+      "requireOwnership": true
+    },
+    "guildMasterRoleChecks": "3/4",
+    "forbiddenResponses": 3,
+    "concurrentJoinHandling": {
+      "transaction": false,
+      "uniqueConstraint": false
+    }
+  },
+  "gaps": [
+    {
+      "type": "MISSING_PROFILE_SERVICE",
+      "severity": "MEDIUM",
+      "location": "backend/src/services/",
+      "note": "No ProfileService.ts found - rank calculation may be elsewhere"
+    },
+    {
+      "type": "MISSING_QR_SCREEN",
+      "severity": "LOW",
+      "location": "src/app/(modals)/",
+      "note": "QR code feature not implemented"
+    }
+  ],
+  "security": [],
+  "performance": [
+    {
+      "severity": "MEDIUM",
+      "issue": "No transaction/locking for concurrent guild joins",
+      "location": "GuildService",
+      "recommendation": "Use Prisma transactions or unique constraints"
+    }
+  ],
+  "details": [
+    {
+      "status": "WARN",
+      "test": "Q1.1: Count profile screens (expected 10)",
+      "message": "Only 2 profile screens (expected 10)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.2: Count guild screens (expected 11)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.3: Profile screens use UserContext state"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.4: Guild screens use GuildContext state"
+    },
+    {
+      "status": "WARN",
+      "test": "Q1.5: Permission checks exist in guild screens",
+      "message": "No guild management screens found to check permissions"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.1: Rank enum exists in Prisma schema"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.2: User model has currentRank field"
+    },
+    {
+      "status": "WARN",
+      "test": "Q2.3: Profile service exists with rank calculation",
+      "message": "[CODEBASE GAP] ProfileService not found"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.4: Rank calculation uses stats aggregation"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.1: Guild model exists in Prisma schema"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.2: GuildMember model exists with role/level fields"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.3: GuildRole enum exists with 3 roles"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.4: Guild creation endpoint exists"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.5: Guild service exists with CRUD operations"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.6: Level 1-3 enforcement exists"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.1: Permission middleware exists"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.2: Guild routes use permission checks"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.3: Guild master actions are restricted"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.4: 403 Forbidden is returned for unauthorized access"
+    },
+    {
+      "status": "WARN",
+      "test": "Q5.1: QR code screen exists",
+      "message": "[CODEBASE GAP] QR code screen not found"
+    },
+    {
+      "status": "WARN",
+      "test": "Q5.2: QR code generation uses library",
+      "message": "QR screen not found - skipping"
+    },
+    {
+      "status": "WARN",
+      "test": "Q5.3: QR data does not leak sensitive info",
+      "message": "Cannot verify - QR screen not found"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.1: GuildContext uses Firestore listeners",
+      "message": "No Firestore integration in GuildContext"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.2: Guild stats update on member join",
+      "message": "addMember function not found"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.3: Concurrent join handling",
+      "message": "Race condition possible on concurrent joins"
+    }
+  ]
+}

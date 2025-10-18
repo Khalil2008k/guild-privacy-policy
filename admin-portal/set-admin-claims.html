@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Admin Claims - Guild</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: #2D2D2D;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            color: #00FF88;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .info {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+            border: 1px solid #2196F3;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .user-info {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00FF88;
+            border: 1px solid #00FF88;
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00FF88;
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #00E67A;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00FF88;
+            border: 1px solid #00FF88;
+        }
+        .error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #FF5252;
+            border: 1px solid #FF5252;
+        }
+        .loading {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFC107;
+            border: 1px solid #FFC107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Set Admin Claims</h1>
+        
+        <div class="info">
+            <strong>User Found in Firebase:</strong><br>
+            We found the admin user you created. Now we need to give it admin permissions.
+        </div>
+
+        <div class="user-info">
+            <strong>User Details:</strong><br>
+            Email: admin@guild.app<br>
+            UID: d94kK9YWrgdevASG58BZ5NQDJWt1<br>
+            Status: Created ✅
+        </div>
+
+        <button onclick="setAdminClaims()" id="claimsBtn">
+            🔧 Set Super Admin Role
+        </button>
+
+        <button onclick="testLogin()" id="testBtn" style="background: #2196F3;">
+            🧪 Test Admin Portal Login
+        </button>
+
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
+            authDomain: "guild-4f46b.firebaseapp.com",
+            projectId: "guild-4f46b",
+            storageBucket: "guild-4f46b.firebasestorage.app",
+            messagingSenderId: "654144998705",
+            appId: "1:654144998705:web:9c49a52bd633a436853410",
+            measurementId: "G-MQX879CXFY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.setAdminClaims = async function() {
+            const statusDiv = document.getElementById('status');
+            const claimsBtn = document.getElementById('claimsBtn');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.innerHTML = '🔧 Setting admin role...<br>This requires manual setup in Firebase Console.';
+            claimsBtn.disabled = true;
+
+            // Since we can't set custom claims from client-side, provide instructions
+            setTimeout(() => {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Manual Setup Required</strong><br><br>
+                    <strong>Follow these steps in Firebase Console:</strong><br>
+                    1. Go to Authentication > Users<br>
+                    2. Click on admin@guild.app<br>
+                    3. Look for "Custom Claims" or "Set Claims"<br>
+                    4. Add: {"role": "super_admin"}<br>
+                    5. Save and test login below<br><br>
+                    <em>If you can't find Custom Claims, try refreshing the Firebase Console page.</em>
+                `;
+                claimsBtn.disabled = false;
+            }, 2000);
+        };
+
+        window.testLogin = async function() {
+            const statusDiv = document.getElementById('status');
+            const testBtn = document.getElementById('testBtn');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '🧪 Testing admin login...';
+            testBtn.disabled = true;
+
+            try {
+                // Try to sign in with admin credentials
+                const userCredential = await signInWithEmailAndPassword(auth, 'admin@guild.app', 'admin123');
+                
+                // Get ID token to check claims
+                const idTokenResult = await userCredential.user.getIdTokenResult();
+                const role = idTokenResult.claims.role;
+
+                if (role === 'super_admin') {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `
+                        <strong>✅ SUCCESS! Admin Role Working!</strong><br><br>
+                        <strong>Login Details:</strong><br>
+                        Email: admin@guild.app<br>
+                        Password: admin123<br>
+                        Role: ${role}<br><br>
+                        <strong>🚀 You can now access the admin portal!</strong><br>
+                        <a href="http://localhost:3000" target="_blank" style="color: #00FF88;">Open Admin Portal →</a>
+                    `;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `
+                        <strong>❌ Admin Role Not Set</strong><br><br>
+                        Current role: ${role || 'none'}<br>
+                        Please set custom claims in Firebase Console:<br>
+                        {"role": "super_admin"}
+                    `;
+                }
+
+                // Sign out after test
+                await signOut(auth);
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>❌ Login Test Failed</strong><br><br>
+                    Error: ${error.message}<br><br>
+                    Make sure the user exists and custom claims are set.
+                `;
+            } finally {
+                testBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

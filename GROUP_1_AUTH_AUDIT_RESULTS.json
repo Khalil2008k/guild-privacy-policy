@@ -1,0 +1,176 @@
+{
+  "summary": {
+    "total": 25,
+    "passed": 22,
+    "failed": 1,
+    "warnings": 2,
+    "critical": 1,
+    "passRate": "88.0%",
+    "completeness": "83%"
+  },
+  "metrics": {
+    "authFunctions": 4,
+    "authContextLines": 537,
+    "authMiddlewareLines": 323,
+    "authMiddlewareSecurityChecks": 5,
+    "secureTokenStorage": true,
+    "authErrorHandling": "3/4",
+    "jwtExpiry": "7d",
+    "authScreenCount": 20,
+    "authScreensWithTheme": "19/19",
+    "authScreensWithI18n": "19/19",
+    "authScreensWithRouter": "19/19",
+    "userModelFields": 6,
+    "registrationValidations": 3,
+    "mfaInDatabase": false,
+    "emailVerificationImplemented": true,
+    "rateLimiting": {
+      "middleware": true,
+      "redis": true,
+      "inMemory": true
+    },
+    "mfaMethods": [
+      "sms",
+      "email",
+      "authenticator"
+    ],
+    "biometricAuth": true,
+    "asyncStorageKeys": [
+      "pending_phone_verification",
+      "phone_verification_success"
+    ],
+    "onboardingSteps": 3,
+    "errorTracking": false,
+    "authRateLimit": {
+      "maxAttempts": 5,
+      "windowMinutes": 0.00025
+    }
+  },
+  "gaps": [
+    {
+      "type": "MFA_NOT_IN_DATABASE",
+      "severity": "INFO",
+      "location": "backend/prisma/schema.prisma",
+      "note": "MFA handled externally (Firebase/separate system)"
+    },
+    {
+      "type": "ERROR_TRACKING",
+      "severity": "LOW",
+      "location": "src/contexts/AuthContext.tsx",
+      "note": "Consider adding Sentry or Firebase Crashlytics"
+    }
+  ],
+  "security": [
+    {
+      "severity": "CRITICAL",
+      "issue": "Rate limiting not applied to endpoints",
+      "location": "backend/src/server.ts",
+      "recommendation": "Apply rate limiting middleware to auth routes"
+    }
+  ],
+  "details": [
+    {
+      "status": "PASS",
+      "test": "Q1.1: AuthContext exists and implements Firebase auth"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.2: Backend auth middleware validates JWT with proper error handling"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.3: Auth token is stored securely (SecureStore/KeyChain)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.4: Auth flow includes proper error handling and user feedback"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.5: JWT token expiry is configured (not infinite)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.1: Count all auth screens"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.2: All auth screens use theme context"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.3: All auth screens use i18n context for RTL support"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.4: Auth screens use Expo Router for navigation"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.1: Prisma User model has required security fields"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.2: Registration endpoint validates all required fields"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.3: User model does NOT have MFA fields (external system)"
+    },
+    {
+      "status": "WARN",
+      "test": "Q4.1: Phone verification screen exists",
+      "message": "Firebase phone auth not integrated"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.2: Email verification screen exists"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.3: Verification has rate limiting protection"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.4: Verification implements idempotency checks"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.1: Backend has rate limiting middleware"
+    },
+    {
+      "status": "CRITICAL",
+      "test": "Q5.2: Rate limiting is applied to auth endpoints",
+      "message": "Rate limiting middleware not applied!"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.3: MFA/2FA screens exist and are functional"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.4: Biometric authentication is available"
+    },
+    {
+      "status": "WARN",
+      "test": "Q5.5: Password requirements are enforced",
+      "message": "Password min length too short: 6 (recommend 8+)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q6.1: AuthContext persists state via AsyncStorage"
+    },
+    {
+      "status": "PASS",
+      "test": "Q6.2: Incomplete onboarding is handled gracefully"
+    },
+    {
+      "status": "PASS",
+      "test": "Q6.3: Auth errors are logged and tracked"
+    },
+    {
+      "status": "PASS",
+      "test": "Q6.4: Failed auth attempts are rate limited"
+    }
+  ]
+}

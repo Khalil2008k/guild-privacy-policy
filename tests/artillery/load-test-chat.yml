@@ -1,0 +1,160 @@
+# Artillery Load Test: Real-time Chat System
+# Tests: WebSocket connections, message throughput, typing indicators
+# Target: 2,000 concurrent chat sessions, 50,000 messages/minute
+# Expected: <100ms message latency, no message loss, stable connections
+
+config:
+  target: "ws://localhost:4000"
+  phases:
+    # Phase 1: Establish connections
+    - duration: 60
+      arrivalRate: 20
+      name: "Connect users"
+    
+    # Phase 2: Active chatting
+    - duration: 300
+      arrivalRate: 50
+      name: "Active messaging"
+    
+    # Phase 3: Peak load
+    - duration: 120
+      arrivalRate: 100
+      name: "Peak concurrent messages"
+  
+  ensure:
+    maxErrorRate: 0.5        # Chat is critical
+    p95: 100                 # 95% messages < 100ms
+    p99: 200
+  
+  # WebSocket engine
+  engines:
+    socketio:
+      transports: ["websocket"]
+      upgrade: false
+  
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+scenarios:
+  # Scenario 1: 1-on-1 Chat (60% of traffic)
+  - engine: socketio
+    name: "One-on-One Chat"
+    weight: 60
+    flow:
+      # Step 1: Connect to Socket.IO
+      - emit:
+          channel: "authenticate"
+          data:
+            token: "{{ $randomString() }}"
+          acknowledge:
+            args:
+              - authenticated: true
+        
+      # Step 2: Join chat room
+      - emit:
+          channel: "join_chat"
+          data:
+            chatId: "chat-{{ $randomNumber(1, 1000) }}"
+            userId: "user-{{ $randomNumber(1, 2000) }}"
+      
+      # Step 3: Listen for incoming messages
+      - think: 2
+      
+      # Step 4: Send typing indicator
+      - emit:
+          channel: "typing"
+          data:
+            chatId: "{{ chatId }}"
+            isTyping: true
+      
+      # Step 5: Send message (repeat 10-20 times)
+      - loop:
+          - think: "{{ $randomNumber(3, 10) }}"
+          - emit:
+              channel: "send_message"
+              data:
+                chatId: "{{ chatId }}"
+                message: "Test message {{ $randomString() }}"
+                timestamp: "{{ $timestamp }}"
+                messageId: "msg-{{ $randomString() }}"
+              acknowledge:
+                match:
+                  json: "$.success"
+                  value: true
+          - emit:
+              channel: "typing"
+              data:
+                chatId: "{{ chatId }}"
+                isTyping: false
+        count: "{{ $randomNumber(10, 20) }}"
+      
+      # Step 6: Disconnect
+      - emit:
+          channel: "leave_chat"
+          data:
+            chatId: "{{ chatId }}"
+
+  # Scenario 2: Group Chat (30% of traffic)
+  - engine: socketio
+    name: "Group Chat"
+    weight: 30
+    flow:
+      - emit:
+          channel: "authenticate"
+          data:
+            token: "{{ $randomString() }}"
+      
+      - emit:
+          channel: "join_group"
+          data:
+            groupId: "group-{{ $randomNumber(1, 100) }}"
+            userId: "user-{{ $randomNumber(1, 2000) }}"
+      
+      # Active participation
+      - loop:
+          - think: "{{ $randomNumber(5, 15) }}"
+          - emit:
+              channel: "send_group_message"
+              data:
+                groupId: "{{ groupId }}"
+                message: "Group message {{ $randomString() }}"
+                mentions: []
+        count: "{{ $randomNumber(5, 15) }}"
+
+  # Scenario 3: File Upload in Chat (10% of traffic)
+  - name: "File Share in Chat"
+    weight: 10
+    flow:
+      # HTTP-based file upload
+      - post:
+          url: "http://localhost:4000/api/chat/upload"
+          headers:
+            Authorization: "Bearer {{ $randomString() }}"
+            Content-Type: "multipart/form-data"
+          formData:
+            file: "@./test-files/sample-image.jpg"
+            chatId: "chat-{{ $randomNumber(1, 1000) }}"
+          capture:
+            - json: "$.fileUrl"
+              as: "fileUrl"
+          expect:
+            - statusCode: 200
+            - hasProperty: fileUrl
+      
+      # Send message with file link via WebSocket
+      - emit:
+          channel: "send_message"
+          data:
+            chatId: "{{ chatId }}"
+            message: "Shared a file"
+            fileUrl: "{{ fileUrl }}"
+            fileType: "image"
+
+processor: "./artillery-processor-socketio.js"
+
+
+
+
+
+

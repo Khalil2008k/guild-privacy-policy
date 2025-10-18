@@ -1,0 +1,267 @@
+
+// Kaniko Build Pipeline for In-Cluster Container Building
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kaniko-config
+  namespace: guild-production
+data:
+  config.json: |
+    {
+      "auths": {
+        "gcr.io": {
+          "auth": "${GCR_AUTH}"
+        }
+      },
+      "credsStore": "gcr"
+    }
+
+---
+# Kaniko Build Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kaniko-build
+  namespace: guild-production
+  annotations:
+    sidecar.istio.io/status: '{"version":"12345","initContainers":["istio-init"],"containers":["istio-proxy"],"volumes":["istio-envoy","istio-data","istio-podinfo","istio-token","istiod-ca-cert"]}'
+spec:
+  restartPolicy: Never
+  serviceAccountName: kaniko-builder
+  containers:
+    - name: kaniko-executor
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        - --dockerfile=Dockerfile
+        - --context=git://github.com/guild/platform.git#refs/heads/main
+        - --destination=gcr.io/guild-production/guild-api:$(date +%Y%m%d%H%M%S)
+        - --cache=true
+        - --cache-repo=gcr.io/guild-production/cache
+        - --cache-ttl=24h
+        - --skip-tls-verify-pull
+        - --skip-tls-verify-push
+      volumeMounts:
+        - name: kaniko-config
+          mountPath: /kaniko/.docker/
+        - name: gcr-secret
+          mountPath: /secret
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/guild-service-account.json
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+
+  volumes:
+    - name: kaniko-config
+      configMap:
+        name: kaniko-config
+    - name: gcr-secret
+      secret:
+        secretName: guild-gcr-secret
+
+---
+# Service Account for Kaniko
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kaniko-builder
+  namespace: guild-production
+  annotations:
+    iam.gke.io/gcp-service-account: guild-kaniko@guild-production.iam.gserviceaccount.com
+
+---
+# Cluster Role for Kaniko
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kaniko-builder
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "update", "patch"]
+
+---
+# Cluster Role Binding for Kaniko
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kaniko-builder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kaniko-builder
+subjects:
+  - kind: ServiceAccount
+    name: kaniko-builder
+    namespace: guild-production
+
+---
+# CI/CD Pipeline Job for Building
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: guild-build-job
+  namespace: guild-production
+spec:
+  template:
+    spec:
+      serviceAccountName: kaniko-builder
+      restartPolicy: Never
+      containers:
+        - name: kaniko-executor
+          image: gcr.io/kaniko-project/executor:latest
+          args:
+            - --dockerfile=Dockerfile
+            - --context=https://github.com/guild/platform.git#refs/heads/main
+            - --destination=gcr.io/guild-production/guild-api:$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)
+            - --cache=true
+            - --cache-repo=gcr.io/guild-production/cache
+            - --cache-ttl=48h
+            - --skip-tls-verify-pull
+            - --skip-tls-verify-push
+          volumeMounts:
+            - name: kaniko-config
+              mountPath: /kaniko/.docker/
+          env:
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: token
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 4000m
+              memory: 8Gi
+
+      volumes:
+        - name: kaniko-config
+          configMap:
+            name: kaniko-config
+
+---
+# Build Trigger for Git Changes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: build-trigger-config
+  namespace: guild-production
+data:
+  build.sh: |
+    #!/bin/bash
+    # Build script for in-cluster builds
+
+    echo "🔨 Starting in-cluster build..."
+
+    # Clone repository
+    git clone https://github.com/guild/platform.git /workspace
+    cd /workspace
+
+    # Build Docker image with Kaniko
+    /kaniko/executor \
+      --dockerfile=Dockerfile \
+      --context=. \
+      --destination=gcr.io/guild-production/guild-api:$(date +%Y%m%d%H%M%S) \
+      --cache=true \
+      --cache-repo=gcr.io/guild-production/cache
+
+    echo "✅ Build completed successfully!"
+
+---
+# Tekton Pipeline for CI/CD
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: guild-ci-pipeline
+  namespace: guild-production
+spec:
+  workspaces:
+    - name: source-workspace
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source-workspace
+      params:
+        - name: url
+          value: https://github.com/guild/platform
+        - name: revision
+          value: main
+
+    - name: run-tests
+      taskRef:
+        name: npm
+      runAfter:
+        - fetch-source
+      workspaces:
+        - name: source
+          workspace: source-workspace
+      params:
+        - name: args
+          value: ["run", "test:ci"]
+
+    - name: build-image
+      taskRef:
+        name: kaniko
+      runAfter:
+        - run-tests
+      workspaces:
+        - name: source
+          workspace: source-workspace
+      params:
+        - name: IMAGE
+          value: gcr.io/guild-production/guild-api:$(context.pipelineRun.uid)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+
+    - name: deploy-staging
+      taskRef:
+        name: helm-upgrade
+      runAfter:
+        - build-image
+      params:
+        - name: release
+          value: guild-staging
+        - name: chart
+          value: ./infrastructure/helm/guild-platform
+        - name: values
+          value: ./infrastructure/helm/guild-platform/values-staging.yaml
+        - name: set
+          value: image.tag=$(context.pipelineRun.uid)
+
+---
+# Tekton PipelineRun
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: guild-ci-run
+  namespace: guild-production
+spec:
+  pipelineRef:
+    name: guild-ci-pipeline
+  workspaces:
+    - name: source-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi

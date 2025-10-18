@@ -1,0 +1,379 @@
+{
+  "summary": {
+    "total": 52,
+    "passed": 38,
+    "failed": 14,
+    "passRate": 73.1,
+    "duration": 18.59,
+    "timestamp": "2025-10-06T14:29:44.738Z"
+  },
+  "metrics": {
+    "apiResponseTime": 746.2
+  },
+  "results": [
+    {
+      "category": "Security",
+      "name": "Public routes accessible (no auth)",
+      "status": "pass",
+      "duration": 524,
+      "message": "Health endpoint public ✅"
+    },
+    {
+      "category": "Security",
+      "name": "Protected routes reject no auth",
+      "status": "pass",
+      "duration": 2,
+      "message": "Correctly rejected (401) ✅"
+    },
+    {
+      "category": "Security",
+      "name": "Protected routes reject invalid token",
+      "status": "pass",
+      "duration": 3,
+      "message": "Invalid token rejected ✅"
+    },
+    {
+      "category": "Security",
+      "name": "SQL injection protection",
+      "status": "pass",
+      "duration": 194,
+      "message": "Protected ✅"
+    },
+    {
+      "category": "Security",
+      "name": "XSS attack protection",
+      "status": "pass",
+      "duration": 468,
+      "message": "Protected ✅"
+    },
+    {
+      "category": "Security",
+      "name": "Rate limiting active",
+      "status": "pass",
+      "duration": 10825,
+      "message": "No rate limit hit (might be high threshold)"
+    },
+    {
+      "category": "UI/UX",
+      "name": "All critical screens exist",
+      "status": "fail",
+      "error": "Missing screens: src/app/(main)/notifications.tsx",
+      "stack": "Error: Missing screens: src/app/(main)/notifications.tsx\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:183:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testFrontendUIUX (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:167:16)\n    at ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1088:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    },
+    {
+      "category": "UI/UX",
+      "name": "Theme system (light/dark)",
+      "status": "pass",
+      "duration": 1,
+      "message": "Light/Dark theme implemented ✅"
+    },
+    {
+      "category": "UI/UX",
+      "name": "Internationalization (AR/EN)",
+      "status": "fail",
+      "error": "Language context not found",
+      "stack": "Error: Language context not found\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:210:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testFrontendUIUX (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:207:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1088:7)"
+    },
+    {
+      "category": "UI/UX",
+      "name": "Error boundaries present",
+      "status": "pass",
+      "duration": 0,
+      "message": "Error boundary implemented ✅"
+    },
+    {
+      "category": "UI/UX",
+      "name": "Loading states implemented",
+      "status": "pass",
+      "duration": 1,
+      "message": "Loading states present ✅"
+    },
+    {
+      "category": "UI/UX",
+      "name": "Empty states handled",
+      "status": "pass",
+      "duration": 0,
+      "message": "Empty states handled ✅"
+    },
+    {
+      "category": "Job Flow",
+      "name": "Job creation screen exists & functional",
+      "status": "pass",
+      "duration": 0,
+      "message": "Job creation screen perfect ✅"
+    },
+    {
+      "category": "Job Flow",
+      "name": "Input validation present",
+      "status": "pass",
+      "duration": 0,
+      "message": "Validation implemented ✅"
+    },
+    {
+      "category": "Job Flow",
+      "name": "Job details screen complete",
+      "status": "fail",
+      "error": "Offer/Accept functionality missing",
+      "stack": "Error: Offer/Accept functionality missing\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:334:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testJobWorkflow (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:323:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1089:7)"
+    },
+    {
+      "category": "Job Flow",
+      "name": "Escrow service integrated",
+      "status": "pass",
+      "duration": 1,
+      "message": "Escrow with fees (5%+10%+2.5%) ✅"
+    },
+    {
+      "category": "Job Flow",
+      "name": "Job status transitions valid",
+      "status": "fail",
+      "error": "Missing statuses: disputed",
+      "stack": "Error: Missing statuses: disputed\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:376:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testJobWorkflow (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:362:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1089:7)"
+    },
+    {
+      "category": "Chat",
+      "name": "Chat screen complete",
+      "status": "fail",
+      "error": "Chat screen not found",
+      "stack": "Error: Chat screen not found\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:394:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testChatSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:391:16)\n    at ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1090:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    },
+    {
+      "category": "Chat",
+      "name": "File/Image upload supported",
+      "status": "fail",
+      "error": "ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'",
+      "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'\n    at Object.readFileSync (node:fs:440:20)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:421:26\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testChatSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:419:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1090:7)"
+    },
+    {
+      "category": "Chat",
+      "name": "Message edit/delete present",
+      "status": "fail",
+      "error": "ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'",
+      "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'\n    at Object.readFileSync (node:fs:440:20)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:438:26\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testChatSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:436:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1090:7)"
+    },
+    {
+      "category": "Chat",
+      "name": "Typing indicator present",
+      "status": "fail",
+      "error": "ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'",
+      "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'\n    at Object.readFileSync (node:fs:440:20)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:453:26\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testChatSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:451:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1090:7)"
+    },
+    {
+      "category": "Chat",
+      "name": "Keyboard handling (Android fix)",
+      "status": "fail",
+      "error": "ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'",
+      "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\app\\(main)\\chat\\[id].tsx'\n    at Object.readFileSync (node:fs:440:20)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:467:26\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testChatSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:465:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1090:7)"
+    },
+    {
+      "category": "Notifications",
+      "name": "Notification service exists",
+      "status": "pass",
+      "duration": 0,
+      "message": "Notification service ready ✅"
+    },
+    {
+      "category": "Notifications",
+      "name": "All notification types defined",
+      "status": "fail",
+      "error": "Missing types: OFFER",
+      "stack": "Error: Missing types: OFFER\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:515:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testNotificationSystem (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:507:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1091:7)"
+    },
+    {
+      "category": "Notifications",
+      "name": "In-app notification banner",
+      "status": "pass",
+      "duration": 1,
+      "message": "In-app banner with animation ✅"
+    },
+    {
+      "category": "Notifications",
+      "name": "Rate limiting present",
+      "status": "pass",
+      "duration": 0,
+      "message": "Rate limiting active ✅"
+    },
+    {
+      "category": "Errors",
+      "name": "Global error handler present",
+      "status": "pass",
+      "duration": 0,
+      "message": "Error handler with type safety ✅"
+    },
+    {
+      "category": "Errors",
+      "name": "Network errors handled (frontend)",
+      "status": "fail",
+      "error": "API service not found",
+      "stack": "Error: API service not found\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:585:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testErrorHandling (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:582:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1092:7)"
+    },
+    {
+      "category": "Errors",
+      "name": "Firebase errors handled",
+      "status": "pass",
+      "duration": 0,
+      "message": "Firebase errors handled ✅"
+    },
+    {
+      "category": "Errors",
+      "name": "User-friendly error messages",
+      "status": "pass",
+      "duration": 1,
+      "message": "Error feedback present ✅"
+    },
+    {
+      "category": "Edge Cases",
+      "name": "Empty job list handled",
+      "status": "pass",
+      "duration": 0,
+      "message": "Empty state handled ✅"
+    },
+    {
+      "category": "Edge Cases",
+      "name": "Long text truncation",
+      "status": "pass",
+      "duration": 0,
+      "message": "Text truncation present ✅"
+    },
+    {
+      "category": "Edge Cases",
+      "name": "Offline detection",
+      "status": "fail",
+      "error": "ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\services\\api.ts'",
+      "stack": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Admin\\GUILD\\GUILD-3\\src\\services\\api.ts'\n    at Object.readFileSync (node:fs:440:20)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:675:26\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testEdgeCases (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:673:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1093:7)"
+    },
+    {
+      "category": "Edge Cases",
+      "name": "Duplicate submission prevention",
+      "status": "pass",
+      "duration": 0,
+      "message": "Duplicate prevention ✅"
+    },
+    {
+      "category": "Performance",
+      "name": "API response < 500ms",
+      "status": "fail",
+      "error": "Average response time 746ms (too slow)",
+      "stack": "Error: Average response time 746ms (too slow)\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:729:15\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:22)\n    at async ComprehensiveTestSuite.testPerformance (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:713:5)\n    at async ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1094:7)"
+    },
+    {
+      "category": "Performance",
+      "name": "Image optimization present",
+      "status": "pass",
+      "duration": 1,
+      "message": "⚠️  Consider image optimization"
+    },
+    {
+      "category": "Performance",
+      "name": "List rendering optimized",
+      "status": "pass",
+      "duration": 2,
+      "message": "⚠️  Using ScrollView (less efficient)"
+    },
+    {
+      "category": "Performance",
+      "name": "Bundle size check",
+      "status": "pass",
+      "duration": 1,
+      "message": "100 dependencies (reasonable) ✅"
+    },
+    {
+      "category": "Firebase",
+      "name": "Firebase configuration valid",
+      "status": "pass",
+      "duration": 0,
+      "message": "Firebase config complete ✅"
+    },
+    {
+      "category": "Firebase",
+      "name": "Real-time listeners (onSnapshot)",
+      "status": "pass",
+      "duration": 1,
+      "message": "Real-time with cleanup ✅"
+    },
+    {
+      "category": "Firebase",
+      "name": "Firestore security rules exist",
+      "status": "pass",
+      "duration": 0,
+      "message": "Security rules defined ✅"
+    },
+    {
+      "category": "Firebase",
+      "name": "Composite indexes defined",
+      "status": "pass",
+      "duration": 1,
+      "message": "2 indexes defined ✅"
+    },
+    {
+      "category": "Auth",
+      "name": "Auth service exists",
+      "status": "fail",
+      "error": "Auth service not found",
+      "stack": "Error: Auth service not found\n    at C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:888:15\n    at ComprehensiveTestSuite.test (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:38:28)\n    at ComprehensiveTestSuite.testAuthentication (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:885:16)\n    at ComprehensiveTestSuite.runAllTests (C:\\Users\\Admin\\GUILD\\GUILD-3\\comprehensive-all-scenarios-test.js:1096:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    },
+    {
+      "category": "Auth",
+      "name": "Role-based access control",
+      "status": "pass",
+      "duration": 0,
+      "message": "RBAC implemented ✅"
+    },
+    {
+      "category": "Auth",
+      "name": "JWT token validation",
+      "status": "pass",
+      "duration": 0,
+      "message": "JWT validation present ✅"
+    },
+    {
+      "category": "Auth",
+      "name": "Auth context (React)",
+      "status": "pass",
+      "duration": 0,
+      "message": "Auth context ready ✅"
+    },
+    {
+      "category": "Validation",
+      "name": "Job form validation",
+      "status": "pass",
+      "duration": 1,
+      "message": "Form validation present ✅"
+    },
+    {
+      "category": "Validation",
+      "name": "Backend input validation",
+      "status": "pass",
+      "duration": 0,
+      "message": "⚠️  Backend validation recommended"
+    },
+    {
+      "category": "Validation",
+      "name": "XSS prevention",
+      "status": "pass",
+      "duration": 0,
+      "message": "XSS prevention (backend handles) ✅"
+    },
+    {
+      "category": "Load",
+      "name": "100 concurrent requests",
+      "status": "pass",
+      "duration": 2018,
+      "message": "100/100 OK in 2001ms ✅"
+    },
+    {
+      "category": "Load",
+      "name": "Memory leak check (useEffect)",
+      "status": "pass",
+      "duration": 0,
+      "message": "1 useEffect, 1 cleanups ✅"
+    },
+    {
+      "category": "Load",
+      "name": "Backend handles multiple connections",
+      "status": "pass",
+      "duration": 807,
+      "message": "50/50 connections handled ✅"
+    }
+  ]
+}

@@ -1,0 +1,329 @@
+# Artillery Load Test: Job System
+# Tests: Job CRUD, Offers, Acceptance, Completion under high load
+# Target: 5,000 concurrent users, 20,000 jobs created
+# Expected: <800ms p95, escrow transactions atomic, no race conditions
+
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Phase 1: Warm up
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Warm up"
+    
+    # Phase 2: Heavy load (simulate real-world job posting surge)
+    - duration: 300
+      arrivalRate: 100
+      name: "Peak job posting hours"
+    
+    # Phase 3: Stress test (Black Friday scenario)
+    - duration: 120
+      arrivalRate: 200
+      name: "Extreme stress"
+    
+    # Phase 4: Sustained stress
+    - duration: 180
+      arrivalRate: 150
+      name: "Sustained stress"
+  
+  ensure:
+    maxErrorRate: 2          # Jobs are critical, allow 2% errors
+    p95: 800
+    p99: 1500
+  
+  plugins:
+    expect: {}
+    metrics-by-endpoint:
+      stripQueryString: true
+  
+  http:
+    timeout: 15              # Jobs may have file uploads
+    pool: 100
+  
+  variables:
+    categories:
+      - "Development"
+      - "Design"
+      - "Writing"
+      - "Marketing"
+      - "Admin Support"
+      - "Customer Service"
+    
+    durations:
+      - "1 day"
+      - "3 days"
+      - "1 week"
+      - "2 weeks"
+      - "1 month"
+
+scenarios:
+  # Scenario 1: Post Job Flow (30% of traffic)
+  - name: "Post New Job"
+    weight: 30
+    flow:
+      # Step 1: Authenticate
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "client{{ $randomNumber(1, 100) }}@test.com"
+            password: "TestPass123!"
+          capture:
+            - json: "$.token"
+              as: "token"
+            - json: "$.user.id"
+              as: "userId"
+      
+      # Step 2: Create job draft
+      - post:
+          url: "/api/v1/jobs"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            title: "{{ $randomString() }} - Load Test Job"
+            description: "This is a comprehensive job description for load testing purposes. It needs to be detailed enough to simulate real-world scenarios with multiple paragraphs and requirements. The job should attract qualified freelancers who can deliver high-quality work within the specified timeline."
+            category: "{{ $randomItem(categories) }}"
+            budget: "{{ $randomNumber(100, 5000) }}"
+            duration: "{{ $randomItem(durations) }}"
+            skills: ["skill1", "skill2", "skill3"]
+            status: "DRAFT"
+          capture:
+            - json: "$.data.id"
+              as: "jobId"
+          expect:
+            - statusCode: [200, 201]
+            - hasProperty: data
+            - hasProperty: data.id
+      
+      # Step 3: Think time (user reviews draft)
+      - think: "{{ $randomNumber(5, 15) }}"
+      
+      # Step 4: Publish job
+      - patch:
+          url: "/api/v1/jobs/{{ jobId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            status: "PENDING_APPROVAL"
+          expect:
+            - statusCode: 200
+      
+      # Step 5: Check job status
+      - get:
+          url: "/api/v1/jobs/{{ jobId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: data.id
+
+  # Scenario 2: Browse & Submit Offer Flow (50% of traffic)
+  - name: "Browse Jobs and Submit Offer"
+    weight: 50
+    flow:
+      # Step 1: Authenticate as freelancer
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "freelancer{{ $randomNumber(1, 200) }}@test.com"
+            password: "TestPass123!"
+          capture:
+            - json: "$.token"
+              as: "token"
+            - json: "$.user.id"
+              as: "userId"
+      
+      # Step 2: Browse jobs (paginated)
+      - get:
+          url: "/api/v1/jobs"
+          qs:
+            limit: 20
+            offset: "{{ $randomNumber(0, 100) }}"
+            category: "{{ $randomItem(categories) }}"
+            status: "OPEN"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.data[0].id"
+              as: "targetJobId"
+          expect:
+            - statusCode: 200
+            - hasProperty: data
+      
+      # Step 3: View job details
+      - get:
+          url: "/api/v1/jobs/{{ targetJobId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+      
+      # Step 4: Think time (read job details)
+      - think: "{{ $randomNumber(10, 30) }}"
+      
+      # Step 5: Submit offer (test duplicate prevention)
+      - post:
+          url: "/api/v1/jobs/{{ targetJobId }}/offers"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            budget: "{{ $randomNumber(150, 4500) }}"
+            timeline: "{{ $randomItem(durations) }}"
+            message: "I am interested in this job and have {{ $randomNumber(3, 10) }} years of experience in this field. I can deliver high-quality work within your timeline."
+            coverLetter: "Detailed cover letter explaining why I'm the best fit for this job..."
+          expect:
+            - statusCode: [201, 400]  # 400 if already submitted
+      
+      # Step 6: Check my offers
+      - get:
+          url: "/api/v1/jobs/offers/my-offers"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: Accept Offer & Start Job (15% of traffic)
+  - name: "Accept Offer and Create Escrow"
+    weight: 15
+    flow:
+      # Step 1: Authenticate as job poster
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "client{{ $randomNumber(1, 100) }}@test.com"
+            password: "TestPass123!"
+          capture:
+            - json: "$.token"
+              as: "token"
+            - json: "$.user.id"
+              as: "userId"
+      
+      # Step 2: Get my posted jobs
+      - get:
+          url: "/api/v1/jobs"
+          qs:
+            posterId: "{{ userId }}"
+            status: "OPEN"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.data[0].id"
+              as: "jobId"
+      
+      # Step 3: Get offers for job
+      - get:
+          url: "/api/v1/jobs/{{ jobId }}/offers"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.data[0].id"
+              as: "offerId"
+            - json: "$.data[0].budget"
+              as: "offerBudget"
+          expect:
+            - statusCode: 200
+      
+      # Step 4: Accept offer (critical - test OCC)
+      - post:
+          url: "/api/v1/jobs/{{ jobId }}/accept"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            offerId: "{{ offerId }}"
+            acceptedBudget: "{{ offerBudget }}"
+          capture:
+            - json: "$.escrowId"
+              as: "escrowId"
+          expect:
+            - statusCode: [200, 409]  # 409 if already accepted
+      
+      # Step 5: Verify escrow created
+      - get:
+          url: "/api/v1/wallet/escrow/{{ escrowId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: [200, 404]
+            - hasProperty: status
+      
+      # Step 6: Fund escrow
+      - post:
+          url: "/api/v1/wallet/escrow/{{ escrowId }}/fund"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            paymentMethodId: "pm_test_{{ $randomString() }}"
+          expect:
+            - statusCode: [200, 400]
+
+  # Scenario 4: Complete Job & Release Funds (5% of traffic)
+  - name: "Complete Job and Release Payment"
+    weight: 5
+    flow:
+      # Step 1: Authenticate as freelancer
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "freelancer{{ $randomNumber(1, 200) }}@test.com"
+            password: "TestPass123!"
+          capture:
+            - json: "$.token"
+              as: "token"
+      
+      # Step 2: Get active jobs
+      - get:
+          url: "/api/v1/jobs"
+          qs:
+            status: "IN_PROGRESS"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.data[0].id"
+              as: "jobId"
+      
+      # Step 3: Submit work
+      - post:
+          url: "/api/v1/jobs/{{ jobId }}/submit"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            message: "Work completed. Please review."
+            deliverables:
+              - url: "https://example.com/file1.pdf"
+                type: "document"
+          expect:
+            - statusCode: [200, 400]
+      
+      # Step 4: Client authenticates and reviews
+      - think: 5
+      
+      # Step 5: Release escrow (as client)
+      - post:
+          url: "/api/v1/wallet/escrow/release"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            jobId: "{{ jobId }}"
+            rating: 5
+            review: "Excellent work!"
+          expect:
+            - statusCode: [200, 400]
+
+# Load test monitoring
+before:
+  flow:
+    - log: "Starting Job System Load Test"
+    - log: "Target: 20,000 jobs, 5,000 concurrent users"
+
+after:
+  flow:
+    - log: "Job System Load Test Complete"
+    - log: "Verify: Database consistency, no duplicate escrows"
+
+processor: "./artillery-processor.js"
+
+
+
+
+
+

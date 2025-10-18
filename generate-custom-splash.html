@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate GUILD Splash Screen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        
+        h1 {
+            color: #FFD700;
+        }
+        
+        #preview {
+            border: 2px solid #FFD700;
+            margin: 20px 0;
+            max-width: 90%;
+            height: auto;
+        }
+        
+        button {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background: #FFA500;
+        }
+        
+        .instructions {
+            max-width: 600px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        code {
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛡️ GUILD Splash Screen Generator</h1>
+    <p>Generate a native splash screen that matches your app design</p>
+    
+    <canvas id="canvas" width="1284" height="2778" style="display:none;"></canvas>
+    <img id="preview" alt="Preview will appear here"/>
+    
+    <button onclick="generateSplash()">Generate Splash Screen</button>
+    <button onclick="downloadSplash()">Download splash.png</button>
+    
+    <div class="instructions">
+        <h3>📋 Instructions:</h3>
+        <ol>
+            <li>Click <strong>"Generate Splash Screen"</strong> to create the image</li>
+            <li>Review the preview above</li>
+            <li>Click <strong>"Download splash.png"</strong></li>
+            <li>Replace the file at: <code>GUILD-3/assets/splash.png</code></li>
+            <li>Run: <code>npx expo prebuild --clean</code></li>
+            <li>Your app will now start with THIS splash! 🎯</li>
+        </ol>
+    </div>
+    
+    <script>
+        let imageDataUrl = null;
+        
+        function generateSplash() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Black background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 1284, 2778);
+            
+            // Gold color
+            const goldColor = '#FFD700';
+            
+            // Draw Shield Icon (simplified)
+            ctx.fillStyle = goldColor;
+            ctx.strokeStyle = goldColor;
+            ctx.lineWidth = 8;
+            
+            // Shield path (centered at 642, 1100)
+            ctx.beginPath();
+            ctx.moveTo(642, 1000); // Top center
+            ctx.lineTo(742, 1050); // Top right
+            ctx.lineTo(742, 1150); // Bottom right
+            ctx.lineTo(642, 1220); // Bottom center (point)
+            ctx.lineTo(542, 1150); // Bottom left
+            ctx.lineTo(542, 1050); // Top left
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Add inner shield detail
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(642, 1040);
+            ctx.lineTo(710, 1070);
+            ctx.lineTo(710, 1140);
+            ctx.lineTo(642, 1190);
+            ctx.lineTo(574, 1140);
+            ctx.lineTo(574, 1070);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Draw "GUILD" text
+            ctx.fillStyle = goldColor;
+            ctx.font = 'bold 140px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('GUILD', 642, 1300);
+            
+            // Add subtle glow effect
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = goldColor;
+            ctx.fillText('GUILD', 642, 1300);
+            
+            // Convert canvas to image
+            imageDataUrl = canvas.toDataURL('image/png');
+            document.getElementById('preview').src = imageDataUrl;
+            
+            alert('✅ Splash screen generated! Review the preview and click Download.');
+        }
+        
+        function downloadSplash() {
+            if (!imageDataUrl) {
+                alert('⚠️ Please generate the splash screen first!');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'splash.png';
+            link.href = imageDataUrl;
+            link.click();
+            
+            alert('✅ Downloaded! Now:\n1. Replace GUILD-3/assets/splash.png\n2. Run: npx expo prebuild --clean');
+        }
+        
+        // Auto-generate on page load
+        window.onload = function() {
+            generateSplash();
+        };
+    </script>
+</body>
+</html>
+
+
+
+
+

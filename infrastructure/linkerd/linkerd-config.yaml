@@ -1,0 +1,252 @@
+
+// Linkerd Service Mesh Configuration for Traffic Control
+apiVersion: install.linkerd.io/v1alpha1
+kind: Linkerd
+metadata:
+  name: linkerd
+  namespace: linkerd
+spec:
+  version: stable-2.14.0
+  namespace: linkerd
+
+  proxy:
+    capabilities: null
+    disableIdentity: false
+    disableTap: false
+    enableExternalProfiles: false
+    image:
+      name: cr.l5d.io/linkerd/proxy
+      pullPolicy: IfNotPresent
+      version: stable-2.14.0
+    logFormat: plain
+    logLevel: info,warn,error
+    opaquePorts: 25,587,3306,4444,5432,6379,9300,11211
+    outboundConnectTimeout: 1000ms
+    inboundConnectTimeout: 100ms
+    resources:
+      cpu:
+        limit: 1000m
+        request: 100m
+      memory:
+        limit: 250Mi
+        request: 20Mi
+    uid: 2102
+
+  identity:
+    issuer:
+      clockSkewAllowance: 20s
+      crtExpiry: 24h
+      externalCA: false
+      issuanceLifetime: 24h
+      scheme: linkerd.io/tls
+      tls:
+        crtPEM: |
+          -----BEGIN CERTIFICATE-----
+          # Certificate content
+          -----END CERTIFICATE-----
+        keyPEM: |
+          -----BEGIN PRIVATE KEY-----
+          # Private key content
+          -----END PRIVATE KEY-----
+
+  dashboard:
+    enforcedHostRegexp: ^linkerd-dashboard\.linkerd\.svc\.cluster\.local\:9090$
+    resources:
+      cpu:
+        limit: 1000m
+        request: 100m
+      memory:
+        limit: 250Mi
+        request: 50Mi
+
+  debugContainer:
+    image:
+      name: cr.l5d.io/linkerd/debug
+      pullPolicy: IfNotPresent
+      version: stable-2.14.0
+
+  heartbeatSchedule: 0 0 * * *
+
+  skipOutboundPorts: []
+
+  clusterDomain: cluster.local
+
+  podMonitor:
+    controller:
+      enabled: true
+      namespaceSelector: linkerd
+    enabled: true
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+
+  prometheus:
+    enabled: true
+    resources:
+      cpu:
+        limit: 1000m
+        request: 100m
+      memory:
+        limit: 2Gi
+        request: 1Gi
+
+  tracing:
+    enabled: true
+    collector:
+      resources:
+        cpu:
+          limit: 1000m
+          request: 100m
+        memory:
+          limit: 1Gi
+          request: 256Mi
+
+---
+# Traffic Policy for Guild API
+apiVersion: policy.linkerd.io/v1beta3
+kind: TrafficPolicy
+metadata:
+  name: guild-api-traffic-policy
+  namespace: guild-production
+spec:
+  selector:
+    matchLabels:
+      app: guild-api
+  policy:
+    control:
+      maxConnections: 100
+      maxPendingRequests: 50
+      maxRequests: 1000
+      maxRetries: 3
+      timeout: 10s
+    detection:
+      timeout: 5s
+      failureThreshold: 3
+      successThreshold: 1
+    loadBalancer:
+      algorithm: ewma
+      header: x-load-balancer
+      sourceIP: true
+    retryBudget:
+      minRetriesPerSecond: 10
+      retryRatio: 0.1
+      ttl: 10s
+
+---
+# Service Profile for Enhanced Observability
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: guild-api.guild-production.svc.cluster.local
+  namespace: guild-production
+spec:
+  routes:
+  - name: route-to-api
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    timeout: 10s
+    retryBudget:
+      minRetriesPerSecond: 10
+      retryRatio: 0.1
+      ttl: 10s
+    conditions:
+    - method: GET
+      pathRegex: "/api/v1/.*"
+      statusRange: "200-299"
+    - method: POST
+      pathRegex: "/api/v1/.*"
+      statusRange: "200-299"
+
+---
+# Traffic Split for Canary Deployments
+apiVersion: split.smi-spec.io/v1alpha3
+kind: TrafficSplit
+metadata:
+  name: guild-api-traffic-split
+  namespace: guild-production
+spec:
+  service: guild-api
+  backends:
+  - service: guild-api-stable
+    weight: 90
+  - service: guild-api-canary
+    weight: 10
+
+---
+# HTTPRoute for Traffic Routing
+apiVersion: policy.linkerd.io/v1beta3
+kind: HTTPRoute
+metadata:
+  name: guild-api-route
+  namespace: guild-production
+spec:
+  parentRefs:
+  - name: guild-api
+    kind: Service
+  rules:
+  - backendRefs:
+    - name: guild-api
+      kind: Service
+      weight: 100
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+        - name: x-trace-id
+          value: "${request.header.x-trace-id}"
+        - name: x-user-id
+          value: "${request.header.x-user-id}"
+    retries:
+    - attempts: 3
+      conditions:
+      - type: StatusCode
+        statusCodes: ["500", "502", "503", "504"]
+
+---
+# Authorization Policy for Service Mesh Security
+apiVersion: policy.linkerd.io/v1beta3
+kind: AuthorizationPolicy
+metadata:
+  name: guild-api-authz
+  namespace: guild-production
+spec:
+  targetRefs:
+  - kind: Service
+    name: guild-api
+  requiredAuthenticationRefs:
+  - kind: MeshTLSAuthentication
+    name: guild-mtls
+  rules:
+  - principals:
+    - cluster.local/ns/guild-production/sa/guild-api
+    - cluster.local/ns/guild-production/sa/guild-frontend
+
+---
+# MeshTLSAuthentication for mTLS
+apiVersion: policy.linkerd.io/v1beta3
+kind: MeshTLSAuthentication
+metadata:
+  name: guild-mtls
+  namespace: guild-production
+spec:
+  identities:
+  - "${serviceaccount.namespace}.serviceaccount.identity.linkerd.cluster.local"
+  mode: STRICT
+
+---
+# Server Authorization for External Access
+apiVersion: policy.linkerd.io/v1beta3
+kind: ServerAuthorization
+metadata:
+  name: guild-api-external-authz
+  namespace: guild-production
+spec:
+  server:
+    name: guild-api
+    selector:
+      matchLabels:
+        app: guild-api
+  client:
+    unauthenticated: false
+    networks:
+    - cidr: 10.0.0.0/8
+    - cidr: 172.16.0.0/12
+    - cidr: 192.168.0.0/16

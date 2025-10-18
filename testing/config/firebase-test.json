@@ -1,0 +1,26 @@
+{
+  "test": {
+    "apiKey": "AIzaSy-your-test-api-key",
+    "authDomain": "guild-testing.firebaseapp.com",
+    "projectId": "guild-testing",
+    "storageBucket": "guild-testing.appspot.com",
+    "messagingSenderId": "123456789",
+    "appId": "1:123456789:web:abcdef123456"
+  },
+  "development": {
+    "apiKey": "AIzaSy-your-dev-api-key",
+    "authDomain": "guild-dev.firebaseapp.com",
+    "projectId": "guild-dev",
+    "storageBucket": "guild-dev.appspot.com",
+    "messagingSenderId": "987654321",
+    "appId": "1:987654321:web:fedcba987654"
+  },
+  "production": {
+    "apiKey": "AIzaSy-your-prod-api-key",
+    "authDomain": "guild-4f46b.firebaseapp.com",
+    "projectId": "guild-4f46b",
+    "storageBucket": "guild-4f46b.appspot.com",
+    "messagingSenderId": "your-sender-id",
+    "appId": "your-app-id"
+  }
+}

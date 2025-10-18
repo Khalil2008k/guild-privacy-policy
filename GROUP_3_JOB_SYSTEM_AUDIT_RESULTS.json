@@ -1,0 +1,208 @@
+{
+  "summary": {
+    "total": 22,
+    "passed": 10,
+    "failed": 1,
+    "warnings": 11,
+    "critical": 1,
+    "passRate": "45.5%",
+    "completeness": "74%"
+  },
+  "metrics": {
+    "jobScreenCount": 9,
+    "jobScreens": [
+      "jobs.tsx",
+      "add-job.tsx",
+      "[jobId].tsx",
+      "[jobId].tsx",
+      "job-details.tsx",
+      "job-posting.tsx",
+      "job-search.tsx",
+      "job-templates.tsx",
+      "my-jobs.tsx"
+    ],
+    "jobStatuses": [
+      "DRAFT",
+      "OPEN",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+      "DISPUTED"
+    ],
+    "jobModelFields": 8,
+    "jobEndpoints": [
+      "list",
+      "create",
+      "getById",
+      "update"
+    ],
+    "jobServiceMethods": [
+      "create",
+      "update"
+    ],
+    "jobServicePath": "backend/src/services/jobService.ts",
+    "jobSearchScreen": "job-search.tsx",
+    "searchFilters": {
+      "category": true,
+      "budget": false
+    },
+    "draftSupport": true,
+    "cancelWithRefund": false
+  },
+  "gaps": [
+    {
+      "type": "INCOMPLETE_JOB_LIFECYCLE",
+      "severity": "HIGH",
+      "location": "src/app/(modals)/",
+      "note": "Only 0/4 lifecycle screens found"
+    },
+    {
+      "type": "MISSING_OFFER_ENDPOINT",
+      "severity": "HIGH",
+      "location": "backend/src/routes/jobs.ts",
+      "note": "No offer/application submission endpoint"
+    }
+  ],
+  "security": [
+    {
+      "severity": "HIGH",
+      "issue": "No escrow integration in job acceptance",
+      "location": "backend/src/routes/jobs.ts",
+      "recommendation": "Add escrow creation when job is accepted"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "No input validation on job creation",
+      "location": "backend/src/routes/jobs.ts",
+      "recommendation": "Add express-validator for job fields"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "No unique constraint to prevent duplicate offers",
+      "location": "backend/prisma/schema.prisma (JobApplication)",
+      "recommendation": "Add @@unique([userId, jobId])"
+    }
+  ],
+  "performance": [
+    {
+      "severity": "HIGH",
+      "issue": "No database indexes on Job table",
+      "location": "backend/prisma/schema.prisma",
+      "recommendation": "Add indexes on status, category, createdAt for query performance"
+    },
+    {
+      "severity": "MEDIUM",
+      "issue": "User stats may not update on job completion",
+      "location": "backend/src/services/jobService.ts",
+      "recommendation": "Update user completedTasks and totalEarnings"
+    },
+    {
+      "severity": "LOW",
+      "issue": "Job count queries may not be optimized",
+      "location": "backend/src/routes/jobs.ts",
+      "recommendation": "Use Prisma count() for efficient counting"
+    }
+  ],
+  "details": [
+    {
+      "status": "WARN",
+      "test": "Q1.1: Count job-related screens (expected 13)",
+      "message": "Only 9 job screens (expected 13)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.2: Job status enum exists in Prisma schema"
+    },
+    {
+      "status": "PASS",
+      "test": "Q1.3: Job model has all required fields"
+    },
+    {
+      "status": "WARN",
+      "test": "Q1.4: Job screens handle all lifecycle states",
+      "message": "Only 0/4 lifecycle screens"
+    },
+    {
+      "status": "PASS",
+      "test": "Q2.1: Job routes exist with CRUD endpoints"
+    },
+    {
+      "status": "WARN",
+      "test": "Q2.2: Job acceptance triggers escrow creation",
+      "message": "No escrow integration detected"
+    },
+    {
+      "status": "WARN",
+      "test": "Q2.3: Budget validation on job creation",
+      "message": "No validation middleware detected"
+    },
+    {
+      "status": "WARN",
+      "test": "Q2.4: Job service exists with business logic",
+      "message": "Only 2/5 service methods"
+    },
+    {
+      "status": "WARN",
+      "test": "Q3.1: JobApplication/Offer model exists",
+      "message": "Missing fields: userId"
+    },
+    {
+      "status": "CRITICAL",
+      "test": "Q3.2: Offer submission endpoint exists",
+      "message": "No offer submission endpoint found"
+    },
+    {
+      "status": "WARN",
+      "test": "Q3.3: Duplicate offer prevention (unique constraint)",
+      "message": "Duplicate offers possible (no unique constraint)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q3.4: Offer rejection handling"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.1: Job search screen exists"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.2: Job list endpoint supports filters"
+    },
+    {
+      "status": "WARN",
+      "test": "Q4.3: Database indexes for job queries",
+      "message": "No indexes - queries may be slow"
+    },
+    {
+      "status": "PASS",
+      "test": "Q4.4: Search supports category and budget filters"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.1: Draft job support (incomplete submissions)"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.2: Orphaned job cleanup mechanism"
+    },
+    {
+      "status": "PASS",
+      "test": "Q5.3: Job cancellation with escrow refund"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.1: User stats update on job completion",
+      "message": "No stats update logic found"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.2: Job analytics screen exists",
+      "message": "[CODEBASE GAP] No job analytics screen"
+    },
+    {
+      "status": "WARN",
+      "test": "Q6.3: Efficient job count queries",
+      "message": "No optimized count queries detected"
+    }
+  ]
+}

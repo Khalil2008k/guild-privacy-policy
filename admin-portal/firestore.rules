@@ -1,0 +1,196 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for security
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.role in ['admin', 'super_admin'];
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.role == 'super_admin';
+    }
+    
+    function isGuildMaster(guildId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/guilds/$(guildId)/members/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/guilds/$(guildId)/members/$(request.auth.uid)).data.role == 'master';
+    }
+    
+    function isGuildMember(guildId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/guilds/$(guildId)/members/$(request.auth.uid));
+    }
+    
+    function isValidUserData(data) {
+      return data.keys().hasAll(['email', 'displayName', 'createdAt']) &&
+             data.email is string &&
+             data.displayName is string &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidJobData(data) {
+      return data.keys().hasAll(['title', 'description', 'budget', 'createdBy', 'createdAt', 'status']) &&
+             data.title is string &&
+             data.description is string &&
+             data.budget is number &&
+             data.createdBy is string &&
+             data.createdAt is timestamp &&
+             data.status in ['draft', 'pending', 'approved', 'rejected', 'active', 'completed', 'cancelled'];
+    }
+
+    // Users collection - users can only access their own data
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUserData(resource.data);
+      allow update: if isOwner(userId) && isValidUserData(resource.data);
+      allow delete: if isSuperAdmin();
+      
+      // User's private subcollections
+      match /private/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // User's notifications
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow create: if isAuthenticated(); // System can create notifications
+        allow update: if isOwner(userId); // User can mark as read
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Jobs collection - complex permissions based on status and role
+    match /jobs/{jobId} {
+      // Read permissions
+      allow read: if resource.data.status == 'active' || // Public active jobs
+                     isOwner(resource.data.createdBy) || // Job creator
+                     isAdmin() || // Admins can see all
+                     (resource.data.status == 'pending' && isAdmin()); // Pending jobs for admin approval
+      
+      // Create permissions
+      allow create: if isAuthenticated() && 
+                       isValidJobData(resource.data) &&
+                       resource.data.createdBy == request.auth.uid &&
+                       resource.data.status in ['draft', 'pending'];
+      
+      // Update permissions
+      allow update: if (isOwner(resource.data.createdBy) && 
+                          resource.data.status in ['draft', 'pending']) || // Creator can edit draft/pending
+                       (isAdmin() && 
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminNotes', 'adminStatus'])); // Admin can change status
+      
+      // Delete permissions
+      allow delete: if isOwner(resource.data.createdBy) || isSuperAdmin();
+      
+      // Job applications subcollection
+      match /applications/{applicationId} {
+        allow read: if isOwner(resource.data.applicantId) || 
+                       isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.createdBy) ||
+                       isAdmin();
+        allow create: if isAuthenticated() && 
+                         resource.data.applicantId == request.auth.uid;
+        allow update: if isOwner(resource.data.applicantId) ||
+                         isOwner(get(/databases/$(database)/documents/jobs/$(jobId)).data.createdBy);
+        allow delete: if isOwner(resource.data.applicantId) || isAdmin();
+      }
+    }
+
+    // Guilds collection - hierarchical permissions
+    match /guilds/{guildId} {
+      // Read permissions - public guild info
+      allow read: if true; // Basic guild info is public
+      
+      // Create permissions - authenticated users can create guilds
+      allow create: if isAuthenticated() && 
+                       resource.data.createdBy == request.auth.uid;
+      
+      // Update permissions - guild masters and admins
+      allow update: if isGuildMaster(guildId) || isAdmin();
+      
+      // Delete permissions - super admins only
+      allow delete: if isSuperAdmin();
+      
+      // Guild members subcollection
+      match /members/{memberId} {
+        allow read: if isGuildMember(guildId) || isAdmin();
+        allow create: if isGuildMaster(guildId) || 
+                         (memberId == request.auth.uid && resource.data.role == 'member');
+        allow update: if isGuildMaster(guildId) || isAdmin();
+        allow delete: if isGuildMaster(guildId) || 
+                         isOwner(memberId) || 
+                         isAdmin();
+      }
+      
+      // Guild jobs subcollection
+      match /jobs/{jobId} {
+        allow read: if isGuildMember(guildId) || isAdmin();
+        allow create: if isGuildMember(guildId);
+        allow update: if isGuildMaster(guildId) || 
+                         isOwner(resource.data.createdBy) ||
+                         isAdmin();
+        allow delete: if isGuildMaster(guildId) || isAdmin();
+      }
+      
+      // Guild private data (finances, internal communications)
+      match /private/{document=**} {
+        allow read, write: if isGuildMaster(guildId) || isAdmin();
+      }
+    }
+
+    // Admin-only collections
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // System analytics (read-only for admins)
+    match /analytics/{document=**} {
+      allow read: if isAdmin();
+      allow write: if false; // Only server-side writes
+    }
+    
+    // Reports collection
+    match /reports/{reportId} {
+      allow read: if isOwner(resource.data.reportedBy) || isAdmin();
+      allow create: if isAuthenticated() && 
+                       resource.data.reportedBy == request.auth.uid;
+      allow update: if isAdmin(); // Only admins can update report status
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Transactions collection (financial records)
+    match /transactions/{transactionId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if false; // Only server-side creates
+      allow update: if isAdmin(); // Only admins can update transaction status
+      allow delete: if isSuperAdmin();
+    }
+    
+    // System configuration (admin only)
+    match /config/{configId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+    
+    // Audit logs (read-only for super admins)
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow write: if false; // Only server-side writes
+    }
+    
+    // Default deny rule for any unmatched documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

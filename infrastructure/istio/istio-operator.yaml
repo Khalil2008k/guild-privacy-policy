@@ -1,0 +1,259 @@
+
+// Istio Service Mesh Configuration for Guild Platform
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: guild-istio
+  namespace: istio-system
+spec:
+  profile: default
+  hub: gcr.io/istio-release
+  tag: 1.20.0
+
+  meshConfig:
+    defaultConfig:
+      proxyMetadata:
+        BOOTSTRAP_XDS_AGENT: true
+      concurrency: 2
+
+    # Traffic management
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY
+
+    # Security settings
+    extensionProviders:
+      - name: oauth2-proxy
+        envoyExtAuthzHttp:
+          service: oauth2-proxy.oauth2-proxy.svc.cluster.local
+          port: 4180
+          timeout: 10s
+
+  components:
+    # Control plane components
+    pilot:
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+
+    # Data plane configuration
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          service:
+            type: LoadBalancer
+            loadBalancerIP: "34.102.136.180"
+            ports:
+              - name: status-port
+                port: 15021
+                targetPort: 15021
+              - name: http2
+                port: 80
+                targetPort: 80
+              - name: https
+                port: 443
+                targetPort: 443
+              - name: tls
+                port: 15443
+                targetPort: 15443
+
+    # Sidecar injection
+    cni:
+      enabled: true
+
+  # Global configuration
+  values:
+    global:
+      imagePullPolicy: Always
+      logging:
+        level: info
+      proxy:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 2000m
+            memory: 1Gi
+        concurrency: 2
+        accessLogFile: "/dev/stdout"
+        accessLogFormat: |
+          [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+          %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+          %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%
+          "%REQ(X-FORWARDED-FOR)%" "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%"
+          "%REQ(:AUTHORITY)%" "%UPSTREAM_HOST%"
+
+    pilot:
+      autoscaleEnabled: true
+      autoscaleMin: 1
+      autoscaleMax: 5
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+
+    gateways:
+      istio-ingressgateway:
+        autoscaleEnabled: true
+        autoscaleMin: 2
+        autoscaleMax: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 2000m
+            memory: 1Gi
+
+    telemetry:
+      v2:
+        prometheus:
+          configOverride:
+            gateway:
+              server:
+                port:
+                  number: 15020
+            global:
+              scrape_interval: 15s
+
+---
+# Virtual Service for Traffic Management
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: guild-api-vs
+  namespace: guild-production
+spec:
+  hosts:
+    - guild-api.guild-production.svc.cluster.local
+  http:
+    - match:
+        - uri:
+            prefix: /api/v1/
+      route:
+        - destination:
+            host: guild-api.guild-production.svc.cluster.local
+            port:
+              number: 8080
+      corsPolicy:
+        allowOrigin:
+          - "https://app.guild.com"
+          - "https://admin.guild.com"
+        allowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        allowHeaders:
+          - authorization
+          - content-type
+          - x-api-key
+        allowCredentials: true
+        maxAge: "1728000"
+
+    - match:
+        - uri:
+            prefix: /health
+      route:
+        - destination:
+            host: guild-api.guild-production.svc.cluster.local
+            port:
+              number: 8080
+
+---
+# Destination Rule for Load Balancing
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: guild-api-dr
+  namespace: guild-production
+spec:
+  host: guild-api.guild-production.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+        keepalive:
+          time: 7200s
+          interval: 75s
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+
+---
+# Service Entry for External Services
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: firebase-service-entry
+  namespace: guild-production
+spec:
+  hosts:
+    - firebase.googleapis.com
+    - www.googleapis.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+# Authorization Policy for Security
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: guild-api-authz
+  namespace: guild-production
+spec:
+  selector:
+    matchLabels:
+      app: guild-api
+  rules:
+    - key: request.headers[authorization]
+      values: ["Bearer *"]
+    - key: request.headers[x-api-key]
+      values: ["*"]
+
+---
+# Peer Authentication for mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: guild-mtls
+  namespace: guild-production
+spec:
+  selector:
+    matchLabels:
+      app: guild-api
+  mtls:
+    mode: STRICT
+
+---
+# Request Authentication for JWT
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: guild-jwt-auth
+  namespace: guild-production
+spec:
+  selector:
+    matchLabels:
+      app: guild-api
+  jwtRules:
+    - issuer: "guild-auth"
+      jwksUri: "https://auth.guild.com/.well-known/jwks.json"

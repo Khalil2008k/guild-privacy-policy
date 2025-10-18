@@ -1,0 +1,9 @@
+{
+  "setupFilesAfterEnv": [
+    "<rootDir>/config.js"
+  ],
+  "testEnvironment": "node",
+  "testTimeout": 30000,
+  "verbose": true,
+  "collectCoverage": false
+}

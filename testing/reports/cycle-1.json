@@ -1,0 +1,11 @@
+{
+  "cycle": 1,
+  "startTime": "2025-09-21T16:56:40.638Z",
+  "uiTests": null,
+  "loadTests": null,
+  "singleUserTest": null,
+  "report": null,
+  "endTime": null,
+  "duration": null,
+  "error": "spawn EINVAL"
+}

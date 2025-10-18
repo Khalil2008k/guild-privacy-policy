@@ -1,0 +1,66 @@
+
+// Production Docker Compose Override
+version: '3.8'
+
+services:
+  guild-api:
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  guild-worker:
+    deploy:
+      replicas: 2
+
+  postgres:
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  redis:
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+  elasticsearch:
+    environment:
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.http.ssl.enabled=true
+
+  prometheus:
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=720h' # 30 days
+      - '--web.enable-lifecycle'
+    secrets:
+      - prometheus_config
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    secrets:
+      - grafana_password
+
+secrets:
+  prometheus_config:
+    file: ./docker/prometheus/prometheus.yml
+  grafana_password:
+    file: ./docker/grafana/grafana_password.txt

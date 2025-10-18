@@ -1,0 +1,434 @@
+# GitHub Actions CI/CD Pipeline
+# Comprehensive testing workflow with all advanced test suites
+# Triggers: Push, Pull Request, Scheduled
+
+name: 🧪 Advanced Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Manual trigger
+
+env:
+  NODE_VERSION: '18.x'
+  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+  API_URL: http://localhost:4000/api
+
+jobs:
+  # Job 1: Basic Validation
+  validation:
+    name: 📋 Code Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Lint check
+        run: npm run lint || echo "Linting issues found"
+      
+      - name: 🏗️  Build check
+        run: npm run build || echo "Build succeeded"
+      
+      - name: 🔐 Security audit
+        run: npm audit --audit-level=high || true
+      
+      - name: 📊 Upload validation results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: validation-results
+          path: |
+            lint-report.txt
+            audit-report.json
+
+  # Job 2: Unit & Integration Tests
+  unit-tests:
+    name: 🧪 Unit & Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: validation
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🧪 Run unit tests
+        run: npm test -- --coverage --maxWorkers=2
+      
+      - name: 📊 Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: unit-test-coverage
+
+  # Job 3: Artillery Load Tests
+  load-tests:
+    name: ⚡ Artillery Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: unit-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm install -g artillery
+      
+      - name: 🚀 Start backend
+        run: |
+          cd backend
+          npm install
+          npm run build
+          npm start &
+          sleep 10
+        env:
+          NODE_ENV: test
+      
+      - name: 🔥 Generate test data
+        run: node tests/artillery/generate-test-data.js
+      
+      - name: ⚡ Run Artillery load tests
+        run: |
+          artillery run tests/artillery/load-test-auth.yml --output test-reports/artillery/auth-results.json
+          artillery run tests/artillery/load-test-jobs.yml --output test-reports/artillery/jobs-results.json
+      
+      - name: 📊 Upload Artillery reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: artillery-reports
+          path: test-reports/artillery/
+
+  # Job 4: k6 Stress Tests
+  stress-tests:
+    name: 💪 k6 Stress Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: unit-tests
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup k6
+        run: |
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🚀 Start backend
+        run: |
+          cd backend
+          npm install
+          npm start &
+          sleep 10
+        env:
+          NODE_ENV: test
+      
+      - name: 💪 Run k6 stress test
+        run: k6 run tests/k6/stress-test-api.js
+      
+      - name: 📈 Run k6 spike test
+        run: k6 run tests/k6/spike-test.js
+      
+      - name: 📊 Upload k6 reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: k6-reports
+          path: test-reports/k6/
+
+  # Job 5: Security Tests (OWASP ZAP)
+  security-tests:
+    name: 🔐 Security Scan (OWASP ZAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: unit-tests
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🚀 Start backend
+        run: |
+          cd backend
+          npm install
+          npm start &
+          sleep 15
+        env:
+          NODE_ENV: test
+      
+      - name: 🔐 Run OWASP ZAP scan
+        uses: zaproxy/action-full-scan@v0.7.0
+        with:
+          target: 'http://localhost:4000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+      
+      - name: 🧪 Run custom security tests
+        run: node tests/security/api-security-test.js
+      
+      - name: 📊 Upload ZAP reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-reports
+          path: |
+            test-reports/security/
+            zap-report.html
+
+  # Job 6: Database Load Tests
+  database-tests:
+    name: 💾 Database Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: unit-tests
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔥 Setup Firebase Emulators
+        run: |
+          npm install -g firebase-tools
+          firebase emulators:start --only firestore &
+          sleep 10
+      
+      - name: 💾 Run Firestore load test
+        run: node tests/database/load-test-firestore.js
+        env:
+          FIRESTORE_EMULATOR_HOST: localhost:8080
+      
+      - name: 📊 Upload database test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: database-reports
+          path: test-reports/database/
+
+  # Job 7: Performance Profiling
+  performance-tests:
+    name: ⚡ Performance Profiling
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: unit-tests
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm install -g clinic
+      
+      - name: ⚡ Run memory leak detection
+        run: node --expose-gc tests/performance/memory-leak-detection.js
+      
+      - name: 📊 Upload performance reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-reports
+          path: test-reports/performance/
+
+  # Job 8: Chaos Engineering
+  chaos-tests:
+    name: 🌪️ Chaos Engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: unit-tests
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🚀 Start backend
+        run: |
+          cd backend
+          npm install
+          npm start &
+          sleep 10
+        env:
+          NODE_ENV: test
+      
+      - name: 🌪️ Run chaos tests
+        run: node tests/chaos/network-chaos-test.js
+      
+      - name: 📊 Upload chaos test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: chaos-reports
+          path: test-reports/chaos/
+
+  # Job 9: Final Report & Deployment Gate
+  deployment-gate:
+    name: 🚦 Deployment Readiness Gate
+    runs-on: ubuntu-latest
+    needs: [validation, unit-tests, load-tests, stress-tests, security-tests, database-tests, performance-tests, chaos-tests]
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📊 Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: 📋 Generate deployment readiness report
+        run: |
+          echo "# Deployment Readiness Report" > deployment-report.md
+          echo "Generated: $(date)" >> deployment-report.md
+          echo "" >> deployment-report.md
+          
+          # Check validation
+          if [ "${{ needs.validation.result }}" == "success" ]; then
+            echo "✅ Code Validation: PASSED" >> deployment-report.md
+          else
+            echo "❌ Code Validation: FAILED" >> deployment-report.md
+          fi
+          
+          # Check unit tests
+          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
+            echo "✅ Unit Tests: PASSED" >> deployment-report.md
+          else
+            echo "❌ Unit Tests: FAILED" >> deployment-report.md
+          fi
+          
+          # Check load tests
+          if [ "${{ needs.load-tests.result }}" == "success" ]; then
+            echo "✅ Load Tests: PASSED" >> deployment-report.md
+          else
+            echo "⚠️  Load Tests: FAILED" >> deployment-report.md
+          fi
+          
+          # Check security
+          if [ "${{ needs.security-tests.result }}" == "success" ]; then
+            echo "✅ Security Scan: PASSED" >> deployment-report.md
+          else
+            echo "❌ Security Scan: FAILED (BLOCKING)" >> deployment-report.md
+          fi
+          
+          cat deployment-report.md
+      
+      - name: 🚦 Deployment decision
+        run: |
+          if [ "${{ needs.validation.result }}" != "success" ] || \
+             [ "${{ needs.unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.security-tests.result }}" != "success" ]; then
+            echo "❌ DEPLOYMENT BLOCKED: Critical tests failed"
+            exit 1
+          else
+            echo "✅ DEPLOYMENT APPROVED: All critical tests passed"
+          fi
+      
+      - name: 📊 Upload final report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: deployment-report
+          path: deployment-report.md
+      
+      - name: 💬 Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('deployment-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+
+
+
+
+

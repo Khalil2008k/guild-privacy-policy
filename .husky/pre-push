@@ -1,0 +1,69 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running comprehensive pre-push quality checks..."
+
+# Run TypeScript compilation check
+echo "📝 Checking TypeScript compilation..."
+npm run type-check
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript compilation failed"
+  exit 1
+fi
+
+# Run ESLint with SonarLint
+echo "📋 Running ESLint with SonarLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint checks failed"
+  exit 1
+fi
+
+# Run tests
+echo "🧪 Running tests..."
+npm run test
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed"
+  exit 1
+fi
+
+# Run code duplication analysis
+echo "🔍 Running code duplication analysis..."
+npm run analyze:duplication
+if [ $? -ne 0 ]; then
+  echo "⚠️  Code duplication analysis found issues (warning only)"
+fi
+
+# Run dependency check
+echo "🧹 Running dependency cleanup..."
+npm run depcheck
+if [ $? -ne 0 ]; then
+  echo "❌ Dependency check failed"
+  exit 1
+fi
+
+# Run security audit
+echo "🔒 Running security audit..."
+npm audit --audit-level moderate
+if [ $? -ne 0 ]; then
+  echo "❌ Security audit failed"
+  exit 1
+fi
+
+# Check bundle size (if applicable)
+if npm run build --silent 2>/dev/null; then
+  echo "📦 Checking bundle size..."
+  npm run analyze:bundle
+  if [ $? -ne 0 ]; then
+    echo "⚠️  Bundle size analysis failed (warning only)"
+  fi
+fi
+
+echo "✅ All pre-push quality checks passed!"
+
+
+
+
+
+
+

@@ -1,0 +1,452 @@
+
+// Thanos Long-Term Monitoring Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    type: OBJECT_STORAGE
+    config:
+      bucket: "guild-monitoring-bucket"
+      endpoint: "s3.amazonaws.com"
+      region: "us-east-1"
+      access_key: "${AWS_ACCESS_KEY_ID}"
+      secret_key: "${AWS_SECRET_ACCESS_KEY}"
+      signature_version2: false
+
+---
+# Thanos Store Gateway
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-store
+  namespace: monitoring
+spec:
+  serviceName: thanos-store
+  replicas: 3
+  selector:
+    matchLabels:
+      app: thanos-store
+  template:
+    metadata:
+      labels:
+        app: thanos-store
+    spec:
+      containers:
+      - name: thanos-store
+        image: thanosio/thanos:v0.32.0
+        args:
+        - store
+        - --data-dir=/var/thanos/store
+        - --objstore.config-file=/etc/thanos/config/config.yaml
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --index-cache-size=500MB
+        - --chunk-pool-size=500MB
+        - --store.grpc.series-max-concurrency=20
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 10902
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/thanos/config
+        - name: storage
+          mountPath: /var/thanos/store
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 10902
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: thanos-config
+
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "premium-rwo"
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+# Thanos Query Layer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-query
+  namespace: monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: thanos-query
+  template:
+    metadata:
+      labels:
+        app: thanos-query
+    spec:
+      containers:
+      - name: thanos-query
+        image: thanosio/thanos:v0.32.0
+        args:
+        - query
+        - --http-address=0.0.0.0:10902
+        - --grpc-address=0.0.0.0:10901
+        - --store=thanos-store-0.thanos-store.monitoring.svc.cluster.local:10901
+        - --store=thanos-store-1.thanos-store.monitoring.svc.cluster.local:10901
+        - --store=thanos-store-2.thanos-store.monitoring.svc.cluster.local:10901
+        - --query.replica-label=prometheus_replica
+        - --query.replica-label=thanos_ruler_replica
+        - --query.max-concurrent=100
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 10902
+          name: http
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          initialDelaySeconds: 30
+          periodSeconds: 30
+
+---
+# Thanos Query Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-query-frontend
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-query-frontend
+  template:
+    metadata:
+      labels:
+        app: thanos-query-frontend
+    spec:
+      containers:
+      - name: thanos-query-frontend
+        image: thanosio/thanos:v0.32.0
+        args:
+        - query-frontend
+        - --http-address=0.0.0.0:10902
+        - --query-frontend.downstream-url=http://thanos-query.monitoring.svc.cluster.local:10902
+        - --query-range.split-interval=24h
+        - --query-range.max-resolution=1h
+        ports:
+        - containerPort: 10902
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+
+---
+# Thanos Compactor for Long-Term Storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-compactor
+  namespace: monitoring
+spec:
+  serviceName: thanos-compactor
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor
+    spec:
+      containers:
+      - name: thanos-compactor
+        image: thanosio/thanos:v0.32.0
+        args:
+        - compact
+        - --data-dir=/var/thanos/compact
+        - --objstore.config-file=/etc/thanos/config/config.yaml
+        - --retention.resolution-raw=30d
+        - --retention.resolution-5m=90d
+        - --retention.resolution-1h=1y
+        - --compact.concurrency=1
+        - --deduplication.replica-label=prometheus_replica
+        ports:
+        - containerPort: 10902
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/thanos/config
+        - name: storage
+          mountPath: /var/thanos/compact
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 2Gi
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: thanos-config
+
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "premium-rwo"
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+# Thanos Ruler for Recording and Alerting Rules
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-ruler
+  namespace: monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: thanos-ruler
+  template:
+    metadata:
+      labels:
+        app: thanos-ruler
+    spec:
+      containers:
+      - name: thanos-ruler
+        image: thanosio/thanos:v0.32.0
+        args:
+        - rule
+        - --http-address=0.0.0.0:10902
+        - --grpc-address=0.0.0.0:10901
+        - --rule-file=/etc/thanos/rules/*.yml
+        - --objstore.config-file=/etc/thanos/config/config.yaml
+        - --query=http://thanos-query.monitoring.svc.cluster.local:10902
+        - --alert.label-drop=prometheus_replica
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 10902
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/thanos/config
+        - name: rules
+          mountPath: /etc/thanos/rules
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+      volumes:
+      - name: config
+        configMap:
+          name: thanos-config
+      - name: rules
+        configMap:
+          name: thanos-rules
+
+---
+# Thanos Sidecar for Prometheus
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-with-sidecar
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.45.0
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        ports:
+        - containerPort: 9090
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: storage
+          mountPath: /prometheus
+
+      - name: thanos-sidecar
+        image: thanosio/thanos:v0.32.0
+        args:
+        - sidecar
+        - --tsdb.path=/prometheus
+        - --prometheus.url=http://localhost:9090
+        - --objstore.config-file=/etc/thanos/config/config.yaml
+        - --reloader.config-file=/etc/prometheus/prometheus.yml
+        - --reloader.rule-dir=/etc/prometheus/rules
+        ports:
+        - containerPort: 10902
+          name: http
+        - containerPort: 10901
+          name: grpc
+        volumeMounts:
+        - name: config
+          mountPath: /etc/thanos/config
+        - name: storage
+          mountPath: /prometheus
+
+      volumes:
+      - name: config
+        configMap:
+          name: thanos-config
+      - name: storage
+        emptyDir: {}
+
+---
+# Thanos Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-store
+  namespace: monitoring
+spec:
+  selector:
+    app: thanos-store
+  ports:
+  - name: grpc
+    port: 10901
+    targetPort: 10901
+  - name: http
+    port: 10902
+    targetPort: 10902
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-query
+  namespace: monitoring
+spec:
+  selector:
+    app: thanos-query
+  ports:
+  - name: grpc
+    port: 10901
+    targetPort: 10901
+  - name: http
+    port: 10902
+    targetPort: 10902
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-query-frontend
+  namespace: monitoring
+spec:
+  selector:
+    app: thanos-query-frontend
+  ports:
+  - name: http
+    port: 10902
+    targetPort: 10902
+
+---
+# Service Monitor for Thanos
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: thanos-servicemonitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: thanos-store
+  endpoints:
+  - port: http
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Prometheus Rules for Thanos
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: thanos-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: thanos
+    rules:
+    - alert: ThanosStoreDown
+      expr: up{job="thanos-store"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Thanos Store is down"
+        description: "Thanos Store has been down for more than 5 minutes."
+
+    - alert: ThanosQueryDown
+      expr: up{job="thanos-query"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Thanos Query is down"
+        description: "Thanos Query has been down for more than 5 minutes."

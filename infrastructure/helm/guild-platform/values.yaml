@@ -1,0 +1,112 @@
+
+// Production Values for Guild Platform Helm Chart
+# Global configuration
+global:
+  imageRegistry: gcr.io/guild-production
+  imagePullSecrets:
+    - guild-registry-secret
+
+# Application version
+imageTag: "1.0.0"
+
+# Domain configuration
+ingress:
+  host: app.guild.com
+
+# Load balancer IP
+loadBalancerIP: "34.102.136.180"
+
+# Database passwords (should be overridden via secrets)
+postgresql:
+  password: "CHANGE_THIS_PASSWORD"
+  guildPassword: "CHANGE_THIS_PASSWORD"
+  url: "postgresql://guild:CHANGE_THIS_PASSWORD@guild-postgres:5432/guild"
+
+# Redis password
+redis:
+  password: "CHANGE_THIS_PASSWORD"
+  url: "redis://:CHANGE_THIS_PASSWORD@guild-redis:6379"
+
+# Elasticsearch configuration
+elasticsearch:
+  url: "http://guild-elasticsearch:9200"
+  enabled: true
+
+# Grafana admin password
+grafana:
+  adminPassword: "CHANGE_THIS_PASSWORD"
+
+# Environment-specific configuration
+environment: production
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Horizontal Pod Autoscaler configuration
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Pod security policy
+podSecurityPolicy:
+  enabled: true
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# Service mesh configuration
+istio:
+  enabled: true
+  injection: enabled
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    retention: "720h"  # 30 days
+  grafana:
+    persistence:
+      size: "20Gi"
+
+# Logging configuration
+logging:
+  enabled: true
+  elasticsearch:
+    persistence:
+      size: "200Gi"
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+
+# External secrets
+externalSecrets:
+  enabled: true
+  vault:
+    address: "https://vault.guild.com:8200"
+    mountPath: "kubernetes"
+
+# Argo CD configuration
+argocd:
+  enabled: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

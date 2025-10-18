@@ -1,0 +1,112 @@
+{
+  "timestamp": "2025-10-08T01:16:43.703Z",
+  "configuration": {
+    "iterations": 1000,
+    "heapSnapshotInterval": 100,
+    "memoryThreshold": 104857600,
+    "reportDir": "C:\\Users\\Admin\\GUILD\\GUILD-3\\test-reports\\performance"
+  },
+  "memorySnapshots": [
+    {
+      "label": "initial",
+      "rss": 35872768,
+      "heapTotal": 6352896,
+      "heapUsed": 4689024,
+      "external": 1628420,
+      "arrayBuffers": 10691
+    },
+    {
+      "iteration": 100,
+      "rss": 39260160,
+      "heapTotal": 7401472,
+      "heapUsed": 5017336,
+      "external": 1628439,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 200,
+      "rss": 39907328,
+      "heapTotal": 7663616,
+      "heapUsed": 5272512,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 300,
+      "rss": 40075264,
+      "heapTotal": 7925760,
+      "heapUsed": 5543024,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 400,
+      "rss": 40382464,
+      "heapTotal": 8187904,
+      "heapUsed": 5820040,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 500,
+      "rss": 40816640,
+      "heapTotal": 10547200,
+      "heapUsed": 6097776,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 600,
+      "rss": 41816064,
+      "heapTotal": 10809344,
+      "heapUsed": 6750064,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 700,
+      "rss": 41709568,
+      "heapTotal": 11071488,
+      "heapUsed": 6662784,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 800,
+      "rss": 42061824,
+      "heapTotal": 11333632,
+      "heapUsed": 6937984,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "iteration": 900,
+      "rss": 42401792,
+      "heapTotal": 11595776,
+      "heapUsed": 7214400,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    },
+    {
+      "label": "final",
+      "rss": 42684416,
+      "heapTotal": 11857920,
+      "heapUsed": 7484232,
+      "external": 1628403,
+      "arrayBuffers": 10655
+    }
+  ],
+  "gcStats": {
+    "count": 0,
+    "avgDuration": 0
+  },
+  "memoryLeaks": [
+    {
+      "type": "heap_growth",
+      "growth": 2795208,
+      "percent": 59.611723036606335
+    }
+  ],
+  "warnings": [],
+  "verdict": "FAIL"
+}

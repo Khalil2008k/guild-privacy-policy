@@ -1,0 +1,348 @@
+
+// Advanced Helm Chart for Guild Platform with Progressive Delivery
+apiVersion: v2
+name: guild-platform
+description: Production-ready Helm chart for Guild platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - guild
+  - platform
+  - kubernetes
+  - production
+home: https://guild.com
+sources:
+  - https://github.com/guild/platform
+maintainers:
+  - name: Guild DevOps Team
+    email: devops@guild.com
+
+# Dependencies
+dependencies:
+  - name: prometheus
+    version: "25.0.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus.enabled
+  - name: grafana
+    version: "7.0.0"
+    repository: "https://grafana.github.io/helm-charts"
+    condition: grafana.enabled
+  - name: elasticsearch
+    version: "8.11.0"
+    repository: "https://helm.elastic.co"
+    condition: elasticsearch.enabled
+  - name: istio-base
+    version: "1.20.0"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istio.enabled
+  - name: istio-discovery
+    version: "1.20.0"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istio.enabled
+
+# Application configuration
+guild-api:
+  image:
+    repository: gcr.io/guild-production/guild-api
+    tag: "{{ .Chart.AppVersion }}"
+    pullPolicy: Always
+
+  replicaCount: 5
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  config:
+    databaseUrl: "{{ .Values.postgresql.url }}"
+    redisUrl: "{{ .Values.redis.url }}"
+    elasticsearchUrl: "{{ .Values.elasticsearch.url }}"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 3
+
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+
+guild-worker:
+  image:
+    repository: gcr.io/guild-production/guild-worker
+    tag: "{{ .Chart.AppVersion }}"
+    pullPolicy: Always
+
+  replicaCount: 3
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+guild-frontend:
+  image:
+    repository: gcr.io/guild-production/guild-frontend
+    tag: "{{ .Chart.AppVersion }}"
+    pullPolicy: Always
+
+  replicaCount: 3
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+
+  ingress:
+    enabled: true
+    className: "gce"
+    annotations:
+      kubernetes.io/ingress.class: "gce"
+      networking.gke.io/managed-certificates: "guild-ssl-cert"
+      networking.gke.io/v1beta1.FrontendConfig: "guild-frontend-config"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: "{{ .Values.ingress.host }}"
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: guild-frontend
+                port:
+                  number: 80
+
+# Database configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "{{ .Values.postgresql.password }}"
+    password: "{{ .Values.postgresql.guildPassword }}"
+
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "premium-rwo"
+
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+
+    configuration: |
+      # PostgreSQL configuration for high performance
+      max_connections = 200
+      shared_buffers = 2GB
+      effective_cache_size = 6GB
+      maintenance_work_mem = 512MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.5
+      effective_io_concurrency = 200
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    password: "{{ .Values.redis.password }}"
+
+  master:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: "premium-rwo"
+
+  replica:
+    replicaCount: 2
+
+# Elasticsearch configuration
+elasticsearch:
+  enabled: true
+
+  persistence:
+    enabled: true
+    size: 200Gi
+    storageClass: "premium-rwo"
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+
+  esConfig:
+    elasticsearch.yml: |
+      cluster.name: guild-cluster
+      node.name: guild-node-${HOSTNAME}
+      discovery.type: zen
+      discovery.zen.minimum_master_nodes: 2
+      network.host: 0.0.0.0
+      http.port: 9200
+      transport.tcp.port: 9300
+
+# Monitoring configuration
+prometheus:
+  enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+      size: 50Gi
+      storageClass: "premium-rwo"
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+  alertmanager:
+    persistentVolume:
+      enabled: true
+      size: 10Gi
+
+grafana:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "premium-rwo"
+
+  adminPassword: "{{ .Values.grafana.adminPassword }}"
+
+# Ingress configuration
+ingress-nginx:
+  enabled: true
+  controller:
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+
+    service:
+      loadBalancerIP: "{{ .Values.loadBalancerIP }}"
+      annotations:
+        networking.gke.io/v1beta1.FrontendConfig: "guild-frontend-config"
+
+# Service mesh configuration
+istio:
+  enabled: true
+  gateways:
+    istio-ingressgateway:
+      enabled: true
+      service:
+        type: LoadBalancer
+        loadBalancerIP: "{{ .Values.loadBalancerIP }}"
+
+  pilot:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# Network policies
+networkPolicies:
+  enabled: true
+
+  guild-api:
+    podSelector:
+      matchLabels:
+        app: guild-api
+    policyTypes:
+      - Ingress
+      - Egress
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app: guild-frontend
+          - podSelector:
+              matchLabels:
+                app: guild-admin
+        ports:
+          - protocol: TCP
+            port: 8080
+
+# Horizontal Pod Autoscaler
+hpa:
+  guild-api:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+pdb:
+  guild-api:
+    enabled: true
+    minAvailable: 3
+
+# External Secrets Operator
+external-secrets:
+  enabled: true
+  installCRDs: true
+
+  secretStores:
+    - name: vault-backend
+      type: vault
+      server:
+        server: "https://vault.guild.com:8200"
+        path: secret
+        version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          role: "demo"
+          serviceAccountName: "vault-auth"
+
+# Argo CD Application
+argocd:
+  enabled: true
+  applications:
+    guild-platform:
+      project: default
+      source:
+        repoURL: https://github.com/guild/platform
+        targetRevision: HEAD
+        path: infrastructure/helm/guild-platform
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: guild-production
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

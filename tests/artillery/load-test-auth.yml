@@ -1,0 +1,224 @@
+# Artillery Load Test: Authentication System
+# Tests: Registration, Login, Token Refresh under high load
+# Target: 10,000 concurrent users over 10 minutes
+# Expected: <500ms p95, <1% error rate, no memory leaks
+
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Phase 1: Ramp up (0 → 1,000 users in 2 minutes)
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: "Warm up"
+    
+    # Phase 2: Sustained load (5,000 concurrent for 5 minutes)
+    - duration: 300
+      arrivalRate: 100
+      name: "Sustained load"
+    
+    # Phase 3: Spike test (10,000 concurrent for 2 minutes)
+    - duration: 120
+      arrivalRate: 200
+      name: "Spike test"
+    
+    # Phase 4: Cool down (10,000 → 0 in 1 minute)
+    - duration: 60
+      arrivalRate: 200
+      rampTo: 0
+      name: "Cool down"
+  
+  # Performance thresholds (test fails if exceeded)
+  ensure:
+    maxErrorRate: 1          # Max 1% errors
+    p95: 500                 # 95th percentile < 500ms
+    p99: 1000                # 99th percentile < 1s
+  
+  # Plugins for advanced metrics
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+  
+  # HTTP defaults
+  http:
+    timeout: 10
+    pool: 50                 # Connection pool size
+  
+  # Custom variables
+  variables:
+    baseUrl: "http://localhost:4000"
+    apiVersion: "v1"
+  
+  # Load external data
+  payload:
+    path: "./test-users.csv"
+    fields:
+      - email
+      - password
+      - username
+      - firstName
+      - lastName
+
+scenarios:
+  # Scenario 1: User Registration Flow (40% of traffic)
+  - name: "Register New User"
+    weight: 40
+    flow:
+      # Step 1: Check if email exists (should be fast)
+      - get:
+          url: "/api/auth/check-email"
+          qs:
+            email: "{{ $randomString() }}@test.com"
+          capture:
+            json: "$.available"
+            as: "emailAvailable"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: available
+      
+      # Step 2: Register user
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "user-{{ $randomNumber(1, 1000000) }}@loadtest.com"
+            password: "LoadTest123!@#"
+            username: "loaduser{{ $randomNumber(1, 1000000) }}"
+            firstName: "Load"
+            lastName: "Test{{ $randomNumber(1, 1000) }}"
+            acceptTerms: true
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.user.id"
+              as: "userId"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+          expect:
+            - statusCode: [200, 201]
+            - contentType: json
+            - hasProperty: token
+            - hasProperty: user
+          afterResponse: "captureAuthMetrics"
+      
+      # Step 3: Verify email token (simulate)
+      - think: 2
+      
+      # Step 4: Get user profile (authenticated request)
+      - get:
+          url: "/api/users/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: id
+      
+      # Step 5: Update profile
+      - patch:
+          url: "/api/users/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            bio: "Load test user bio"
+            phoneNumber: "+1{{ $randomNumber(1000000000, 9999999999) }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: User Login Flow (50% of traffic)
+  - name: "Login Existing User"
+    weight: 50
+    flow:
+      # Step 1: Login
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+            - json: "$.user.id"
+              as: "userId"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: token
+          afterResponse: "validateTokenFormat"
+      
+      # Step 2: Access protected resource
+      - get:
+          url: "/api/v1/jobs?limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+      
+      # Step 3: Simulate user activity (3-7 seconds)
+      - think: "{{ $randomNumber(3, 7) }}"
+      
+      # Step 4: Refresh token (simulate token expiration)
+      - post:
+          url: "/api/auth/refresh"
+          json:
+            refreshToken: "{{ refreshToken }}"
+          capture:
+            - json: "$.token"
+              as: "newAuthToken"
+          expect:
+            - statusCode: 200
+            - hasProperty: token
+      
+      # Step 5: Use new token
+      - get:
+          url: "/api/notifications"
+          headers:
+            Authorization: "Bearer {{ newAuthToken }}"
+          expect:
+            - statusCode: 200
+      
+      # Step 6: Logout
+      - post:
+          url: "/api/auth/logout"
+          headers:
+            Authorization: "Bearer {{ newAuthToken }}"
+          json:
+            userId: "{{ userId }}"
+          expect:
+            - statusCode: [200, 204]
+
+  # Scenario 3: Rate Limiting Test (10% of traffic)
+  - name: "Test Rate Limiting"
+    weight: 10
+    flow:
+      # Rapid-fire requests to trigger rate limiting
+      - loop:
+          - post:
+              url: "/api/auth/login"
+              json:
+                email: "attacker@test.com"
+                password: "WrongPassword123!"
+              expect:
+                - statusCode: [400, 401, 429]
+        count: 10
+      
+      # Verify rate limit response
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "attacker@test.com"
+            password: "WrongPassword123!"
+          expect:
+            - statusCode: 429
+            - hasHeader: "Retry-After"
+            - hasProperty: error
+
+# Custom JavaScript functions for advanced validations
+processor: "./artillery-processor.js"
+
+
+
+
+
+

@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-10-08T00:45:07.723Z",
+  "totalTests": 8,
+  "passed": 4,
+  "failed": 4,
+  "critical": 0,
+  "high": 1,
+  "medium": 2,
+  "low": 1,
+  "tests": [
+    {
+      "name": "JWT \"none\" algorithm rejected",
+      "passed": true,
+      "severity": "critical",
+      "details": "Server correctly rejected JWT with \"none\" algorithm",
+      "timestamp": "2025-10-08T00:45:07.756Z"
+    },
+    {
+      "name": "SQL Injection in login",
+      "passed": true,
+      "severity": "critical",
+      "details": "All SQL injection payloads rejected",
+      "timestamp": "2025-10-08T00:45:07.780Z"
+    },
+    {
+      "name": "XSS test setup",
+      "passed": false,
+      "severity": "medium",
+      "details": "Could not authenticate for XSS test",
+      "timestamp": "2025-10-08T00:45:07.837Z"
+    },
+    {
+      "name": "IDOR test setup",
+      "passed": false,
+      "severity": "high",
+      "details": "Could not authenticate for IDOR test",
+      "timestamp": "2025-10-08T00:45:07.851Z"
+    },
+    {
+      "name": "Rate limiting missing",
+      "passed": false,
+      "severity": "medium",
+      "details": "No rate limiting detected on auth endpoint!",
+      "timestamp": "2025-10-08T00:45:07.907Z"
+    },
+    {
+      "name": "JWT expiration check",
+      "passed": true,
+      "severity": "medium",
+      "details": "Expired tokens correctly rejected",
+      "timestamp": "2025-10-08T00:45:07.913Z"
+    },
+    {
+      "name": "CORS misconfiguration",
+      "passed": false,
+      "severity": "low",
+      "details": "CORS allows all origins (*)",
+      "timestamp": "2025-10-08T00:45:07.917Z"
+    },
+    {
+      "name": "Sensitive data exposure",
+      "passed": true,
+      "severity": "critical",
+      "details": "No sensitive data exposed in responses",
+      "timestamp": "2025-10-08T00:45:07.921Z"
+    }
+  ]
+}

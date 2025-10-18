@@ -1,0 +1,110 @@
+{
+  "timestamp": "2025-10-08T00:21:46.452Z",
+  "mode": "full",
+  "totalTests": 11,
+  "passed": 0,
+  "failed": 11,
+  "skipped": 0,
+  "duration": 1534428,
+  "suites": [
+    {
+      "id": "validation",
+      "name": "Code Validation",
+      "critical": true,
+      "passed": false,
+      "exitCode": null,
+      "duration": 172790,
+      "timestamp": "2025-10-08T00:24:39.246Z"
+    },
+    {
+      "id": "unit",
+      "name": "Unit & Integration Tests",
+      "critical": true,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 32253,
+      "timestamp": "2025-10-08T00:25:11.499Z"
+    },
+    {
+      "id": "artillery-auth",
+      "name": "Artillery Load Test (Auth)",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 2047,
+      "timestamp": "2025-10-08T00:25:13.546Z"
+    },
+    {
+      "id": "artillery-jobs",
+      "name": "Artillery Load Test (Jobs)",
+      "critical": false,
+      "passed": false,
+      "exitCode": null,
+      "duration": 666621,
+      "timestamp": "2025-10-08T00:36:20.169Z"
+    },
+    {
+      "id": "k6-stress",
+      "name": "k6 Stress Test",
+      "critical": false,
+      "passed": false,
+      "exitCode": 107,
+      "duration": 5234,
+      "timestamp": "2025-10-08T00:36:25.404Z"
+    },
+    {
+      "id": "k6-spike",
+      "name": "k6 Spike Test",
+      "critical": false,
+      "passed": false,
+      "exitCode": null,
+      "duration": 522173,
+      "timestamp": "2025-10-08T00:45:07.577Z"
+    },
+    {
+      "id": "security",
+      "name": "API Security Tests",
+      "critical": true,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 353,
+      "timestamp": "2025-10-08T00:45:07.932Z"
+    },
+    {
+      "id": "database",
+      "name": "Firestore Load Test",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 88379,
+      "timestamp": "2025-10-08T00:46:36.311Z"
+    },
+    {
+      "id": "performance",
+      "name": "Memory Leak Detection",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 73,
+      "timestamp": "2025-10-08T00:46:36.385Z"
+    },
+    {
+      "id": "firebase",
+      "name": "Firebase Emulator Tests",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 326,
+      "timestamp": "2025-10-08T00:46:36.712Z"
+    },
+    {
+      "id": "chaos",
+      "name": "Chaos Engineering Tests",
+      "critical": false,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 44169,
+      "timestamp": "2025-10-08T00:47:20.882Z"
+    }
+  ]
+}

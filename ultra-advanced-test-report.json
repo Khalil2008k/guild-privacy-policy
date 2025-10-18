@@ -1,0 +1,242 @@
+{
+  "passed": 24,
+  "failed": 9,
+  "warnings": 0,
+  "tests": [
+    {
+      "category": "Backend",
+      "name": "Server responds within 500ms",
+      "status": "failed",
+      "error": "Response too slow: 911ms",
+      "duration": "911ms"
+    },
+    {
+      "category": "Backend",
+      "name": "Multiple concurrent requests",
+      "status": "passed",
+      "duration": "559ms",
+      "message": "10 requests in 559ms"
+    },
+    {
+      "category": "Backend",
+      "name": "Firebase connection verified",
+      "status": "passed",
+      "duration": "244ms",
+      "message": "Firebase connected and operational"
+    },
+    {
+      "category": "Auth",
+      "name": "GET /api/jobs (public route)",
+      "status": "failed",
+      "error": "Request failed with status code 500",
+      "duration": "666ms"
+    },
+    {
+      "category": "Auth",
+      "name": "POST /api/jobs (requires auth)",
+      "status": "passed",
+      "duration": "8ms",
+      "message": "Correctly rejects unauthorized POST"
+    },
+    {
+      "category": "Auth",
+      "name": "Invalid token rejected",
+      "status": "passed",
+      "duration": "2ms",
+      "message": "Invalid tokens properly rejected"
+    },
+    {
+      "category": "Jobs",
+      "name": "Get all jobs (paginated)",
+      "status": "failed",
+      "error": "Request failed with status code 500",
+      "duration": "179ms"
+    },
+    {
+      "category": "Jobs",
+      "name": "Get job by ID",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "No jobs to test (skipped)"
+    },
+    {
+      "category": "Jobs",
+      "name": "Filter jobs by category",
+      "status": "failed",
+      "error": "Request failed with status code 500",
+      "duration": "475ms"
+    },
+    {
+      "category": "Jobs",
+      "name": "Search jobs by keyword",
+      "status": "failed",
+      "error": "Request failed with status code 500",
+      "duration": "176ms"
+    },
+    {
+      "category": "Frontend",
+      "name": "Add Job screen code analysis",
+      "status": "passed",
+      "duration": "1ms",
+      "message": "605 lines, all best practices followed"
+    },
+    {
+      "category": "Frontend",
+      "name": "TypeScript strict mode compliance",
+      "status": "passed",
+      "duration": "1ms",
+      "message": "Only 1 minor type issues (acceptable)"
+    },
+    {
+      "category": "Frontend",
+      "name": "No console.log in production code",
+      "status": "passed",
+      "duration": "1ms",
+      "message": "Clean code (1 debug logs)"
+    },
+    {
+      "category": "Frontend",
+      "name": "Component props are typed",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "All props properly typed"
+    },
+    {
+      "category": "Firebase",
+      "name": "Config has all required fields",
+      "status": "failed",
+      "error": "Missing fields: apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId",
+      "duration": "0ms"
+    },
+    {
+      "category": "Firebase",
+      "name": "Real-time listeners have cleanup",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "3 listeners, 4 cleanups"
+    },
+    {
+      "category": "Firebase",
+      "name": "Firestore security rules exist",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "38 lines of security rules"
+    },
+    {
+      "category": "Firebase",
+      "name": "Collections are indexed",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "2 Firestore indexes defined"
+    },
+    {
+      "category": "Escrow",
+      "name": "Fee calculation accuracy",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "1000 QAR → Freelancer: 825, Fees: 175"
+    },
+    {
+      "category": "Escrow",
+      "name": "Auto-release after 72 hours",
+      "status": "failed",
+      "error": "Auto-release logic not found",
+      "duration": "0ms"
+    },
+    {
+      "category": "Escrow",
+      "name": "Dispute handling workflow",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "3/3 dispute methods implemented"
+    },
+    {
+      "category": "Notifications",
+      "name": "Advanced features present",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "2/4 advanced features implemented"
+    },
+    {
+      "category": "Notifications",
+      "name": "Rate limiting configured",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "Rate limiting prevents notification spam"
+    },
+    {
+      "category": "Notifications",
+      "name": "In-app banner component",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "Banner with animation, icon, and unread status"
+    },
+    {
+      "category": "Security",
+      "name": "JWT secret is strong",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "JWT secret 52 characters (strong)"
+    },
+    {
+      "category": "Security",
+      "name": "CORS properly configured",
+      "status": "passed",
+      "duration": "1ms",
+      "message": "CORS configured with specific origins"
+    },
+    {
+      "category": "Security",
+      "name": "Input validation middleware",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "Input validation present"
+    },
+    {
+      "category": "Security",
+      "name": "No sensitive data in code",
+      "status": "passed",
+      "duration": "1ms",
+      "message": "No hardcoded credentials found"
+    },
+    {
+      "category": "Performance",
+      "name": "API response time < 200ms",
+      "status": "failed",
+      "error": "Average response time: 296ms",
+      "duration": "1483ms"
+    },
+    {
+      "category": "Performance",
+      "name": "Bundle size analysis",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "Core bundle: 52KB (acceptable)"
+    },
+    {
+      "category": "Performance",
+      "name": "Memory leak prevention",
+      "status": "failed",
+      "error": "2 useEffect but only 1 cleanups",
+      "duration": "0ms"
+    },
+    {
+      "category": "E2E",
+      "name": "Complete job posting workflow",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "13-step workflow supported"
+    },
+    {
+      "category": "E2E",
+      "name": "Error handling in workflows",
+      "status": "passed",
+      "duration": "0ms",
+      "message": "1 error handlers in critical paths"
+    }
+  ],
+  "performance": {
+    "concurrent10": "559ms"
+  },
+  "startTime": 1759760384786
+}

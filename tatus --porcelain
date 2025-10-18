@@ -1,0 +1,22 @@
+warning: in the working copy of 'backend/src/routes/jobs.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/routes/notifications.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/routes/payments.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/server.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/contexts/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/services/notificationService.ts', LF will be replaced by CRLF the next time Git touches it
+backend/logs/combined.log
+backend/logs/error.log
+backend/package-lock.json
+backend/src/config/firebase-unified.ts
+backend/src/routes/jobs.ts
+backend/src/routes/notifications.ts
+backend/src/routes/payments.ts
+backend/src/routes/users.ts
+backend/src/server.ts
+backend/src/services/firebase/ChatService.ts
+backend/src/services/firebase/GuildService.ts
+backend/src/services/firebase/JobService.ts
+backend/src/services/firebase/PaymentService.ts
+backend/src/services/firebase/UserService.ts
+src/contexts/AuthContext.tsx
+src/services/notificationService.ts

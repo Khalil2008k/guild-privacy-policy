@@ -1,0 +1,41 @@
+{
+  "name": "guild-testing-suite",
+  "version": "1.0.0",
+  "description": "Enterprise-grade testing suite for GUILD app",
+  "scripts": {
+    "test": "node scripts/enhanced-test-manager.js run",
+    "test:universal": "node scripts/enhanced-test-manager.js universal",
+    "test:deploy": "node scripts/deployment-readiness.js run",
+    "test:security": "node scripts/enhanced-test-manager.js security",
+    "test:performance": "node scripts/enhanced-test-manager.js performance",
+    "setup": "node scripts/setup.js"
+  },
+  "dependencies": {
+    "detox": "^20.13.0",
+    "artillery": "^2.0.0",
+    "openai": "^4.0.0",
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "@stryker-mutator/core": "^7.3.0",
+    "@stryker-mutator/jest-runner": "^7.3.0",
+    "@stryker-mutator/typescript-checker": "^7.3.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "license-checker": "^25.0.1",
+    "npm-check-updates": "^16.14.6",
+    "axe-core": "^4.8.2",
+    "lighthouse": "^11.4.0",
+    "puppeteer": "^21.6.1",
+    "k6": "^0.47.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.5",
+    "@types/jest": "^29.5.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

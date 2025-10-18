@@ -1,0 +1,230 @@
+
+// Karpenter Auto-Provisioning Configuration for Guild Platform
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: guild-provisioner
+  namespace: guild-production
+spec:
+  # Requirements that instances must satisfy
+  requirements:
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+    - key: kubernetes.io/os
+      operator: In
+      values: ["linux"]
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand", "spot"]
+    - key: karpenter.k8s.aws/instance-category
+      operator: In
+      values: ["c", "m", "r"]
+    - key: karpenter.k8s.aws/instance-generation
+      operator: In
+      values: ["5", "6"]
+
+  # Instance types to consider for provisioning
+  instanceTypes:
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - m5.large
+    - m5.xlarge
+    - m5.2xlarge
+    - r5.large
+    - r5.xlarge
+
+  # Resource limits for the provisioner
+  limits:
+    resources:
+      cpu: "1000"
+      memory: "2000Gi"
+
+  # Provider configuration
+  provider:
+    instanceProfile: "KarpenterInstanceProfile-guild-production"
+    subnetSelector:
+      karpenter.sh/discovery: "guild-production"
+    securityGroupSelector:
+      karpenter.sh/discovery: "guild-production"
+
+  # TTL for idle nodes
+  ttlSecondsAfterEmpty: 30
+  ttlSecondsUntilExpired: 2592000  # 30 days
+
+---
+# Karpenter Node Template
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: guild-node-template
+  namespace: guild-production
+spec:
+  subnetSelector:
+    karpenter.sh/discovery: "guild-production"
+  securityGroupSelector:
+    karpenter.sh/discovery: "guild-production"
+  instanceProfile: "KarpenterInstanceProfile-guild-production"
+  amiFamily: AL2
+  amiSelector:
+    karpenter.sh/discovery: "guild-production"
+  userData: |
+    #!/bin/bash
+    # Install monitoring agent
+    curl -s https://monitoring.guild.com/install.sh | bash
+
+    # Configure logging
+    mkdir -p /var/log/guild
+    chown -R 1000:1000 /var/log/guild
+
+  tags:
+    Name: "guild-karpenter-node"
+    Environment: "production"
+    ManagedBy: "Karpenter"
+    Team: "platform"
+
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true
+        kmsKeyID: "alias/guild-production"
+        deleteOnTermination: true
+        iops: 3000
+        throughput: 125
+
+---
+# Horizontal Pod Autoscaler with Karpenter Integration
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guild-api-hpa
+  namespace: guild-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guild-api
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Pods
+      pods:
+        metric:
+          name: packets_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 5
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+# Karpenter Metrics and Monitoring
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: karpenter-metrics
+  namespace: guild-production
+  labels:
+    app: karpenter
+spec:
+  selector:
+    matchLabels:
+      app: karpenter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+
+---
+# Karpenter Cost Optimization Policy
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: guild-cost-optimized
+  namespace: guild-production
+spec:
+  requirements:
+    - key: karpenter.k8s.aws/instance-category
+      operator: In
+      values: ["c", "m"]
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["spot"]  # Use spot instances for cost optimization
+    - key: karpenter.k8s.aws/instance-generation
+      operator: In
+      values: ["5", "6"]
+
+  limits:
+    resources:
+      cpu: "500"
+      memory: "1000Gi"
+
+  consolidation:
+    enabled: true
+
+  ttlSecondsAfterEmpty: 30
+
+---
+# Node Pool for Different Workloads
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: guild-workload-specific
+  namespace: guild-production
+spec:
+  requirements:
+    - key: kubernetes.io/os
+      operator: In
+      values: ["linux"]
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand"]
+
+  # GPU instances for ML workloads
+  instanceTypes:
+    - p3.2xlarge
+    - p3.8xlarge
+    - p4d.24xlarge
+
+  provider:
+    subnetSelector:
+      karpenter.sh/discovery: "guild-production"
+    securityGroupSelector:
+      karpenter.sh/discovery: "guild-production"
+
+  ttlSecondsAfterEmpty: 60

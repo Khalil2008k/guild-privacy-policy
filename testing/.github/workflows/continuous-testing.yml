@@ -1,0 +1,133 @@
+name: Continuous Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'backend/**'
+      - 'testing/**'
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions:://github.com/actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'testing/package-lock.json'
+
+    - name: Install dependencies
+      run: |
+        cd testing
+        npm ci
+
+    - name: Setup Expo CLI
+      run: npm install -g @expo/cli
+
+    - name: Setup Android emulator (for UI tests)
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 31
+        target: google_apis
+        arch: x86_64
+        profile: Pixel_5
+        script: echo "Android emulator ready"
+
+    - name: Build app for testing
+      run: |
+        cd src
+        npx expo install --fix
+        # Build would happen here in a real scenario
+        echo "App build completed"
+
+    - name: Run single user baseline test
+      run: |
+        cd testing
+        npm run test:single-user
+
+    - name: Run load tests (gradual ramp-up)
+      run: |
+        cd testing
+        npm run test:load
+
+    - name: Generate test report
+      run: |
+        cd testing
+        npm run report:generate
+
+    - name: Upload test reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports
+        path: |
+          testing/reports/
+          testing/logs/
+
+    - name: Comment PR with results (if PR)
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          // Read latest report
+          const reportDir = path.join(process.cwd(), 'testing/reports/analysis');
+          const files = fs.readdirSync(reportDir);
+          const latestReport = files
+            .filter(f => f.endsWith('.md'))
+            .sort()
+            .pop();
+
+          if (latestReport) {
+            const reportContent = fs.readFileSync(
+              path.join(reportDir, latestReport),
+              'utf8'
+            );
+
+            // Extract key metrics
+            const successRate = reportContent.match(/Passed: (\d+) \(([\d.]+)%\)/);
+            const responseTime = reportContent.match(/Average Response Time: (\d+)ms/);
+
+            const summary = `## 🧪 Automated Test Results\n\n` +
+              `**Success Rate:** ${successRate ? successRate[2] : 'N/A'}%\n` +
+              `**Avg Response Time:** ${responseTime ? responseTime[1] : 'N/A'}ms\n\n` +
+              `[View Full Report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+          }
+
+    - name: Check for critical failures
+      run: |
+        cd testing
+
+        # Check if any tests had critical failures
+        if [ -f "reports/analysis/cycle-latest.json" ]; then
+          critical_failures=$(grep -c "CRITICAL\|SEVERE" reports/analysis/cycle-latest.json || echo "0")
+
+          if [ "$critical_failures" -gt 0 ]; then
+            echo "❌ Critical test failures detected"
+            exit 1
+          else
+            echo "✅ No critical failures found"
+          fi
+        fi

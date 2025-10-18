@@ -1,0 +1,108 @@
+
+// JMeter Distributed Load Testing Configuration for 50k Users
+{
+  "testPlan": {
+    "name": "Guild Platform Load Test",
+    "description": "Comprehensive load testing for 50k concurrent users",
+    "userDefinedVariables": [
+      {
+        "name": "API_BASE_URL",
+        "value": "https://api.guild.com",
+        "description": "Base URL for API endpoints"
+      },
+      {
+        "name": "ADMIN_BASE_URL",
+        "value": "https://admin.guild.com",
+        "description": "Base URL for admin panel"
+      },
+      {
+        "name": "MOBILE_BASE_URL",
+        "value": "https://app.guild.com",
+        "description": "Base URL for mobile app"
+      }
+    ]
+  },
+  "threadGroups": [
+    {
+      "name": "API Load Test",
+      "numThreads": 10000,
+      "rampUp": 300,
+      "duration": 1800,
+      "sampler": {
+        "type": "HTTP Sampler",
+        "method": "GET",
+        "path": "/api/v1/jobs",
+        "parameters": {
+          "limit": "20",
+          "offset": "${__Random(0,1000)}"
+        }
+      },
+      "assertions": [
+        {
+          "type": "Response Assertion",
+          "testField": "Response Code",
+          "pattern": "2\d\d"
+        },
+        {
+          "type": "Duration Assertion",
+          "duration": 2000
+        }
+      ]
+    },
+    {
+      "name": "Authentication Load Test",
+      "numThreads": 5000,
+      "rampUp": 120,
+      "duration": 900,
+      "sampler": {
+        "type": "HTTP Sampler",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "body": {
+          "email": "user_${__threadNum}@test.com",
+          "password": "password123"
+        }
+      }
+    },
+    {
+      "name": "Real-time Chat Load Test",
+      "numThreads": 2000,
+      "rampUp": 60,
+      "duration": 600,
+      "sampler": {
+        "type": "WebSocket Sampler",
+        "url": "wss://api.guild.com/chat",
+        "message": {
+          "type": "chat_message",
+          "content": "Load test message #${__threadNum}"
+        }
+      }
+    }
+  ],
+  "listeners": [
+    {
+      "type": "Summary Report",
+      "filename": "jmeter-results/summary.jtl"
+    },
+    {
+      "type": "Aggregate Report",
+      "filename": "jmeter-results/aggregate.jtl"
+    },
+    {
+      "type": "Response Times Over Time",
+      "filename": "jmeter-results/response-times.jtl"
+    },
+    {
+      "type": "Transactions per Second",
+      "filename": "jmeter-results/tps.jtl"
+    }
+  ],
+  "backendListeners": [
+    {
+      "type": "InfluxDB Backend Listener",
+      "influxDBUrl": "http://localhost:8086/write?db=jmeter",
+      "application": "guild-load-test",
+      "measurement": "jmeter_metrics"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║                    GUILD TEST SUITE - QUICK REFERENCE                         ║
+║                          150+ Tests Ready to Run                              ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════════
+1. QUICK START (Copy & Paste)
+═══════════════════════════════════════════════════════════════════════════════
+
+# Install dependencies
+npm install --save-dev @jest/globals axios
+
+# Run all tests (Windows)
+.\run-all-tests.ps1
+
+# Run all tests (Linux/Mac)
+./run-all-tests.sh
+
+# Run specific phase
+npm test tests/phase1-general.test.ts
+npm test tests/phase2-api.test.ts
+npm test tests/phase3-ux-flow.test.ts
+
+═══════════════════════════════════════════════════════════════════════════════
+2. TEST PHASES
+═══════════════════════════════════════════════════════════════════════════════
+
+PHASE 1 (Tests 1-50): General System Checks
+  File: tests/phase1-general.test.ts
+  Focus: Infrastructure, Build, Security, Performance
+  Time: ~10 minutes
+  Backend: Optional (some tests work without)
+
+PHASE 2 (Tests 51-100): API Deep Dive
+  File: tests/phase2-api.test.ts
+  Focus: Endpoints, Validation, Security, Rate Limiting
+  Time: ~15 minutes
+  Backend: REQUIRED
+
+PHASE 3 (Tests 101-150): UX/Flow Testing
+  File: tests/phase3-ux-flow.test.ts
+  Focus: User journeys, Mobile app, UI/UX
+  Time: ~1-2 hours (manual)
+  App: REQUIRED (Expo running)
+
+═══════════════════════════════════════════════════════════════════════════════
+3. CRITICAL TESTS (Run First)
+═══════════════════════════════════════════════════════════════════════════════
+
+Test 2:  Backend health check
+Test 13: Dependency vulnerabilities (npm audit)
+Test 32: Rate limiting
+Test 52: Duplicate user prevention
+Test 58: Password validation (min 8 chars)
+Test 60: SQL injection prevention
+Test 62: Job creation
+Test 81: Wallet balance
+Test 99: API response time
+
+═══════════════════════════════════════════════════════════════════════════════
+4. BEFORE RUNNING
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Node.js v18+ installed
+✓ npm dependencies installed
+✓ Backend running (cd backend && npm run dev)
+✓ Environment variables set (.env file)
+✓ Firebase configured (if using Firestore)
+
+═══════════════════════════════════════════════════════════════════════════════
+5. COMMON COMMANDS
+═══════════════════════════════════════════════════════════════════════════════
+
+# Start backend
+cd backend
+npm run dev
+
+# Start frontend (Expo)
+npx expo start
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run specific test
+npm test tests/phase1-general.test.ts -- -t "Test 2"
+
+# Quick checks only
+.\run-all-tests.ps1 quick
+
+═══════════════════════════════════════════════════════════════════════════════
+6. INTERPRETING RESULTS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ Test X PASS: Feature working correctly
+❌ Test X FAIL: Bug found, needs fix
+⚠️  Test X WARN: Manual verification needed
+
+Pass Rate Thresholds:
+  95-100%: Production ready ✅
+  85-94%:  Beta ready ✅
+  70-84%:  Staging only ⚠️
+  <70%:    Not ready ❌
+
+═══════════════════════════════════════════════════════════════════════════════
+7. TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════════
+
+Issue: Cannot find module '@jest/globals'
+Fix:   npm install --save-dev @jest/globals axios
+
+Issue: Backend connection refused
+Fix:   cd backend && npm run dev
+
+Issue: Tests timeout
+Fix:   Increase timeout in test file (timeout: 30000)
+
+Issue: Permission denied (Linux/Mac)
+Fix:   chmod +x run-all-tests.sh
+
+═══════════════════════════════════════════════════════════════════════════════
+8. DEPLOYMENT CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+Before deploying to production:
+□ All Phase 1 tests pass (>90%)
+□ All Phase 2 tests pass (>95%)
+□ Critical manual tests complete
+□ No high/critical vulnerabilities (npm audit)
+□ Performance benchmarks met (<300ms p95)
+□ Security scan clean (OWASP ZAP)
+□ Load test successful (1k+ users)
+□ Mobile app tested on real devices
+
+═══════════════════════════════════════════════════════════════════════════════
+9. FILES INCLUDED
+═══════════════════════════════════════════════════════════════════════════════
+
+tests/phase1-general.test.ts       - Tests 1-50 (500+ lines)
+tests/phase2-api.test.ts           - Tests 51-100 (600+ lines)
+tests/phase3-ux-flow.test.ts       - Tests 101-150 (300+ lines)
+run-all-tests.sh                   - Linux/Mac runner
+run-all-tests.ps1                  - Windows runner
+TEST_SUITE_README.md               - Full documentation
+COMPLETE_TEST_SUITE_DELIVERY.md    - Delivery summary
+QUICK_TEST_REFERENCE.txt           - This file
+
+═══════════════════════════════════════════════════════════════════════════════
+10. NEXT STEPS
+═══════════════════════════════════════════════════════════════════════════════
+
+NOW:
+  1. Run: npm test tests/phase1-general.test.ts
+  2. Review results
+  3. Fix any failures
+
+TODAY:
+  1. Run all automated tests
+  2. Document failures
+  3. Calculate pass rate
+
+THIS WEEK:
+  1. Complete manual tests
+  2. Run load tests
+  3. Deploy to staging
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 START TESTING NOW: npm test tests/phase1-general.test.ts
+
+═══════════════════════════════════════════════════════════════════════════════
+
+
+
+
+
+
