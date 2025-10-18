@@ -3,1056 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUILD Dashboard - Qatar/GCC Analytics</title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <title>GUILD Dashboard</title>
     <style>
-        :root {
-            --primary: #00FFFF;
-            --secondary: #00FF88;
-            --accent: #FF6B35;
-            --warning: #FFD700;
-            --background: #0A0A0A;
-            --surface: #1A1A1A;
-            --surface-light: #2A2A2A;
-            --text-primary: #FFFFFF;
-            --text-secondary: #CCCCCC;
-            --text-muted: #888888;
-            --border: #333333;
-            --glow: 0 0 20px rgba(0, 255, 255, 0.3);
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #00FFFF;
+            --background: #000000;
+            --surface: #1A1A1A;
+            --text-primary: #FFFFFF;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: var(--background);
             color: var(--text-primary);
-            overflow-x: hidden;
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            position: relative;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .menu-toggle {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .header-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .time-info, .weather-info {
-            text-align: right;
-        }
-
-        .time-info h3, .weather-info h3 {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.2rem;
-        }
-
-        .time-info p, .weather-info p {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        /* Main Layout */
-        .dashboard {
-            display: grid;
-            grid-template-columns: 300px 1fr 350px;
-            height: calc(100vh - 80px);
-        }
-
-        /* Left Panel */
-        .left-panel {
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            padding: 1.5rem;
-        }
-
-        .tabs {
-            display: flex;
-            margin-bottom: 1.5rem;
-        }
-
-        .tab {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .search-container {
-            position: relative;
-            margin-bottom: 2rem;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: var(--surface-light);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .search-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .search-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        /* Map Container */
-        .map-container {
-            background: var(--background);
-            position: relative;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
         }
 
-        .map-background {
+        .container {
+            text-align: center;
+        }
+
+        .guild-title {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 0.5rem;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            margin-bottom: 3rem;
+            animation: textGlow 3s ease-in-out infinite;
+        }
+
+        /* From Uiverse.io by SelfMadeSystem */
+        .absolute {
             position: absolute;
-            inset: 0;
-            background: 
-                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
         }
 
-        .gcc-map {
-            position: relative;
-            width: 90%;
-            height: 90%;
-            min-height: 500px;
-            background: var(--surface);
-            border: 2px solid var(--primary);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: var(--glow);
+        .inline-block {
+            display: inline-block;
+        }
+
+        .loader {
             display: flex;
-            align-items: center;
+            margin: 0.25em 0;
             justify-content: center;
+            align-items: center;
         }
 
-        .gcc-map-container {
-            position: relative;
+        .w-2 {
+            width: 0.5em;
+        }
+
+        .dash {
+            animation: dashArray 2s ease-in-out infinite,
+                dashOffset 2s linear infinite;
+        }
+
+        .spin {
+            animation: spinDashArray 2s ease-in-out infinite,
+                spin 8s ease-in-out infinite,
+                dashOffset 2s linear infinite;
+            transform-origin: center;
+        }
+
+        @keyframes dashArray {
+            0% {
+                stroke-dasharray: 0 1 359 0;
+            }
+            50% {
+                stroke-dasharray: 0 359 1 0;
+            }
+            100% {
+                stroke-dasharray: 359 1 0 0;
+            }
+        }
+
+        @keyframes spinDashArray {
+            0% {
+                stroke-dasharray: 270 90;
+            }
+            50% {
+                stroke-dasharray: 0 360;
+            }
+            100% {
+                stroke-dasharray: 270 90;
+            }
+        }
+
+        @keyframes dashOffset {
+            0% {
+                stroke-dashoffset: 365;
+            }
+            100% {
+                stroke-dashoffset: 5;
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                rotate: 0deg;
+            }
+            12.5%, 25% {
+                rotate: 270deg;
+            }
+            37.5%, 50% {
+                rotate: 540deg;
+            }
+            62.5%, 75% {
+                rotate: 810deg;
+            }
+            87.5%, 100% {
+                rotate: 1080deg;
+            }
+        }
+
+        @keyframes textGlow {
+            0%, 100% {
+                text-shadow: 0 0 20px rgba(0, 255, 255, 0.5),
+                             0 0 40px rgba(0, 255, 255, 0.3);
+            }
+            50% {
+                text-shadow: 0 0 30px rgba(0, 255, 255, 0.8),
+                             0 0 60px rgba(0, 255, 255, 0.5),
+                             0 0 80px rgba(0, 255, 255, 0.3);
+            }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(0, 255, 255, 0.7);
+            letter-spacing: 0.3rem;
+            margin-top: 2rem;
+        }
+
+        /* Background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             background: 
-                repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03) 0px, transparent 1px, transparent 20px, rgba(0, 255, 255, 0.03) 21px),
-                repeating-linear-gradient(90deg, rgba(0, 255, 255, 0.03) 0px, transparent 1px, transparent 20px, rgba(0, 255, 255, 0.03) 21px),
-                var(--background);
-            border-radius: 15px;
-            overflow: hidden;
+                repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03) 0px, transparent 1px, transparent 50px, rgba(0, 255, 255, 0.03) 51px),
+                repeating-linear-gradient(90deg, rgba(0, 255, 255, 0.03) 0px, transparent 1px, transparent 50px, rgba(0, 255, 255, 0.03) 51px);
+            pointer-events: none;
+            z-index: -1;
         }
 
-        .gcc-map-svg {
-            position: absolute;
+        /* Radial glow */
+        body::after {
+            content: '';
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            height: 80%;
-        }
-
-        .gcc-countries {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .country-path {
-            fill: rgba(26, 26, 26, 0.8);
-            stroke: var(--primary);
-            stroke-width: 2.5;
-            stroke-linejoin: round;
-            stroke-linecap: round;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
-        }
-
-        .country-path:hover {
-            fill: rgba(37, 37, 37, 0.95);
-            stroke: var(--primary-light);
-            stroke-width: 3;
-            filter: drop-shadow(0 8px 30px rgba(0, 255, 255, 0.6)) drop-shadow(0 0 20px rgba(0, 255, 255, 0.4));
-            transform: scale(1.02);
-            transform-origin: center;
-        }
-
-        .country-path.active {
-            fill: rgba(37, 37, 37, 1);
-            stroke: var(--primary);
-            stroke-width: 3.5;
-            filter: drop-shadow(0 0 40px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 20px rgba(0, 255, 255, 0.6));
-            transform: scale(1.03);
-            transform-origin: center;
-        }
-
-        .country-label {
-            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
             pointer-events: none;
-            color: var(--primary);
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-            z-index: 10;
+            z-index: -1;
+            animation: pulse 4s ease-in-out infinite;
         }
-
-        .country-stats-label {
-            position: absolute;
-            pointer-events: none;
-            color: var(--text-secondary);
-            font-size: 0.7rem;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-            z-index: 10;
-        }
-
-        .country {
-            position: absolute;
-            background: var(--surface);
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 80px;
-            min-height: 60px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .country:hover {
-            background: var(--surface-hover);
-            border-color: var(--primary-light);
-            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        .country.active {
-            background: var(--surface-hover);
-            border-color: var(--primary);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            transform: scale(1.05);
-        }
-
-        .country.active .country-name {
-            color: var(--primary-light);
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
-
-        .country-name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .country-stats {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-align: center;
-        }
-
-        .data-points {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-        }
-
-        .data-point {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        .data-point.orange { background: var(--accent); }
-        .data-point.purple { background: #9966FF; }
-        .data-point.cyan { background: var(--primary); }
-        .data-point.red { background: #FF4444; }
-        .data-point.green { background: var(--secondary); }
-        .data-point.yellow { background: var(--warning); }
 
         @keyframes pulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        .map-legend {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 1rem;
-            background: var(--surface);
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        /* Right Panel */
-        .right-panel {
-            background: var(--surface);
-            border-left: 1px solid var(--border);
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .panel-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .section-subtitle {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        .stat-item {
-            background: var(--surface-light);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.2rem;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
-
-        .stat-percentage {
-            font-size: 0.8rem;
-            color: var(--secondary);
-            font-weight: 600;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            background: var(--surface-light);
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            height: 250px;
-            position: relative;
-        }
-
-        .chart-legend {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .chart-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
-
-        .chart-legend-square {
-            width: 8px;
-            height: 8px;
-        }
-
-        /* Progress Bars */
-        .progress-item {
-            margin-bottom: 1rem;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--surface-light);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px 20px 0 0;
-            padding: 1rem 2rem;
-            display: flex;
-            gap: 2rem;
-            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-        }
-
-        .nav-button {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-button:hover {
-            color: var(--primary);
-            background: rgba(0, 255, 255, 0.1);
-        }
-
-        .nav-button.active {
-            color: var(--primary);
-            background: rgba(0, 255, 255, 0.2);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .dashboard {
-                grid-template-columns: 250px 1fr 300px;
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.5;
             }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr auto;
-            }
-            
-            .gcc-regions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .bottom-nav {
-                padding: 0.5rem 1rem;
-                gap: 1rem;
-            }
-
-            .nav-button {
-                font-size: 0.8rem;
-                padding: 0.3rem 0.5rem;
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-left">
-            <button class="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h1 class="header-title">GUILD ANALYTICS / QATAR GCC</h1>
-        </div>
-        <div class="header-right">
-            <div class="time-info">
-                <h3>Time</h3>
-                <p id="current-time">13:44:31</p>
-            </div>
-            <div class="weather-info">
-                <h3>Temp</h3>
-                <p>2025.01.15 24°C <i class="fas fa-cloud"></i> Sunny</p>
-            </div>
-        </div>
-    </header>
+    <div class="container">
+        <h1 class="guild-title">GUILD</h1>
 
-    <!-- Dashboard -->
-    <div class="dashboard">
-        <!-- Left Panel -->
-        <div class="left-panel">
-            <div class="tabs">
-                <button class="tab active">Analytics</button>
-                <button class="tab">Reports</button>
-            </div>
-            <div class="search-container">
-                <input type="text" class="search-input" placeholder="Search GCC regions...">
-                <i class="fas fa-search search-icon"></i>
-            </div>
-        </div>
-
-        <!-- Map Container -->
-        <div class="map-container">
-            <div class="map-background"></div>
-            <div class="gcc-map">
-                <div class="gcc-map-container">
-                    <!-- SVG Map with realistic country shapes based on actual GCC geography -->
-                    <svg class="gcc-map-svg" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Saudi Arabia (Large, central - realistic shape) -->
-                        <path class="country-path" data-country="saudi" 
-                            d="M 250,150 L 280,140 L 310,135 L 340,138 L 370,145 L 395,155 L 415,165 L 435,180 L 450,195 L 460,210 L 468,225 L 475,245 L 478,265 L 480,285 L 482,310 L 483,335 L 482,360 L 478,385 L 472,410 L 465,435 L 455,460 L 442,485 L 425,510 L 405,535 L 382,555 L 355,570 L 325,582 L 295,590 L 265,593 L 235,590 L 205,582 L 180,570 L 160,555 L 145,535 L 135,510 L 128,485 L 125,460 L 125,435 L 128,410 L 135,385 L 145,360 L 155,335 L 165,310 L 175,285 L 185,260 L 195,235 L 208,210 L 222,185 L 238,165 Z"/>
-                        
-                        <!-- UAE (East coast - more detailed) -->
-                        <path class="country-path" data-country="uae"
-                            d="M 550,320 L 565,315 L 580,312 L 595,312 L 610,315 L 625,320 L 638,328 L 648,338 L 655,350 L 660,365 L 662,380 L 660,395 L 655,410 L 648,423 L 638,433 L 625,440 L 610,444 L 595,445 L 580,443 L 565,438 L 552,430 L 542,418 L 535,403 L 532,388 L 532,373 L 535,358 L 542,343 Z"/>
-                        
-                        <!-- Qatar (Peninsula - accurate shape) -->
-                        <path class="country-path" data-country="qatar"
-                            d="M 505,240 L 512,232 L 520,228 L 528,227 L 536,230 L 542,236 L 546,244 L 548,254 L 547,264 L 544,274 L 538,283 L 530,290 L 520,293 L 510,292 L 502,287 L 497,279 L 495,269 L 496,259 L 500,249 Z"/>
-                        
-                        <!-- Kuwait (North - realistic borders) -->
-                        <path class="country-path" data-country="kuwait"
-                            d="M 390,95 L 405,88 L 420,85 L 435,86 L 448,90 L 458,97 L 465,106 L 468,117 L 467,128 L 462,138 L 453,146 L 441,151 L 427,153 L 413,151 L 400,146 L 390,138 L 383,128 L 380,117 L 382,106 Z"/>
-                        
-                        <!-- Bahrain (Small island - tiny but visible) -->
-                        <path class="country-path" data-country="bahrain"
-                            d="M 488,265 L 493,262 L 498,261 L 503,262 L 507,265 L 509,270 L 508,275 L 505,280 L 500,283 L 495,284 L 490,283 L 486,280 L 484,275 L 485,270 Z"/>
-                        
-                        <!-- Oman (Southeast - complex coastline) -->
-                        <path class="country-path" data-country="oman"
-                            d="M 665,350 L 680,345 L 695,343 L 710,344 L 725,348 L 738,355 L 748,365 L 755,378 L 760,393 L 762,410 L 760,428 L 755,446 L 747,464 L 736,482 L 722,498 L 705,512 L 686,523 L 665,530 L 643,533 L 622,532 L 603,527 L 587,518 L 575,506 L 567,492 L 563,476 L 562,460 L 565,444 L 572,428 L 582,413 L 595,400 L 610,390 L 627,382 L 645,375 Z"/>
-                        
-                        <!-- Yemen (South - detailed borders) -->
-                        <path class="country-path" data-country="yemen"
-                            d="M 280,600 L 310,595 L 340,593 L 370,595 L 398,600 L 423,608 L 445,618 L 463,630 L 477,644 L 487,660 L 493,678 L 495,696 L 492,714 L 485,730 L 473,744 L 457,755 L 438,763 L 416,768 L 392,770 L 368,768 L 344,763 L 322,755 L 302,744 L 286,730 L 274,714 L 266,696 L 263,678 L 265,660 L 272,644 Z"/>
-                    </svg>
-
-                    <!-- Country Labels -->
-                    <div class="country-label" style="top: 42%; left: 25%;">
-                        <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">Saudi Arabia</div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">3,789 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="top: 48%; right: 28%;">
-                        <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">UAE</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">2,456 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="top: 32%; right: 38%;">
-                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Qatar</div>
-                        <div style="font-size: 0.7rem; color: var(--text-secondary);">1,234 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="top: 14%; left: 40%;">
-                        <div style="font-size: 0.8rem; margin-bottom: 0.25rem;">Kuwait</div>
-                        <div style="font-size: 0.7rem; color: var(--text-secondary);">987 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="top: 34%; right: 42%;">
-                        <div style="font-size: 0.7rem; margin-bottom: 0.25rem;">Bahrain</div>
-                        <div style="font-size: 0.65rem; color: var(--text-secondary);">654 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="bottom: 18%; right: 15%;">
-                        <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Oman</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">1,567 Active Users</div>
-                    </div>
-                    
-                    <div class="country-label" style="bottom: 5%; left: 35%;">
-                        <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Yemen</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">892 Active Users</div>
-                    </div>
-
-                    <!-- Data Points -->
-                    <div class="data-points" style="position: absolute; inset: 0; pointer-events: none;">
-                        <!-- Saudi Arabia points -->
-                        <div class="data-point yellow" style="top: 35%; left: 22%;"></div>
-                        <div class="data-point orange" style="top: 52%; left: 28%;"></div>
-                        <div class="data-point cyan" style="top: 45%; left: 35%;"></div>
-                        <div class="data-point green" style="top: 38%; left: 30%;"></div>
-                        
-                        <!-- UAE points -->
-                        <div class="data-point purple" style="top: 50%; right: 30%;"></div>
-                        <div class="data-point red" style="top: 54%; right: 32%;"></div>
-                        
-                        <!-- Qatar points -->
-                        <div class="data-point orange" style="top: 32%; right: 40%;"></div>
-                        <div class="data-point cyan" style="top: 35%; right: 39%;"></div>
-                        <div class="data-point green" style="top: 37%; right: 40%;"></div>
-                        
-                        <!-- Kuwait point -->
-                        <div class="data-point cyan" style="top: 15%; left: 42%;"></div>
-                        
-                        <!-- Bahrain point -->
-                        <div class="data-point green" style="top: 34%; right: 43%;"></div>
-                        
-                        <!-- Oman points -->
-                        <div class="data-point purple" style="bottom: 22%; right: 18%;"></div>
-                        <div class="data-point red" style="bottom: 28%; right: 22%;"></div>
-                        <div class="data-point yellow" style="bottom: 25%; right: 20%;"></div>
-                        
-                        <!-- Yemen points -->
-                        <div class="data-point yellow" style="bottom: 8%; left: 38%;"></div>
-                        <div class="data-point orange" style="bottom: 10%; left: 42%;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="map-legend">
-                <div class="legend-item">
-                    <div class="legend-dot orange"></div>
-                    <span>Freelancers</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot red"></div>
-                    <span>Clients</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot purple"></div>
-                    <span>Projects</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot cyan"></div>
-                    <span>Revenue</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot green"></div>
-                    <span>Growth</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot yellow"></div>
-                    <span>Premium</span>
-                </div>
-            </div>
+        <!-- From Uiverse.io by SelfMadeSystem --> 
+        <div class="loader">
+            <svg height="0" width="0" viewBox="0 0 64 64" class="absolute">
+                <defs class="s-xJBuHA073rTt" xmlns="http://www.w3.org/2000/svg">
+                    <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="b">
+                        <stop class="s-xJBuHA073rTt" stop-color="#00FFFF"></stop>
+                        <stop class="s-xJBuHA073rTt" stop-color="#00E0ED" offset="1"></stop>
+                    </linearGradient>
+                    <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="0" x2="0" y1="64" x1="0" id="c">
+                        <stop class="s-xJBuHA073rTt" stop-color="#00FFFF"></stop>
+                        <stop class="s-xJBuHA073rTt" stop-color="#00DA72" offset="1"></stop>
+                        <animateTransform repeatCount="indefinite" keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1" keyTimes="0; 0.125; 0.25; 0.375; 0.5; 0.625; 0.75; 0.875; 1" dur="8s" values="0 32 32;-270 32 32;-270 32 32;-540 32 32;-540 32 32;-810 32 32;-810 32 32;-1080 32 32;-1080 32 32" type="rotate" attributeName="gradientTransform"></animateTransform>
+                    </linearGradient>
+                    <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="d">
+                        <stop class="s-xJBuHA073rTt" stop-color="#00E0ED"></stop>
+                        <stop class="s-xJBuHA073rTt" stop-color="#00FFFF" offset="1"></stop>
+                    </linearGradient>
+                </defs>
+            </svg>
+            
+            <!-- G -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 32,4 C 16.536027,4 4,16.536027 4,32 4,47.463973 16.536027,60 32,60 47.463973,60 60,47.463973 60,32 V 28 H 32 V 36 H 50 C 48.5,44 41,50 32,50 22,50 14,42 14,32 14,22 22,14 32,14 37,14 41.5,16 45,19 L 51,13 C 46,8 39,4 32,4 Z" class="dash" pathLength="360"></path>
+            </svg>
+            
+            <!-- U -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 4,4 h 4.6230469 v 25.919922 c -0.00276,11.916203 9.8364941,21.550422 21.7500001,21.296875 11.616666,-0.240651 21.014356,-9.63894 21.253906,-21.25586 a 2.0002,2.0002 0 0 0 0,-0.04102 V 4 H 56.25 v 25.919922 c 0,14.33873 -11.581192,25.919922 -25.919922,25.919922 a 2.0002,2.0002 0 0 0 -0.0293,0 C 15.812309,56.052941 3.998433,44.409961 4,29.919922 Z" class="dash" pathLength="360"></path>
+            </svg>
+            
+            <!-- I -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 32,4 V 60 M 20,4 H 44 M 20,60 H 44" class="dash" pathLength="360"></path>
+            </svg>
+            
+            <!-- L -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 10,4 V 60 H 54" class="dash" pathLength="360"></path>
+            </svg>
+            
+            <!-- D -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,4 H 32 C 47.463973,4 60,16.536027 60,32 60,47.463973 47.463973,60 32,60 H 10 Z M 10,10 V 54" class="dash" pathLength="360"></path>
+            </svg>
+            
+            <div class="w-2"></div>
+            
+            <!-- Spinning circle -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" style="--rotation-duration:0ms; --rotation-direction:normal;" viewBox="0 0 64 64" height="64" width="64" class="inline-block">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="10" stroke="url(#c)" d="M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54" class="spin" pathLength="360"></path>
+            </svg>
         </div>
 
-        <!-- Right Panel -->
-        <div class="right-panel">
-            <!-- Statistics Section -->
-            <div class="panel-section">
-                <div class="section-title">
-                    <span>GUILD METRICS</span>
-                    <span class="section-subtitle">Live Data →</span>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number">1,234</div>
-                        <div class="stat-label">Active Users</div>
-                        <div class="stat-percentage">+12.3%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">2,456</div>
-                        <div class="stat-label">Projects</div>
-                        <div class="stat-percentage">+8.7%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">3,789</div>
-                        <div class="stat-label">Revenue</div>
-                        <div class="stat-percentage">+15.2%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">987</div>
-                        <div class="stat-label">Teams</div>
-                        <div class="stat-percentage">+5.4%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">654</div>
-                        <div class="stat-label">Clients</div>
-                        <div class="stat-percentage">+9.1%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">1,567</div>
-                        <div class="stat-label">Skills</div>
-                        <div class="stat-percentage">+7.8%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">432</div>
-                        <div class="stat-label">Premium</div>
-                        <div class="stat-percentage">+22.1%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">789</div>
-                        <div class="stat-label">Reviews</div>
-                        <div class="stat-percentage">+11.5%</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">345</div>
-                        <div class="stat-label">Success</div>
-                        <div class="stat-percentage">+6.9%</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chart Section -->
-            <div class="panel-section">
-                <div class="section-title">
-                    <span>GROWTH ANALYTICS</span>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-legend">
-                        <div class="chart-legend-item">
-                            <div class="chart-legend-square" style="background: #00FFFF;"></div>
-                            <span>Users</span>
-                        </div>
-                        <div class="chart-legend-item">
-                            <div class="chart-legend-square" style="background: #FF6B35;"></div>
-                            <span>Revenue</span>
-                        </div>
-                    </div>
-                    <canvas id="growthChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Progress Section -->
-            <div class="panel-section">
-                <div class="section-title">
-                    <span>REGIONAL PROGRESS</span>
-                </div>
-                <div class="chart-legend">
-                    <div class="chart-legend-item">
-                        <div class="chart-legend-square" style="background: #00FFFF;"></div>
-                        <span>Target</span>
-                    </div>
-                    <div class="chart-legend-item">
-                        <div class="chart-legend-square" style="background: #00FF88;"></div>
-                        <span>Current</span>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Qatar</span>
-                        <span>92%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 92%;"></div>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>UAE</span>
-                        <span>87%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 87%;"></div>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Saudi Arabia</span>
-                        <span>78%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 78%;"></div>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Kuwait</span>
-                        <span>85%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 85%;"></div>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Bahrain</span>
-                        <span>73%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 73%;"></div>
-                    </div>
-                </div>
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Oman</span>
-                        <span>69%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 69%;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <p class="subtitle">LOADING PLATFORM</p>
     </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <button class="nav-button active">Freelancers</button>
-        <button class="nav-button">Clients</button>
-        <button class="nav-button">Projects</button>
-        <button class="nav-button">Revenue</button>
-        <button class="nav-button">Growth</button>
-        <button class="nav-button">Premium</button>
-    </nav>
-
-    <script>
-        // Update time
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
-            document.getElementById('current-time').textContent = timeString;
-        }
-
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        // Chart.js Configuration
-        Chart.defaults.color = '#CCCCCC';
-        Chart.defaults.borderColor = '#333333';
-
-        // Growth Chart
-        const growthCtx = document.getElementById('growthChart').getContext('2d');
-        new Chart(growthCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Users',
-                    data: [800, 950, 1100, 1250, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800],
-                    borderColor: '#00FFFF',
-                    backgroundColor: 'rgba(0, 255, 255, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 2
-                }, {
-                    label: 'Revenue',
-                    data: [12000, 15000, 18000, 22000, 26000, 30000, 35000, 40000, 45000, 50000, 55000, 60000],
-                    borderColor: '#FF6B35',
-                    backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 2,
-                    yAxisID: 'y1'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        grid: {
-                            color: '#333333'
-                        },
-                        ticks: {
-                            color: '#888888'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        grid: {
-                            drawOnChartArea: false,
-                        },
-                        ticks: {
-                            color: '#888888',
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#888888'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Region click handlers
-        document.querySelectorAll('.region').forEach(region => {
-            region.addEventListener('click', function() {
-                const regionName = this.dataset.region;
-                console.log(`Clicked on ${regionName}`);
-                // Add visual feedback
-                this.style.boxShadow = '0 0 30px rgba(0, 255, 255, 0.5)';
-                setTimeout(() => {
-                    this.style.boxShadow = '';
-                }, 1000);
-            });
-        });
-
-        // Tab functionality
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
-        // Search functionality for SVG map
-        document.querySelector('.search-input').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            document.querySelectorAll('.country-path').forEach(path => {
-                const countryName = path.dataset.country.toLowerCase();
-                if (countryName.includes(searchTerm)) {
-                    path.style.opacity = '1';
-                    path.style.display = 'block';
-                } else {
-                    path.style.opacity = '0.2';
-                }
-            });
-            
-            // Also filter labels
-            document.querySelectorAll('.country-label').forEach((label, index) => {
-                const labelText = label.textContent.toLowerCase();
-                if (labelText.includes(searchTerm)) {
-                    label.style.opacity = '1';
-                } else {
-                    label.style.opacity = '0.2';
-                }
-            });
-        });
-
-        // Country click functionality for SVG paths
-        document.querySelectorAll('.country-path').forEach(path => {
-            path.addEventListener('click', function() {
-                // Remove active state from all countries
-                document.querySelectorAll('.country-path').forEach(p => p.classList.remove('active'));
-                
-                // Add active state to clicked country
-                this.classList.add('active');
-                
-                // Show country details
-                const countryName = this.dataset.country;
-                console.log(`Selected: ${countryName}`);
-            });
-            
-            // Add hover cursor
-            path.style.cursor = 'pointer';
-        });
-
-        // Bottom navigation functionality
-        document.querySelectorAll('.nav-button').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Add visual feedback
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1)';
-                }, 150);
-            });
-        });
-    </script>
 </body>
 </html>
