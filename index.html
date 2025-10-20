@@ -3,15 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUILD - The Future of Freelancing</title>
+    <title>GUILD - The Future of Freelancing | BlackEnergyTech</title>
+    <meta name="description" content="GUILD - The Future of Freelancing. Join the revolutionary freelancing platform. Form teams, secure payments, and build your future with BlackEnergyTech.">
+    <meta name="keywords" content="GUILD, freelancing, freelancer, platform, teams, payments, BlackEnergyTech, Qatar, Middle East">
+    <meta name="author" content="BlackEnergyTech">
+    <meta property="og:title" content="GUILD - The Future of Freelancing">
+    <meta property="og:description" content="Join GUILD, the revolutionary freelancing platform. Form teams, secure payments, and build your future.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://khalil2008k.github.io/guild-privacy-policy/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GUILD - The Future of Freelancing">
+    <meta name="twitter:description" content="Join GUILD, the revolutionary freelancing platform. Form teams, secure payments, and build your future.">
     <link rel="icon" type="image/png" href="assets/logo with app name horizantl.png">
+    <link rel="shortcut icon" type="image/png" href="assets/logo with app name horizantl.png">
     
     <style>
         :root {
             --primary: #BBFE32;
+            --primary-dark: #9FD929;
+            --primary-light: #D4FF6B;
             --background: #000000;
             --text-primary: #FFFFFF;
             --surface: #1A1A1A;
+            --text-secondary: #808080;
         }
         
         * {
@@ -25,6 +39,7 @@
             background: var(--background);
             color: var(--text-primary);
             line-height: 1.6;
+            overflow-x: hidden;
         }
         
         .nav-container {
@@ -75,6 +90,65 @@
         
         .nav-links a:hover {
             color: var(--primary);
+        }
+        
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 5rem 2rem 2rem;
+        }
+        
+        .mobile-nav.active {
+            display: block;
+        }
+        
+        .mobile-nav-links {
+            list-style: none;
+            text-align: center;
+        }
+        
+        .mobile-nav-links li {
+            margin: 1.5rem 0;
+        }
+        
+        .mobile-nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+        
+        .mobile-nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .mobile-nav-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 2rem;
+            cursor: pointer;
         }
         
         .glitch-button {
@@ -152,7 +226,7 @@
         .hero-content p {
             font-size: 1.5rem;
             margin-bottom: 2rem;
-            color: #808080;
+            color: var(--text-secondary);
         }
         
         .launching-soon {
@@ -169,7 +243,7 @@
         
         .launching-content p {
             font-size: 1.2rem;
-            color: #808080;
+            color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -263,7 +337,7 @@
         }
         
         .footer-section a {
-            color: #808080;
+            color: var(--text-secondary);
             text-decoration: none;
             transition: color 0.15s ease;
         }
@@ -275,25 +349,117 @@
         .footer-bottom {
             border-top: 1px solid #333;
             padding-top: 2rem;
-            color: #808080;
+            color: var(--text-secondary);
         }
         
+        /* Mobile Responsive Design */
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
             }
             
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
             .logo {
                 left: 1rem;
-                transform: translateY(-50%) scale(1.5);
+                transform: translateY(-50%) scale(1.2);
+            }
+            
+            .nav-container {
+                padding: 1rem;
+            }
+            
+            .hero {
+                padding: 1rem;
+                min-height: 100vh;
             }
             
             .hero-content h1 {
                 font-size: 2.5rem;
+                line-height: 1.2;
             }
             
             .hero-content p {
+                font-size: 1.1rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .launching-soon {
+                padding: 2rem 1rem;
+            }
+            
+            .launching-content h2 {
+                font-size: 1.5rem;
+            }
+            
+            .launching-content p {
+                font-size: 1rem;
+            }
+            
+            .loader {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .loader svg {
+                width: 40px;
+                height: 40px;
+                margin: 2px;
+            }
+            
+            .word-row {
+                gap: 4px;
+            }
+            
+            .footer {
+                padding: 2rem 1rem;
+                padding-top: 100px;
+            }
+            
+            .footer-logo {
+                left: 1rem;
+                top: 20px;
+                transform: scale(1.5);
+            }
+            
+            .footer-sections {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .footer-section h3 {
                 font-size: 1.2rem;
+            }
+            
+            .glitch-button {
+                padding: 10px 14px;
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            
+            .hero-content p {
+                font-size: 1rem;
+            }
+            
+            .loader svg {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .launching-content h2 {
+                font-size: 1.3rem;
+            }
+            
+            .launching-content p {
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -318,8 +484,23 @@
             <li><a href="pages/support.html">Support</a></li>
             <li><a href="pages/terms.html">Terms</a></li>
         </ul>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
         <button class="glitch-button">Download Now</button>
     </nav>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav" id="mobile-nav">
+        <button class="mobile-nav-close" id="mobile-nav-close">×</button>
+        <ul class="mobile-nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="pages/features.html">Features</a></li>
+            <li><a href="pages/about.html">About</a></li>
+            <li><a href="pages/pricing.html">Pricing</a></li>
+            <li><a href="pages/privacy.html">Privacy</a></li>
+            <li><a href="pages/support.html">Support</a></li>
+            <li><a href="pages/terms.html">Terms</a></li>
+        </ul>
+    </div>
 
     <!-- Hero Section -->
     <section id="home" class="hero">
@@ -448,6 +629,27 @@
                     loadingScreen.style.display = 'none';
                 }, 500);
             }, 4000);
+        });
+        
+        // Mobile menu functionality
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileNav = document.getElementById('mobile-nav');
+        const mobileNavClose = document.getElementById('mobile-nav-close');
+        
+        mobileMenuToggle.addEventListener('click', function() {
+            mobileNav.classList.add('active');
+        });
+        
+        mobileNavClose.addEventListener('click', function() {
+            mobileNav.classList.remove('active');
+        });
+        
+        // Close mobile menu when clicking on links
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-links a');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                mobileNav.classList.remove('active');
+            });
         });
         
         // Smooth scrolling for navigation links
