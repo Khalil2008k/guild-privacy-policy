@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About GUILD - Qatar Odd Jobs Marketplace</title>
+    <link rel="icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="shortcut icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="stylesheet" href="../styles/main.css">
+    <style>
+        /* Additional styles for about page */
+        .about-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 3rem;
+            margin: 2rem 0;
+            border-radius: 20px;
+            line-height: 1.8;
+        }
+        
+        .about-content h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin: 2rem 0 1rem 0;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        
+        .about-content h3 {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            margin: 1.5rem 0 1rem 0;
+        }
+        
+        .about-content p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .about-content ul, .about-content ol {
+            margin: 1rem 0 1rem 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .about-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .highlight-box {
+            background: var(--surface-secondary);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+        
+        .highlight-box strong {
+            color: var(--primary);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-card {
+            background: var(--surface-secondary);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+        
+        .feature-card h4 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: var(--surface-secondary);
+            border-radius: 15px;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .about-content {
+                padding: 2rem 1.5rem;
+                margin: 1rem 0;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Navigation - Ultra Advanced Glassmorphism */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border-bottom: 1px solid var(--border-glow);
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        nav.scrolled {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: var(--blur-strong);
+            -webkit-backdrop-filter: var(--blur-strong);
+            box-shadow: 
+                0 10px 40px rgba(187, 254, 50, 0.1),
+                0 0 0 1px rgba(187, 254, 50, 0.1);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .nav-container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 70px;
+        }
+
+        .logo {
+            position: fixed;
+            left: calc(2rem + 200px);
+            top: calc(50% + 10px);
+            transform: translateY(-50%) scale(2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: transform 0.15s ease;
+            z-index: 1000;
+        }
+
+        .logo:hover {
+            transform: translateY(-50%) scale(2.1);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+            align-items: center;
+            margin-left: 400px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.15s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Glitch Button */
+        .glitch-button,
+        .glitch-button::after {
+            padding: 12px 16px;
+            font-size: 14px;
+            background: linear-gradient(45deg, transparent 5%, var(--primary) 5%);
+            border: 0;
+            color: var(--background);
+            letter-spacing: 2px;
+            box-shadow: 4px 0px 0px var(--primary-dark);
+            outline: transparent;
+            position: relative;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .glitch-button::after {
+            --slice-0: inset(50% 50% 50% 50%);
+            --slice-1: inset(80% -6px 0 0);
+            --slice-2: inset(50% -6px 30% 0);
+            --slice-3: inset(10% -6px 85% 0);
+            --slice-4: inset(40% -6px 43% 0);
+            --slice-5: inset(80% -6px 5% 0);
+            content: "DOWNLOAD NOW";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 3%, var(--primary-light) 3%, var(--primary-light) 5%, var(--primary) 5%);
+            text-shadow: -2px -2px 0px var(--primary-dark), 2px 2px 0px var(--primary-light);
+            clip-path: var(--slice-0);
+        }
+
+        .glitch-button:hover::after {
+            animation: 1s glitch;
+            animation-timing-function: steps(2, end);
+        }
+
+        @keyframes glitch {
+            0% { clip-path: var(--slice-1); transform: translate(-20px, -10px); }
+            10% { clip-path: var(--slice-3); transform: translate(10px, 10px); }
+            20% { clip-path: var(--slice-1); transform: translate(-10px, 10px); }
+            30% { clip-path: var(--slice-3); transform: translate(0px, 5px); }
+            40% { clip-path: var(--slice-2); transform: translate(-5px, 0px); }
+            50% { clip-path: var(--slice-3); transform: translate(5px, 0px); }
+            60% { clip-path: var(--slice-4); transform: translate(5px, 10px); }
+            70% { clip-path: var(--slice-2); transform: translate(-10px, 10px); }
+            80% { clip-path: var(--slice-5); transform: translate(20px, -10px); }
+            90% { clip-path: var(--slice-1); transform: translate(-10px, 0px); }
+            100% { clip-path: var(--slice-1); transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <nav id="nav">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="../assets/logo with app name horizantl.png" alt="GUILD Logo" style="height: 60px; width: auto;">
+            </a>
+            <ul class="nav-links">
+                <li><a href="features.html">Features</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
+                <li><a href="support.html">Support</a></li>
+            </ul>
+            <button class="glitch-button">Download Now</button>
+        </div>
+    </nav>
+
+    <main style="padding: 150px 2rem 50px; max-width: 1000px; margin: 0 auto;">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">About GUILD</h1>
+        <p style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 3rem; text-align: center;">Qatar's Premier Odd Jobs Marketplace</p>
+        
+        <div class="about-content">
+            <div class="highlight-box">
+                <strong>Welcome to GUILD</strong><br>
+                GUILD is a revolutionary React Native marketplace app built specifically for the Qatar market, connecting job seekers with employers for odd jobs and freelance opportunities. Built with Expo, TypeScript, and NativeWind, GUILD offers full Arabic RTL support and a Qatar-themed design.
+            </div>
+
+            <h2>Our Mission</h2>
+            <p>To create a seamless, accessible, and culturally appropriate platform that connects Qatar's diverse workforce with local job opportunities, fostering economic growth and community development.</p>
+
+            <h2>What Makes GUILD Special</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🌍 Arabic RTL Support</h4>
+                    <p>Full right-to-left layout with Noto Sans Arabic fonts, ensuring a native experience for Arabic-speaking users.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>🎨 Qatar-Themed Design</h4>
+                    <p>Beautiful blue (#1E90FF) and white color scheme that reflects Qatar's national colors and cultural identity.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>🔥 Firebase Integration</h4>
+                    <p>Robust backend with Firestore and Realtime Database for secure data storage and real-time chat functionality.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>📱 Cross-Platform</h4>
+                    <p>Native iOS and Android support with Expo, ensuring consistent experience across all devices.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>♿ Accessibility First</h4>
+                    <p>High-contrast text, 48x48dp touch targets, and full screen reader support for inclusive design.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>🌐 Internationalization</h4>
+                    <p>Arabic and English localization with Islamic calendar support and Arabic number formats.</p>
+                </div>
+            </div>
+
+            <h2>Our Technology Stack</h2>
+            
+            <h3>Frontend Technologies</h3>
+            <ul>
+                <li><strong>React Native:</strong> Mobile app framework for cross-platform development</li>
+                <li><strong>Expo:</strong> Development platform and build tools</li>
+                <li><strong>TypeScript:</strong> Type safety and enhanced developer experience</li>
+                <li><strong>NativeWind:</strong> Tailwind CSS for React Native styling</li>
+            </ul>
+
+            <h3>Backend & Services</h3>
+            <ul>
+                <li><strong>Firebase:</strong> Backend services including Firestore, Realtime Database, and Authentication</li>
+                <li><strong>i18n-js:</strong> Internationalization and localization</li>
+                <li><strong>expo-localization:</strong> Date and number formatting</li>
+                <li><strong>expo-font:</strong> Custom font loading for Arabic support</li>
+            </ul>
+
+            <h2>Platform Statistics</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">10,000+</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number">5,000+</div>
+                    <div class="stat-label">Jobs Completed</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Support Available</div>
+                </div>
+            </div>
+
+            <h2>Our Commitment to Qatar</h2>
+            
+            <p>GUILD is built with deep respect for Qatar's culture, values, and regulatory environment:</p>
+            <ul>
+                <li><strong>Cultural Sensitivity:</strong> Design and features that respect local customs and traditions</li>
+                <li><strong>Regulatory Compliance:</strong> Full compliance with Qatar's labor and data protection laws</li>
+                <li><strong>Local Support:</strong> Customer support available in both Arabic and English</li>
+                <li><strong>Economic Impact:</strong> Supporting local businesses and freelancers in Qatar's growing economy</li>
+            </ul>
+
+            <h2>Accessibility Features</h2>
+            
+            <p>GUILD is designed to be accessible to all users:</p>
+            <ul>
+                <li><strong>High Contrast Text:</strong> Dark text on light backgrounds for better readability</li>
+                <li><strong>48x48dp Touch Targets:</strong> Minimum touch target size for easy interaction</li>
+                <li><strong>Screen Reader Support:</strong> Proper accessibility labels and descriptions</li>
+                <li><strong>Keyboard Navigation:</strong> Full keyboard support for all features</li>
+                <li><strong>Voice Commands:</strong> Voice control support for hands-free operation</li>
+            </ul>
+
+            <h2>Future Roadmap</h2>
+            
+            <p>We're constantly working to improve GUILD with new features:</p>
+            <ul>
+                <li><strong>Push Notifications:</strong> Real-time job alerts and updates</li>
+                <li><strong>Payment Integration:</strong> Secure in-app payment processing</li>
+                <li><strong>Advanced Search:</strong> AI-powered job matching and filtering</li>
+                <li><strong>User Reviews:</strong> Comprehensive rating and review system</li>
+                <li><strong>Offline Support:</strong> Work offline and sync when connected</li>
+                <li><strong>Dark Mode:</strong> Alternative theme for better user experience</li>
+                <li><strong>AR Job Preview:</strong> Augmented reality job visualization</li>
+            </ul>
+
+            <h2>Our Team</h2>
+            
+            <p>GUILD is developed by a passionate team of developers who understand the unique needs of the Qatar market. Our team combines international expertise with local knowledge to create a platform that truly serves the community.</p>
+
+            <h2>Contact Information</h2>
+            
+            <p>Get in touch with us:</p>
+            <ul>
+                <li><strong>Email:</strong> info@guild.qa</li>
+                <li><strong>Support:</strong> support@guild.qa</li>
+                <li><strong>Business:</strong> business@guild.qa</li>
+                <li><strong>Address:</strong> GUILD Headquarters, Qatar</li>
+            </ul>
+
+            <div class="highlight-box">
+                <strong>Built with ❤️ for the Qatar Community</strong><br>
+                GUILD is more than just an app - it's a platform that connects people, creates opportunities, and builds stronger communities across Qatar.
+            </div>
+
+            <p style="margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                © 2025 GUILD. All rights reserved. | Made in Qatar, for Qatar.
+            </p>
+        </div>
+    </main>
+</body>
+</html>
