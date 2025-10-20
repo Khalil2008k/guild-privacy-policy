@@ -44,7 +44,7 @@ export default function UserWalletScreen() {
   const [wallet, setWallet] = useState<RealWallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     loadWalletData();

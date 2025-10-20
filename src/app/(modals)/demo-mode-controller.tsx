@@ -76,7 +76,7 @@ export default function DemoModeController() {
   };
 
   const [settings, setSettings] = useState<DemoModeSettings>({
-    isDemoMode: true,
+    isDemoMode: false,
     betaCoinsPerUser: 300,
     pspApiEnabled: false,
     pspApiProvider: '',

@@ -16,13 +16,11 @@
             --primary-dark: #9FD929;
             --primary-light: #D4FF6B;
             --background: #000000;
-            --surface: #1A1A1A;
             --text-primary: #FFFFFF;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--background);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -31,36 +29,76 @@
             overflow: hidden;
         }
 
-        .container {
+        /* From Uiverse.io by SelfMadeSystem - Rain Background */
+        .container-bg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            backdrop-filter: blur(1em) brightness(6);
+            background-image: radial-gradient(
+                circle at 50% 50%,
+                #0000 0,
+                #0000 2px,
+                hsl(0 0 4%) 2px
+            );
+            background-size: 8px 8px;
+        }
+
+        .container-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            --c: var(--primary);
+            background-color: #000;
+            background-image: radial-gradient(3px 80px at 0px 235px, var(--c), #0000),
+                radial-gradient(3px 80px at 300px 235px, var(--c), #0000),
+                radial-gradient(3px 80px at 0px 150px, var(--c), #0000),
+                radial-gradient(3px 80px at 300px 150px, var(--c), #0000),
+                radial-gradient(3px 80px at 0px 299px, var(--c), #0000),
+                radial-gradient(3px 80px at 300px 299px, var(--c), #0000);
+            background-size:
+                300px 235px,
+                300px 235px,
+                300px 150px,
+                300px 150px,
+                300px 299px,
+                300px 299px;
+            animation: rain 150s linear infinite;
+        }
+
+        @keyframes rain {
+            0% {
+                background-position:
+                    0px 220px, 3px 220px,
+                    50px 16px, 53px 16px,
+                    175px 235px, 178px 235px;
+            }
+            to {
+                background-position:
+                    0px 6800px, 3px 6800px,
+                    50px 5416px, 53px 5416px,
+                    175px 13391px, 178px 13391px;
+            }
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
             text-align: center;
         }
 
-        .shield-container {
+        .logo-container {
             margin-bottom: 3rem;
-            animation: shieldFloat 3s ease-in-out infinite;
         }
 
-        .shield-icon {
+        .logo-img {
+            width: 140px;
+            height: auto;
             filter: drop-shadow(0 0 20px rgba(187, 254, 50, 0.6));
-            animation: shieldGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes shieldFloat {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        @keyframes shieldGlow {
-            0%, 100% {
-                filter: drop-shadow(0 0 20px rgba(187, 254, 50, 0.6));
-            }
-            50% {
-                filter: drop-shadow(0 0 30px rgba(187, 254, 50, 0.9)) drop-shadow(0 0 50px rgba(187, 254, 50, 0.5));
-            }
         }
 
         /* From Uiverse.io by SelfMadeSystem */
@@ -77,22 +115,12 @@
             margin: 0.25em 0;
             justify-content: center;
             align-items: center;
-        }
-
-        .w-2 {
-            width: 0.5em;
+            gap: 1rem;
         }
 
         .dash {
             animation: dashArray 2s ease-in-out infinite,
                 dashOffset 2s linear infinite;
-        }
-
-        .spin {
-            animation: spinDashArray 2s ease-in-out infinite,
-                spin 8s ease-in-out infinite,
-                dashOffset 2s linear infinite;
-            transform-origin: center;
         }
 
         @keyframes dashArray {
@@ -107,18 +135,6 @@
             }
         }
 
-        @keyframes spinDashArray {
-            0% {
-                stroke-dasharray: 270 90;
-            }
-            50% {
-                stroke-dasharray: 0 360;
-            }
-            100% {
-                stroke-dasharray: 270 90;
-            }
-        }
-
         @keyframes dashOffset {
             0% {
                 stroke-dashoffset: 365;
@@ -127,95 +143,25 @@
                 stroke-dashoffset: 5;
             }
         }
-
-        @keyframes spin {
-            0% {
-                rotate: 0deg;
-            }
-            12.5%, 25% {
-                rotate: 270deg;
-            }
-            37.5%, 50% {
-                rotate: 540deg;
-            }
-            62.5%, 75% {
-                rotate: 810deg;
-            }
-            87.5%, 100% {
-                rotate: 1080deg;
-            }
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: rgba(187, 254, 50, 0.7);
-            letter-spacing: 0.3rem;
-            margin-top: 2rem;
-        }
-
-        /* Background grid */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                repeating-linear-gradient(0deg, rgba(187, 254, 50, 0.03) 0px, transparent 1px, transparent 50px, rgba(187, 254, 50, 0.03) 51px),
-                repeating-linear-gradient(90deg, rgba(187, 254, 50, 0.03) 0px, transparent 1px, transparent 50px, rgba(187, 254, 50, 0.03) 51px);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        /* Radial glow */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(187, 254, 50, 0.1) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: -1;
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 0.5;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                opacity: 0.8;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Shield Icon -->
-        <div class="shield-container">
-            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#BBFE32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shield-icon">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
+    <!-- Rain Background -->
+    <div class="container-bg"></div>
+
+    <div class="content">
+        <!-- GUILD Logo -->
+        <div class="logo-container">
+            <img src="../../GUILD platform/assets/logo.png" alt="GUILD Logo" class="logo-img">
         </div>
 
-        <!-- From Uiverse.io by SelfMadeSystem --> 
+        <!-- GUILD Loader with space between G and U -->
         <div class="loader">
             <svg height="0" width="0" viewBox="0 0 64 64" class="absolute">
                 <defs class="s-xJBuHA073rTt" xmlns="http://www.w3.org/2000/svg">
                     <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="b">
                         <stop class="s-xJBuHA073rTt" stop-color="#BBFE32"></stop>
                         <stop class="s-xJBuHA073rTt" stop-color="#9FD929" offset="1"></stop>
-                    </linearGradient>
-                    <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="0" x2="0" y1="64" x1="0" id="c">
-                        <stop class="s-xJBuHA073rTt" stop-color="#BBFE32"></stop>
-                        <stop class="s-xJBuHA073rTt" stop-color="#D4FF6B" offset="1"></stop>
-                        <animateTransform repeatCount="indefinite" keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1" keyTimes="0; 0.125; 0.25; 0.375; 0.5; 0.625; 0.75; 0.875; 1" dur="8s" values="0 32 32;-270 32 32;-270 32 32;-540 32 32;-540 32 32;-810 32 32;-810 32 32;-1080 32 32;-1080 32 32" type="rotate" attributeName="gradientTransform"></animateTransform>
                     </linearGradient>
                     <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="d">
                         <stop class="s-xJBuHA073rTt" stop-color="#9FD929"></stop>
@@ -249,8 +195,6 @@
                 <path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,4 H 32 C 47.463973,4 60,16.536027 60,32 60,47.463973 47.463973,60 32,60 H 10 Z M 10,10 V 54" class="dash" pathLength="360"></path>
             </svg>
         </div>
-
-        <p class="subtitle">LOADING PLATFORM</p>
     </div>
 </body>
 </html>

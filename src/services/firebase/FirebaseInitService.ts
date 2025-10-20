@@ -145,7 +145,12 @@ class FirebaseInitService {
       } else {
         logger.info(`[FirebaseInit] User profile already exists for ${userId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle offline mode gracefully
+      if (error?.code === 'unavailable' || error?.message?.includes('offline')) {
+        logger.warn(`[FirebaseInit] Firestore offline - skipping user profile creation for ${userId}`);
+        return;
+      }
       logger.error('[FirebaseInit] Error ensuring user profile:', error);
       throw error;
     }
@@ -217,7 +222,12 @@ class FirebaseInitService {
       });
 
       logger.info(`[FirebaseInit] ✅ User initialization complete for ${userId}`);
-    } catch (error) {
+    } catch (error: any) {
+      // Handle offline mode gracefully
+      if (error?.code === 'unavailable' || error?.message?.includes('offline')) {
+        logger.warn(`[FirebaseInit] Firestore offline - skipping user initialization for ${userId}`);
+        return;
+      }
       logger.error('[FirebaseInit] Error initializing user:', error);
       throw error;
     }

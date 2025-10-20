@@ -14,12 +14,7 @@ import { authTokenService } from '../services/authTokenService';
 // - iOS Simulator: use 'localhost'
 // - Android Emulator: use '10.0.2.2'
 const BACKEND_CONFIG = {
-  baseURL: __DEV__ 
-    ? 'https://guild-yf7q.onrender.com/api'  // TEMP: Using production backend
-    // ? 'http://192.168.1.34:5000/api'  // Physical device on same network
-    // ? 'http://localhost:5000/api'     // iOS Simulator
-    // ? 'http://10.0.2.2:5000/api'      // Android Emulator
-    : 'https://guild-yf7q.onrender.com/api',  // Production backend on Render
+  baseURL: 'https://guild-yf7q.onrender.com/api',  // Production backend on Render
   timeout: 10000,
   retries: 3,
 };
@@ -63,6 +58,14 @@ export class BackendAPI {
 
       if (token) {
         headers.Authorization = `Bearer ${token}`;
+        console.log('🔐 BackendAPI: Sending request with token', {
+          endpoint,
+          tokenLength: token.length,
+          tokenPrefix: token.substring(0, 20) + '...',
+          hasBearer: headers.Authorization?.startsWith('Bearer ')
+        });
+      } else {
+        console.warn('🔐 BackendAPI: No token available for request', { endpoint });
       }
 
       const response = await fetch(`${this.baseURL}${endpoint}`, {

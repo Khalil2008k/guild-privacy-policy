@@ -65,7 +65,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth as any, async (user) => {
       console.log('🔥 AUTH STATE CHANGED:', { 
         hasUser: !!user, 
         userId: user?.uid, 
@@ -85,7 +85,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
             
             if (hoursSinceActivity >= 72) {
               console.log('🔒 AUTO-LOGOUT: 72 hours of inactivity detected');
-              await firebaseSignOut(auth);
+              await firebaseSignOut(auth as any);
               await AsyncStorage.removeItem('lastActivityTime');
               setUser(null);
               setLoading(false);
@@ -237,7 +237,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       return;
     }
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth as any, email, password);
     } catch (error) {
       throw error;
     }
@@ -254,7 +254,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       
       // Firebase Auth automatically handles email uniqueness
       // If email exists, createUserWithEmailAndPassword will throw 'auth/email-already-in-use'
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth as any, email, password);
       console.log('🔥 SIGNUP: User created successfully', { uid: result.user.uid });
       
       // Update display name if provided
@@ -357,7 +357,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       }
       
       // Sign out from Firebase
-      await firebaseSignOut(auth);
+      await firebaseSignOut(auth as any);
       console.log('🔥 AUTH: Firebase signOut completed');
       
       // Force navigation to auth screen
@@ -450,11 +450,11 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
         console.log('📱 Web environment detected');
         
         try {
-          const provider = new PhoneAuthProvider(auth);
+          const provider = new PhoneAuthProvider(auth as any);
           const { RecaptchaVerifier } = await import('firebase/auth');
           
           // Create reCAPTCHA verifier
-          const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          const recaptchaVerifier = new RecaptchaVerifier(auth as any, 'recaptcha-container', {
             size: 'invisible',
             callback: () => {
               console.log('📱 reCAPTCHA solved');
@@ -583,7 +583,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       
       // Real Firebase verification
       const credential = PhoneAuthProvider.credential(verificationId, code);
-      await signInWithCredential(auth, credential);
+      await signInWithCredential(auth as any, credential);
       
       console.log('📱 REAL VERIFICATION: Phone verification successful!');
     } catch (error) {

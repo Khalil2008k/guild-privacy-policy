@@ -29,26 +29,29 @@ const storage = getStorage(app);
 // Initialize auth with platform-specific persistence
 let auth;
 
-if (Platform.OS === 'web') {
-  // Web initialization
-  try {
+try {
+  if (Platform.OS === 'web') {
+    // Web initialization
     auth = getAuth(app);
-  } catch (error) {
-    auth = null;
-  }
-} else {
-  // React Native initialization with proper AsyncStorage persistence
-  try {
-    const { getReactNativePersistence } = require('firebase/auth');
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
-    });
-  } catch (error) {
+  } else {
+    // React Native initialization with proper AsyncStorage persistence
     try {
+      const { getReactNativePersistence } = require('firebase/auth');
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage)
+      });
+    } catch (error) {
+      // Fallback to default auth
       auth = getAuth(app);
-    } catch (fallbackError) {
-      auth = getAuth();
     }
+  }
+} catch (error) {
+  console.warn('⚠️ Firebase Auth initialization failed, using fallback:', error);
+  try {
+    auth = getAuth();
+  } catch (fallbackError) {
+    console.error('❌ Firebase Auth fallback failed:', fallbackError);
+    auth = null;
   }
 }
 

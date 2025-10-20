@@ -16,6 +16,11 @@ class AuthTokenService {
    */
   async getToken(): Promise<string | null> {
     try {
+      if (!auth) {
+        console.log('🔐 AuthToken: Firebase auth not available');
+        return null;
+      }
+
       const currentUser = auth.currentUser;
       
       if (!currentUser) {
@@ -28,11 +33,22 @@ class AuthTokenService {
       if (cachedToken && await this.isTokenValid()) {
         console.log('🔐 AuthToken: Using cached token');
         return cachedToken;
+      } else if (cachedToken) {
+        console.log('🔐 AuthToken: Cached token invalid, clearing cache');
+        await this.clearToken();
       }
 
       // Get fresh token from Firebase
       console.log('🔐 AuthToken: Fetching fresh token from Firebase');
       const token = await currentUser.getIdToken(true); // Force refresh
+      
+      // Debug token format
+      console.log('🔐 AuthToken: Token details', {
+        length: token.length,
+        prefix: token.substring(0, 20) + '...',
+        hasDots: token.includes('.'),
+        parts: token.split('.').length
+      });
       
       // Cache token with expiry (tokens typically expire in 1 hour)
       await this.cacheToken(token);
@@ -49,6 +65,11 @@ class AuthTokenService {
    */
   async refreshToken(): Promise<string | null> {
     try {
+      if (!auth) {
+        console.log('🔐 AuthToken: Firebase auth not available');
+        return null;
+      }
+
       const currentUser = auth.currentUser;
       
       if (!currentUser) {

@@ -423,12 +423,7 @@ Check console for full details.
           </View>
         </View>
 
-        {/* Beta Tester Badge */}
-        <View style={styles.betaTesterContainer}>
-          <Text style={styles.betaTesterText}>
-            {isRTL ? 'مختبر بيتا' : 'Beta Tester'}
-          </Text>
-        </View>
+        {/* Beta Tester Badge - REMOVED FOR PRODUCTION */}
 
         <View style={[styles.headerBottom, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity 
@@ -510,85 +505,10 @@ Check console for full details.
             <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('guildMap')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { 
-              backgroundColor: theme.primary, 
-              borderColor: theme.primary, 
-              borderWidth: 1,
-              shadowColor: theme.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
-            }]}
-            onPress={handleTestPayment}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="card" size={20} color="#000000" />
-            <Text style={[styles.actionButtonText, { color: '#000000', fontWeight: '700' }]}>
-              {isRTL ? 'اختبار الدفع' : 'Test Payment'}
-            </Text>
-          </TouchableOpacity>
+          {/* Test Payment Button - REMOVED FOR PRODUCTION */}
         </View>
 
-        {/* Admin Portal Test Buttons */}
-        <View style={[styles.testSection, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}>
-          <Text style={[styles.testSectionTitle, { color: theme.textPrimary }]}>
-            🧪 Admin Portal Connection Tests
-          </Text>
-          <Text style={[styles.testSectionSubtitle, { color: theme.textSecondary }]}>
-            {isRTL 
-              ? 'اختبر التحديثات الفورية من لوحة الإدارة' 
-              : 'Test real-time updates from admin portal'
-            }
-          </Text>
-          
-          <View style={[styles.testButtonsContainer, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
-            <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: '#FFB020', borderColor: '#FFB020' }]}
-              onPress={handleTestNotification}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="notifications" size={16} color="#000000" />
-              <Text style={[styles.testButtonText, { color: '#000000' }]}>
-                {isRTL ? 'الإعلانات' : 'Announcements'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: '#4A90E2', borderColor: '#4A90E2' }]}
-              onPress={handleTestRules}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="document-text" size={16} color="#FFFFFF" />
-              <Text style={[styles.testButtonText, { color: '#FFFFFF' }]}>
-                {isRTL ? 'قواعد المنصة' : 'Platform Rules'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' }]}
-              onPress={handleTestContract}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="document" size={16} color="#FFFFFF" />
-              <Text style={[styles.testButtonText, { color: '#FFFFFF' }]}>
-                {isRTL ? 'إنشاء عقد' : 'Generate Contract'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: '#10B981', borderColor: '#10B981' }]}
-              onPress={handleTestTerms}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="list" size={16} color="#FFFFFF" />
-              <Text style={[styles.testButtonText, { color: '#FFFFFF' }]}>
-                {isRTL ? 'كل الشروط' : 'All Terms'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Admin Portal Test Buttons - REMOVED FOR PRODUCTION */}
 
 
         {/* Available Jobs */}

@@ -33,7 +33,7 @@ interface RealPaymentProviderProps {
 export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ children }) => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const { user } = useAuth();
 
   // Load wallet when user changes and is authenticated
@@ -74,7 +74,7 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       setIsDemoMode(demoMode);
     } catch (error) {
       console.error('Error checking demo mode:', error);
-      setIsDemoMode(true); // Default to demo mode
+      setIsDemoMode(false); // Default to production mode
     }
   };
 

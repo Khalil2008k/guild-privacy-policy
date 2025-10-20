@@ -6,6 +6,7 @@
 import { initializeAppCheck, ReCaptchaV3Provider, getToken } from 'firebase/app-check';
 import { app } from '../config/firebase';
 import { config, isProduction, isFeatureEnabled } from '../config/environment';
+import { Platform } from 'react-native';
 
 class AppCheckService {
   private isInitialized = false;
@@ -16,6 +17,12 @@ class AppCheckService {
    */
   async initialize(): Promise<void> {
     try {
+      // Skip App Check on React Native (not supported)
+      if (Platform.OS !== 'web') {
+        console.log('🛡️ App Check skipped on React Native platform');
+        return;
+      }
+
       // Only initialize if App Check is enabled
       if (!isFeatureEnabled('enableAppCheck')) {
         console.log('🛡️ App Check disabled via feature flag');
@@ -27,7 +34,7 @@ class AppCheckService {
         return;
       }
 
-      // App Check configuration
+      // App Check configuration (web only)
       const appCheckConfig = {
         // In production, use reCAPTCHA v3
         // In development, use debug token

@@ -93,7 +93,7 @@ class RealPaymentService {
         transactions: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        isDemoMode: true
+        isDemoMode: false
       };
     }
   }
@@ -120,7 +120,7 @@ class RealPaymentService {
         ],
         createdAt: new Date(),
         updatedAt: new Date(),
-        isDemoMode: true
+        isDemoMode: false
       };
 
       await this.saveWallet(wallet);
@@ -268,10 +268,10 @@ class RealPaymentService {
         return response.data.demoMode;
       }
       
-      return true; // Default to demo mode
+      return false; // Default to production mode
     } catch (error) {
       console.error('Error checking demo mode:', error);
-      return true;
+      return false;
     }
   }
 
