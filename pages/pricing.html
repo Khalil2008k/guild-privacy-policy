@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - GUILD Qatar Odd Jobs Marketplace</title>
+    <link rel="icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="shortcut icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="stylesheet" href="../styles/main.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <style>
+        :root {
+            /* GUILD Brand Colors */
+            --primary: #BBFE32;
+            --primary-dark: #9FD929;
+            --primary-light: #D4FF6B;
+            --primary-glow: rgba(187, 254, 50, 0.3);
+            
+            --background: #000000;
+            --background-gradient: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #1a1a1a 100%);
+            --surface: #1A1A1A;
+            --surface-secondary: #0F0F0F;
+            --surface-hover: #252525;
+            --surface-glass: rgba(26, 26, 26, 0.8);
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #808080;
+            --text-muted: #4A4A4A;
+            --text-accent: #BBFE32;
+            
+            --border: #333333;
+            --border-glow: rgba(187, 254, 50, 0.2);
+            --shadow: rgba(187, 254, 50, 0.2);
+            --shadow-strong: rgba(187, 254, 50, 0.4);
+            --shadow-glow: 0 0 30px rgba(187, 254, 50, 0.3);
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            
+            /* Coin Colors */
+            --bronze: #CD7F32;
+            --silver: #C0C0C0;
+            --gold: #FFD700;
+            --diamond: #B9F2FF;
+            
+            /* Advanced Effects */
+            --blur-glass: blur(20px) saturate(180%);
+            --blur-strong: blur(40px) saturate(200%);
+            --gradient-primary: linear-gradient(135deg, #BBFE32 0%, #9FD929 100%);
+            --gradient-text: linear-gradient(135deg, #FFFFFF 0%, #BBFE32 100%);
+            --gradient-border: linear-gradient(135deg, #BBFE32, #9FD929, #D4FF6B);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Navigation - Ultra Advanced Glassmorphism */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border-bottom: 1px solid var(--border-glow);
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        nav.scrolled {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: var(--blur-strong);
+            -webkit-backdrop-filter: var(--blur-strong);
+            box-shadow: 
+                0 10px 40px rgba(187, 254, 50, 0.1),
+                0 0 0 1px rgba(187, 254, 50, 0.1);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .nav-container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 70px;
+        }
+
+        .logo {
+            position: fixed;
+            left: calc(2rem + 200px);
+            top: calc(50% + 10px);
+            transform: translateY(-50%) scale(2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: transform 0.15s ease;
+            z-index: 1000;
+        }
+
+        .logo:hover {
+            transform: translateY(-50%) scale(2.1);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+            align-items: center;
+            margin-left: 400px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.15s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        /* Glitch Button */
+        .glitch-button,
+        .glitch-button::after {
+            padding: 12px 16px;
+            font-size: 14px;
+            background: linear-gradient(45deg, transparent 5%, var(--primary) 5%);
+            border: 0;
+            color: var(--background);
+            letter-spacing: 2px;
+            box-shadow: 4px 0px 0px var(--primary-dark);
+            outline: transparent;
+            position: relative;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .glitch-button::after {
+            --slice-0: inset(50% 50% 50% 50%);
+            --slice-1: inset(80% -6px 0 0);
+            --slice-2: inset(50% -6px 30% 0);
+            --slice-3: inset(10% -6px 85% 0);
+            --slice-4: inset(40% -6px 43% 0);
+            --slice-5: inset(80% -6px 5% 0);
+            content: "DOWNLOAD NOW";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 3%, var(--primary-light) 3%, var(--primary-light) 5%, var(--primary) 5%);
+            text-shadow: -2px -2px 0px var(--primary-dark), 2px 2px 0px var(--primary-light);
+            clip-path: var(--slice-0);
+        }
+
+        .glitch-button:hover::after {
+            animation: 1s glitch;
+            animation-timing-function: steps(2, end);
+        }
+
+        @keyframes glitch {
+            0% { clip-path: var(--slice-1); transform: translate(-20px, -10px); }
+            10% { clip-path: var(--slice-3); transform: translate(10px, 10px); }
+            20% { clip-path: var(--slice-1); transform: translate(-10px, 10px); }
+            30% { clip-path: var(--slice-3); transform: translate(0px, 5px); }
+            40% { clip-path: var(--slice-2); transform: translate(-5px, 0px); }
+            50% { clip-path: var(--slice-3); transform: translate(5px, 0px); }
+            60% { clip-path: var(--slice-4); transform: translate(5px, 10px); }
+            70% { clip-path: var(--slice-2); transform: translate(-10px, 10px); }
+            80% { clip-path: var(--slice-5); transform: translate(20px, -10px); }
+            90% { clip-path: var(--slice-1); transform: translate(-10px, 0px); }
+            100% { clip-path: var(--slice-1); transform: translate(0); }
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 150px 2rem 80px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, rgba(187, 254, 50, 0.1) 0%, transparent 70%);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 5rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-badge {
+            display: inline-block;
+            background: rgba(187, 254, 50, 0.1);
+            border: 1px solid rgba(187, 254, 50, 0.2);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Guild Creation Section */
+        .guild-creation {
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .guild-creation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-border);
+            opacity: 0.8;
+        }
+
+        .guild-creation h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .guild-creation p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .guild-pricing {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-option {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .pricing-option h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .pricing-option .price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-option .description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Package System Section */
+        .coin-packages {
+            margin-bottom: 5rem;
+        }
+
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .package-card {
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .package-card.featured {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary);
+            color: var(--background);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .coin-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(187, 254, 50, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .coin-card:hover::before {
+            opacity: 1;
+        }
+
+        .package-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 15px 40px var(--shadow-glow);
+        }
+
+        .package-card.featured:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .package-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .package-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .package-cost {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .package-description {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .package-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            position: relative;
+            z-index: 1;
+        }
+
+        .package-icon.bronze {
+            background: linear-gradient(135deg, var(--bronze), #B8860B);
+            color: #FFF;
+        }
+
+        .package-icon.silver {
+            background: linear-gradient(135deg, var(--silver), #A8A8A8);
+            color: #000;
+        }
+
+        .package-icon.gold {
+            background: linear-gradient(135deg, var(--gold), #DAA520);
+            color: #000;
+        }
+
+        .package-icon.diamond {
+            background: linear-gradient(135deg, var(--diamond), #87CEEB);
+            color: #000;
+        }
+
+        .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.8;
+        }
+
+        .coin-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .coin-card .value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .coin-card .cost {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .coin-card .profit {
+            font-size: 1rem;
+            color: var(--success);
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .coin-benefits {
+            list-style: none;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+
+        .coin-benefits li {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .coin-benefits li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Exchange Rate Section */
+        .exchange-rate {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 5rem;
+            border: 1px solid var(--border);
+        }
+
+        .exchange-rate h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .exchange-table {
+            overflow-x: auto;
+        }
+
+        .exchange-table table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .exchange-table th,
+        .exchange-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .exchange-table th {
+            background: var(--surface-secondary);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .exchange-table td {
+            color: var(--text-secondary);
+        }
+
+        .exchange-table .coin-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .exchange-table .profit {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* Benefits Section */
+        .benefits-section {
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .benefits-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-border);
+            opacity: 0.8;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .benefit-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .benefit-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+            color: var(--background);
+        }
+
+        .benefit-item h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .benefit-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 2rem;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, rgba(187, 254, 50, 0.15) 0%, transparent 70%);
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta-section h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 2rem;
+        }
+
+        .cta-section p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--background);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 20px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--shadow-strong);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: var(--background);
+            transform: translateY(-3px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface-secondary);
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .footer-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-bottom p {
+            color: var(--text-secondary);
+        }
+
+        /* Footer Logo - Stick to footer */
+        footer {
+            position: relative; /* Positioning context */
+            padding-top: 120px; /* Space for the logo */
+        }
+
+        .footer-logo {
+            position: absolute;
+            top: 40px;
+            left: calc(2rem + 250px);
+            transform: scale(2);
+            z-index: 1000;
+            transition: transform 0.15s ease;
+        }
+
+        .footer-logo img {
+            height: 60px;
+            width: auto;
+            display: block;
+        }
+
+        .footer-logo:hover {
+            transform: scale(2.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 120px 1.5rem 60px;
+            }
+
+            .coin-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .guild-pricing {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pricing-option {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+
+            .exchange-table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="../assets/logo with app name horizantl.png" alt="GUILD Logo" style="height: 60px; width: auto;">
+            </a>
+            <ul class="nav-links">
+                <li><a href="features.html">Features</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="pricing.html" class="active">Pricing</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
+                <li><a href="support.html">Support</a></li>
+            </ul>
+            <button class="glitch-button">Download Now</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>GUILD Coins</h1>
+        <p>Flexible digital currency for seamless transactions and premium features</p>
+    </section>
+
+    <!-- Guild Creation Section -->
+    <section class="pricing-section">
+        <div class="section-header">
+            <span class="section-badge">Guild Creation</span>
+            <h2>Start Your Guild</h2>
+            <p>Create your own guild and unlock premium features</p>
+        </div>
+
+        <div class="guild-creation" data-aos="fade-up">
+            <h3>Guild Creation Cost</h3>
+            <p>Start your own guild and access exclusive features, team management tools, and premium benefits. Choose your preferred payment method:</p>
+            
+            <div class="guild-pricing">
+                <div class="pricing-option">
+                    <h4>Qatari Riyal</h4>
+                    <div class="price">2,500 QR</div>
+                    <div class="description">One-time payment</div>
+                </div>
+                <div class="pricing-option">
+                    <h4>Diamond Coins</h4>
+                    <div class="price">5 Coins</div>
+                    <div class="description">Premium currency</div>
+                </div>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="users"></i>
+                    </div>
+                    <h4>Team Management</h4>
+                    <p>Manage up to 50 team members</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="crown"></i>
+                    </div>
+                    <h4>Premium Features</h4>
+                    <p>Access to exclusive guild features</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="trending-up"></i>
+                    </div>
+                    <h4>Priority Support</h4>
+                    <p>24/7 priority customer support</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="shield"></i>
+                    </div>
+                    <h4>Enhanced Security</h4>
+                    <p>Advanced security features</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coin Packages Section -->
+    <section class="pricing-section">
+        <div class="section-header">
+            <span class="section-badge">Coin Packages</span>
+            <h2>Buy Coins When You Need Them</h2>
+            <p>No subscriptions, no commitments - just flexible digital currency</p>
+        </div>
+
+        <div class="coin-packages">
+            <div class="package-grid">
+                <div class="package-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="package-icon bronze">
+                        <div class="circle"></div>
+                    </div>
+                    <h3>Bronze Package</h3>
+                    <div class="package-value">20 QR Value</div>
+                    <div class="package-cost">22 QR Total</div>
+                    <p class="package-description">Perfect for small tasks and quick jobs</p>
+                    <button class="btn-primary">Buy Now</button>
+                </div>
+
+                <div class="package-card featured" data-aos="fade-up" data-aos-delay="200">
+                    <div class="package-badge">Most Popular</div>
+                    <div class="package-icon silver">
+                        <div class="circle"></div>
+                    </div>
+                    <h3>Silver Package</h3>
+                    <div class="package-value">50 QR Value</div>
+                    <div class="package-cost">55 QR Total</div>
+                    <p class="package-description">Great for medium projects and regular work</p>
+                    <button class="btn-primary">Buy Now</button>
+                </div>
+
+                <div class="package-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="package-icon gold">
+                        <div class="circle"></div>
+                    </div>
+                    <h3>Gold Package</h3>
+                    <div class="package-value">100 QR Value</div>
+                    <div class="package-cost">110 QR Total</div>
+                    <p class="package-description">Ideal for large projects and premium services</p>
+                    <button class="btn-primary">Buy Now</button>
+                </div>
+
+                <div class="package-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="package-icon diamond">
+                        <div class="circle"></div>
+                    </div>
+                    <h3>Diamond Package</h3>
+                    <div class="package-value">500 QR Value</div>
+                    <div class="package-cost">550 QR Total</div>
+                    <p class="package-description">For enterprise projects and guild creation</p>
+                    <button class="btn-primary">Buy Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Guild Creation Section -->
+    <section class="pricing-section">
+        <div class="section-header">
+            <span class="section-badge">Guild Creation</span>
+            <h2>Create Your Guild</h2>
+            <p>Start your own guild with Diamond coins or direct payment</p>
+        </div>
+
+        <div class="guild-creation" data-aos="fade-up">
+            <div class="guild-options">
+                <div class="guild-option">
+                    <h4>Direct Payment</h4>
+                    <div class="guild-price">2,750 QR</div>
+                    <p>One-time payment (10% fee)</p>
+                </div>
+                <div class="guild-option">
+                    <h4>Diamond Coins</h4>
+                    <div class="guild-price">5 Coins</div>
+                    <p>Use your Diamond coins</p>
+                </div>
+            </div>
+            
+            <div class="guild-benefits">
+                <h4>What you get:</h4>
+                <ul>
+                    <li>Create and manage your own guild</li>
+                    <li>Invite team members and collaborators</li>
+                    <li>Access to guild-specific features</li>
+                    <li>Advanced project management tools</li>
+                    <li>Priority customer support</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="pricing-section">
+        <div class="benefits-section" data-aos="fade-up">
+            <h3 style="text-align: center; font-size: 2rem; font-weight: 700; margin-bottom: 2rem; color: var(--primary);">Why Choose GUILD Coins?</h3>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="zap"></i>
+                    </div>
+                    <h4>Instant Payments</h4>
+                    <p>Fast and secure transactions</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h4>Secure & Safe</h4>
+                    <p>Protected transactions</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="gift"></i>
+                    </div>
+                    <h4>Flexible Usage</h4>
+                    <p>Use coins for any service</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i data-lucide="users"></i>
+                    </div>
+                    <h4>No Subscriptions</h4>
+                    <p>Buy only when you need</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Start Using Coins?</h2>
+            <p>Download GUILD app and begin your journey with our innovative coin system</p>
+            <div class="cta-buttons">
+                <a href="index.html#download" class="btn-primary">
+                    <i data-lucide="download"></i>
+                    <span>Download App</span>
+                </a>
+                <a href="features.html" class="btn-secondary">
+                    <i data-lucide="info"></i>
+                    <span>Learn More</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="../assets/logo with app name horizantl.png" alt="GUILD Logo">
+                </div>
+                <p>The modern freelancing platform built for collaboration and success. Powered by BlackEnergyTech.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="features.html"><i data-lucide="arrow-right"></i> Features</a></li>
+                    <li><a href="pricing.html"><i data-lucide="arrow-right"></i> Pricing</a></li>
+                    <li><a href="index.html#download"><i data-lucide="arrow-right"></i> Download</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="support.html"><i data-lucide="arrow-right"></i> Help Center</a></li>
+                    <li><a href="delete-account.html"><i data-lucide="arrow-right"></i> Delete Account</a></li>
+                    <li><a href="mailto:support@guild.qa"><i data-lucide="arrow-right"></i> Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="privacy.html"><i data-lucide="arrow-right"></i> Privacy Policy</a></li>
+                    <li><a href="terms.html"><i data-lucide="arrow-right"></i> Terms of Service</a></li>
+                    <li><a href="about.html"><i data-lucide="arrow-right"></i> About Us</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 GUILD. All rights reserved. | Made in Qatar, for Qatar.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Initialize AOS (Animate On Scroll)
+        AOS.init({
+            duration: 1000,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+
+        // Coin Card Mouse Effect
+        document.querySelectorAll('.coin-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', `${x}%`);
+                card.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+
+        // Navigation Scroll Effect
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                nav.style.background = 'rgba(0, 0, 0, 0.95)';
+                nav.style.backdropFilter = 'blur(40px) saturate(200%)';
+            } else {
+                nav.style.background = 'rgba(26, 26, 26, 0.8)';
+                nav.style.backdropFilter = 'blur(20px) saturate(180%)';
+            }
+        });
+    </script>
+</body>
+</html>

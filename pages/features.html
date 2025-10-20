@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - GUILD Qatar Odd Jobs Marketplace</title>
+    <link rel="icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="shortcut icon" type="image/png" href="../assets/logo with app name horizantl.png">
+    <link rel="stylesheet" href="../styles/main.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <style>
+        :root {
+            /* GUILD Brand Colors */
+            --primary: #BBFE32;
+            --primary-dark: #9FD929;
+            --primary-light: #D4FF6B;
+            --primary-glow: rgba(187, 254, 50, 0.3);
+            
+            --background: #000000;
+            --background-gradient: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #1a1a1a 100%);
+            --surface: #1A1A1A;
+            --surface-secondary: #0F0F0F;
+            --surface-hover: #252525;
+            --surface-glass: rgba(26, 26, 26, 0.8);
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #808080;
+            --text-muted: #4A4A4A;
+            --text-accent: #BBFE32;
+            
+            --border: #333333;
+            --border-glow: rgba(187, 254, 50, 0.2);
+            --shadow: rgba(187, 254, 50, 0.2);
+            --shadow-strong: rgba(187, 254, 50, 0.4);
+            --shadow-glow: 0 0 30px rgba(187, 254, 50, 0.3);
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            
+            /* Advanced Effects */
+            --blur-glass: blur(20px) saturate(180%);
+            --blur-strong: blur(40px) saturate(200%);
+            --gradient-primary: linear-gradient(135deg, #BBFE32 0%, #9FD929 100%);
+            --gradient-text: linear-gradient(135deg, #FFFFFF 0%, #BBFE32 100%);
+            --gradient-border: linear-gradient(135deg, #BBFE32, #9FD929, #D4FF6B);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Navigation - Ultra Advanced Glassmorphism */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border-bottom: 1px solid var(--border-glow);
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        nav.scrolled {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: var(--blur-strong);
+            -webkit-backdrop-filter: var(--blur-strong);
+            box-shadow: 
+                0 10px 40px rgba(187, 254, 50, 0.1),
+                0 0 0 1px rgba(187, 254, 50, 0.1);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        /* Simple Logo without animations or background */
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: none;
+            position: relative;
+            transition: none;
+        }
+
+        .logo-icon::before {
+            display: none;
+        }
+
+        .logo:hover .logo-icon {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .nav-container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 70px;
+        }
+
+        .logo {
+            position: fixed;
+            left: calc(2rem + 200px);
+            top: calc(50% + 10px);
+            transform: translateY(-50%) scale(2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: transform 0.15s ease;
+            z-index: 1000;
+        }
+
+        .logo:hover {
+            transform: translateY(-50%) scale(2.1);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+            align-items: center;
+            margin-left: 400px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.15s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        /* Glitch Button */
+        .glitch-button,
+        .glitch-button::after {
+            padding: 12px 16px;
+            font-size: 14px;
+            background: linear-gradient(45deg, transparent 5%, var(--primary) 5%);
+            border: 0;
+            color: var(--background);
+            letter-spacing: 2px;
+            box-shadow: 4px 0px 0px var(--primary-dark);
+            outline: transparent;
+            position: relative;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .glitch-button::after {
+            --slice-0: inset(50% 50% 50% 50%);
+            --slice-1: inset(80% -6px 0 0);
+            --slice-2: inset(50% -6px 30% 0);
+            --slice-3: inset(10% -6px 85% 0);
+            --slice-4: inset(40% -6px 43% 0);
+            --slice-5: inset(80% -6px 5% 0);
+            content: "DOWNLOAD NOW";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 3%, var(--primary-light) 3%, var(--primary-light) 5%, var(--primary) 5%);
+            text-shadow: -2px -2px 0px var(--primary-dark), 2px 2px 0px var(--primary-light);
+            clip-path: var(--slice-0);
+        }
+
+        .glitch-button:hover::after {
+            animation: 1s glitch;
+            animation-timing-function: steps(2, end);
+        }
+
+        @keyframes glitch {
+            0% { clip-path: var(--slice-1); transform: translate(-20px, -10px); }
+            10% { clip-path: var(--slice-3); transform: translate(10px, 10px); }
+            20% { clip-path: var(--slice-1); transform: translate(-10px, 10px); }
+            30% { clip-path: var(--slice-3); transform: translate(0px, 5px); }
+            40% { clip-path: var(--slice-2); transform: translate(-5px, 0px); }
+            50% { clip-path: var(--slice-3); transform: translate(5px, 0px); }
+            60% { clip-path: var(--slice-4); transform: translate(5px, 10px); }
+            70% { clip-path: var(--slice-2); transform: translate(-10px, 10px); }
+            80% { clip-path: var(--slice-5); transform: translate(20px, -10px); }
+            90% { clip-path: var(--slice-1); transform: translate(-10px, 0px); }
+            100% { clip-path: var(--slice-1); transform: translate(0); }
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 150px 2rem 80px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, rgba(187, 254, 50, 0.1) 0%, transparent 70%);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        /* Features Grid */
+        .features-section {
+            padding: 5rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-badge {
+            display: inline-block;
+            background: rgba(187, 254, 50, 0.1);
+            border: 1px solid rgba(187, 254, 50, 0.2);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 5rem;
+        }
+
+        .feature-card {
+            background: var(--surface-glass);
+            backdrop-filter: var(--blur-glass);
+            -webkit-backdrop-filter: var(--blur-glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(187, 254, 50, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-border);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 
+                0 25px 50px var(--shadow),
+                0 0 0 1px rgba(187, 254, 50, 0.2),
+                var(--shadow-glow);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            color: var(--background);
+        }
+
+        .feature-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .feature-list li {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Feature Categories */
+        .feature-category {
+            margin-bottom: 6rem;
+        }
+
+        .category-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .category-header h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .category-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Comparison Table */
+        .comparison-section {
+            padding: 5rem 2rem;
+            background: var(--surface);
+        }
+
+        .comparison-table {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--surface-secondary);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .table-header {
+            background: var(--primary);
+            color: var(--background);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .table-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-content {
+            padding: 2rem;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-cell {
+            text-align: center;
+        }
+
+        .comparison-cell h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .comparison-cell p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .comparison-cell.featured {
+            background: rgba(187, 254, 50, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--primary);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 2rem;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, rgba(187, 254, 50, 0.15) 0%, transparent 70%);
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta-section h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 2rem;
+        }
+
+        .cta-section p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--background);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 20px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--shadow-strong);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            padding: 1rem 2rem;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: var(--background);
+            transform: translateY(-3px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface-secondary);
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .footer-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-bottom p {
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 120px 1.5rem 60px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        /* Footer Logo - Stick to footer */
+        footer {
+            position: relative; /* Positioning context */
+            padding-top: 120px; /* Space for the logo */
+        }
+
+        .footer-logo {
+            position: absolute;
+            top: 40px;
+            left: calc(2rem + 250px);
+            transform: scale(2);
+            z-index: 1000;
+            transition: transform 0.15s ease;
+        }
+
+        .footer-logo img {
+            height: 60px;
+            width: auto;
+            display: block;
+        }
+
+        .footer-logo:hover {
+            transform: scale(2.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="../assets/logo with app name horizantl.png" alt="GUILD Logo" style="height: 60px; width: auto;">
+            </a>
+            <ul class="nav-links">
+                <li><a href="features.html" class="active">Features</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
+                <li><a href="support.html">Support</a></li>
+            </ul>
+            <button class="glitch-button">Download Now</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Powerful Features</h1>
+        <p>Discover all the tools and capabilities that make GUILD the ultimate platform for Qatar's odd jobs marketplace</p>
+    </section>
+
+    <!-- Core Features -->
+    <section class="features-section">
+        <div class="section-header">
+            <span class="section-badge">Core Features</span>
+            <h2>Everything You Need</h2>
+            <p>Comprehensive tools designed for modern freelancers and employers</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-icon">
+                    <i data-lucide="users"></i>
+                </div>
+                <h3>Team Collaboration</h3>
+                <p>Form guilds with other freelancers and tackle bigger projects together. Share skills, resources, and opportunities in a collaborative environment.</p>
+                <ul class="feature-list">
+                    <li>Create and join guilds</li>
+                    <li>Real-time team communication</li>
+                    <li>Shared project management</li>
+                    <li>Skill-based matching</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h3>Secure Payments</h3>
+                <p>Escrow-based payment system ensures safe transactions. Get paid on time, every time, with complete transparency and protection.</p>
+                <ul class="feature-list">
+                    <li>Escrow payment protection</li>
+                    <li>Multiple payment methods</li>
+                    <li>Automatic dispute resolution</li>
+                    <li>Transparent fee structure</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-icon">
+                    <i data-lucide="globe"></i>
+                </div>
+                <h3>Global Marketplace</h3>
+                <p>Connect with clients and freelancers worldwide. Access opportunities in multiple languages and currencies across 50+ countries.</p>
+                <ul class="feature-list">
+                    <li>Multi-language support</li>
+                    <li>Currency conversion</li>
+                    <li>International job matching</li>
+                    <li>Cultural sensitivity features</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-icon">
+                    <i data-lucide="trophy"></i>
+                </div>
+                <h3>Ranking System</h3>
+                <p>Build your reputation with our transparent ranking system. Unlock new opportunities and premium features as you grow.</p>
+                <ul class="feature-list">
+                    <li>Skill-based rankings</li>
+                    <li>Performance metrics</li>
+                    <li>Badge system</li>
+                    <li>Premium feature unlocks</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="500">
+                <div class="feature-icon">
+                    <i data-lucide="message-circle"></i>
+                </div>
+                <h3>Real-time Communication</h3>
+                <p>Instant messaging, file sharing, and video calls. Stay connected with your team and clients 24/7.</p>
+                <ul class="feature-list">
+                    <li>Instant messaging</li>
+                    <li>File sharing</li>
+                    <li>Video calls</li>
+                    <li>Notification system</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="600">
+                <div class="feature-icon">
+                    <i data-lucide="user-check"></i>
+                </div>
+                <h3>Verified Profiles</h3>
+                <p>Identity verification and skill validation ensure trust and quality. Work with confidence knowing everyone is verified.</p>
+                <ul class="feature-list">
+                    <li>ID verification</li>
+                    <li>Skill assessments</li>
+                    <li>Background checks</li>
+                    <li>Portfolio validation</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Qatar-Specific Features -->
+    <section class="features-section">
+        <div class="feature-category">
+            <div class="category-header">
+                <h3>Qatar-Specific Features</h3>
+                <p>Tailored for the Qatar market with cultural sensitivity and local compliance</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon">
+                        <i data-lucide="globe-2"></i>
+                    </div>
+                    <h3>Arabic RTL Support</h3>
+                    <p>Full right-to-left layout with Noto Sans Arabic fonts, ensuring a native experience for Arabic-speaking users.</p>
+                    <ul class="feature-list">
+                        <li>Complete RTL interface</li>
+                        <li>Arabic font optimization</li>
+                        <li>Cultural layout adaptation</li>
+                        <li>Bilingual support</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon">
+                        <i data-lucide="palette"></i>
+                    </div>
+                    <h3>Qatar-Themed Design</h3>
+                    <p>Beautiful blue (#1E90FF) and white color scheme that reflects Qatar's national colors and cultural identity.</p>
+                    <ul class="feature-list">
+                        <li>National color integration</li>
+                        <li>Cultural design elements</li>
+                        <li>Local aesthetic preferences</li>
+                        <li>Brand consistency</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon">
+                        <i data-lucide="calendar"></i>
+                    </div>
+                    <h3>Islamic Calendar</h3>
+                    <p>Localized dates with Islamic calendar support and Arabic number formats for better user experience.</p>
+                    <ul class="feature-list">
+                        <li>Islamic calendar integration</li>
+                        <li>Arabic number formats</li>
+                        <li>Local date preferences</li>
+                        <li>Holiday recognition</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="feature-icon">
+                        <i data-lucide="scale"></i>
+                    </div>
+                    <h3>Legal Compliance</h3>
+                    <p>Full compliance with Qatar's labor laws, data protection regulations, and business requirements.</p>
+                    <ul class="feature-list">
+                        <li>Labor law compliance</li>
+                        <li>Data protection</li>
+                        <li>Business regulations</li>
+                        <li>Tax compliance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Features -->
+    <section class="features-section">
+        <div class="feature-category">
+            <div class="category-header">
+                <h3>Technical Features</h3>
+                <p>Built with modern technology for optimal performance and user experience</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon">
+                        <i data-lucide="smartphone"></i>
+                    </div>
+                    <h3>Cross-Platform</h3>
+                    <p>Native iOS and Android support with Expo, ensuring consistent experience across all devices.</p>
+                    <ul class="feature-list">
+                        <li>iOS native app</li>
+                        <li>Android native app</li>
+                        <li>Consistent UI/UX</li>
+                        <li>Offline capabilities</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon">
+                        <i data-lucide="zap"></i>
+                    </div>
+                    <h3>Firebase Integration</h3>
+                    <p>Robust backend with Firestore and Realtime Database for secure data storage and real-time chat functionality.</p>
+                    <ul class="feature-list">
+                        <li>Real-time database</li>
+                        <li>Secure data storage</li>
+                        <li>Push notifications</li>
+                        <li>Cloud functions</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon">
+                        <i data-lucide="eye"></i>
+                    </div>
+                    <h3>Accessibility</h3>
+                    <p>High-contrast text, 48x48dp touch targets, and full screen reader support for inclusive design.</p>
+                    <ul class="feature-list">
+                        <li>Screen reader support</li>
+                        <li>High contrast mode</li>
+                        <li>Large touch targets</li>
+                        <li>Voice commands</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="feature-icon">
+                        <i data-lucide="lock"></i>
+                    </div>
+                    <h3>Security</h3>
+                    <p>End-to-end encryption, secure authentication, and data protection to keep your information safe.</p>
+                    <ul class="feature-list">
+                        <li>End-to-end encryption</li>
+                        <li>Secure authentication</li>
+                        <li>Data protection</li>
+                        <li>Privacy controls</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="comparison-section">
+        <div class="section-header">
+            <span class="section-badge">Platform Comparison</span>
+            <h2>Why Choose GUILD</h2>
+            <p>See how GUILD compares to other freelancing platforms</p>
+        </div>
+
+        <div class="comparison-table">
+            <div class="table-header">
+                <h3>Feature Comparison</h3>
+                <p>GUILD vs Other Platforms</p>
+            </div>
+            <div class="table-content">
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Feature</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <h4>GUILD</h4>
+                    </div>
+                    <div class="comparison-cell">
+                        <h4>Others</h4>
+                    </div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Arabic RTL Support</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <p>✓ Full Support</p>
+                    </div>
+                    <div class="comparison-cell">
+                        <p>✗ Limited</p>
+                    </div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Qatar Compliance</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <p>✓ Complete</p>
+                    </div>
+                    <div class="comparison-cell">
+                        <p>✗ Partial</p>
+                    </div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Team Collaboration</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <p>✓ Advanced</p>
+                    </div>
+                    <div class="comparison-cell">
+                        <p>✗ Basic</p>
+                    </div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Payment Security</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <p>✓ Escrow System</p>
+                    </div>
+                    <div class="comparison-cell">
+                        <p>✗ Standard</p>
+                    </div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">
+                        <h4>Local Support</h4>
+                    </div>
+                    <div class="comparison-cell featured">
+                        <p>✓ 24/7 Arabic</p>
+                    </div>
+                    <div class="comparison-cell">
+                        <p>✗ English Only</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Experience These Features?</h2>
+            <p>Join thousands of freelancers and employers using GUILD's powerful platform</p>
+            <div class="cta-buttons">
+                <a href="index.html#download" class="btn-primary">
+                    <i data-lucide="download"></i>
+                    <span>Download Now</span>
+                </a>
+                <a href="about.html" class="btn-secondary">
+                    <i data-lucide="info"></i>
+                    <span>Learn More</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="../assets/logo with app name horizantl.png" alt="GUILD Logo">
+                </div>
+                <p>The modern freelancing platform built for collaboration and success. Powered by BlackEnergyTech.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="features.html"><i data-lucide="arrow-right"></i> Features</a></li>
+                    <li><a href="pricing.html"><i data-lucide="arrow-right"></i> Pricing</a></li>
+                    <li><a href="about.html"><i data-lucide="arrow-right"></i> About</a></li>
+                    <li><a href="index.html#download"><i data-lucide="arrow-right"></i> Download</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="support.html"><i data-lucide="arrow-right"></i> Help Center</a></li>
+                    <li><a href="delete-account.html"><i data-lucide="arrow-right"></i> Delete Account</a></li>
+                    <li><a href="mailto:support@guild.qa"><i data-lucide="arrow-right"></i> Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="privacy.html"><i data-lucide="arrow-right"></i> Privacy Policy</a></li>
+                    <li><a href="terms.html"><i data-lucide="arrow-right"></i> Terms of Service</a></li>
+                    <li><a href="about.html"><i data-lucide="arrow-right"></i> About Us</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 GUILD. All rights reserved. | Made in Qatar, for Qatar.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Initialize AOS (Animate On Scroll)
+        AOS.init({
+            duration: 1000,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+
+        // Feature Card Mouse Effect
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', `${x}%`);
+                card.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+
+    </script>
+</body>
+</html>
