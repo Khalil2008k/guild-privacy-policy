@@ -82,56 +82,22 @@ export default function Guilds() {
   const loadGuilds = async () => {
     setLoading(true);
     try {
+      // Leaderboard view: prefer high successRate and totalJobs
       if (activeTab === 'leaderboard') {
-        const leaderboard = await guildService.getGuildLeaderboard(20);
-        setGuilds(leaderboard);
-      } else {
-        // Load guilds for discovery (in real implementation, load from database)
-        const mockGuilds: GuildData[] = [
-          {
-            id: '1',
-            name: 'Tech Innovators',
-            description: 'A guild focused on cutting-edge technology and innovation',
-            category: 'Technology',
-            location: 'Global',
-            memberCount: 15,
-            maxMembers: 20,
-            guildRank: 'B',
-            totalJobs: 45,
-            successRate: 92,
-            totalEarnings: 25000,
-            isPublic: true,
-            requiresApproval: false,
-            guildMasterName: 'Ahmed Al-Rashid'
-          },
-          {
-            id: '2',
-            name: 'Creative Designers',
-            description: 'Professional design guild specializing in UI/UX and branding',
-            category: 'Design',
-            location: 'Middle East',
-            memberCount: 8,
-            maxMembers: 12,
-            guildRank: 'C',
-            totalJobs: 28,
-            successRate: 88,
-            totalEarnings: 18000,
-            isPublic: true,
-            requiresApproval: true,
-            guildMasterName: 'Sarah Johnson'
-          }
-        ];
-
-        // Filter based on search
-        const filteredGuilds = searchQuery
-          ? mockGuilds.filter(guild =>
-              guild.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              guild.description.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-          : mockGuilds;
-
-        setGuilds(filteredGuilds);
+        const list = await guildService.searchGuilds('');
+        const ranked = [...list].sort((a, b) => {
+          // Rank by successRate desc, then totalJobs desc
+          const bySuccess = (b.successRate || 0) - (a.successRate || 0);
+          if (bySuccess !== 0) return bySuccess;
+          return (b.totalJobs || 0) - (a.totalJobs || 0);
+        });
+        setGuilds(ranked.slice(0, 50) as any);
+        return;
       }
+
+      // Discover/My Guilds: live query (backend first, Firebase fallback in service)
+      const discovered = await guildService.searchGuilds(searchQuery || '');
+      setGuilds(discovered as any);
     } catch (error) {
       console.error('Error loading guilds:', error);
     } finally {
@@ -141,10 +107,9 @@ export default function Guilds() {
 
   const loadUserGuild = async () => {
     if (!user?.uid) return;
-
     try {
-      // In real implementation, check if user is member of any guild
-      setUserGuild(null); // Placeholder
+      const myGuilds = await guildService.getUserGuilds(user.uid);
+      setUserGuild(myGuilds && myGuilds.length > 0 ? (myGuilds[0] as any) : null);
     } catch (error) {
       console.error('Error loading user guild:', error);
     }

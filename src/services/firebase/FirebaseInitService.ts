@@ -160,7 +160,7 @@ class FirebaseInitService {
    * Generate Firebase index creation URLs
    */
   generateIndexCreationURLs(): string[] {
-    const projectId = 'guild-4f46b'; // Your Firebase project ID
+    const projectId = 'guild-dev-7f06e'; // Your Firebase project ID
     
     return REQUIRED_INDEXES.map(index => {
       // Generate Firebase console URL for index creation

@@ -33,10 +33,10 @@ REACT_APP_WEBSOCKET_URL=ws://192.168.1.34:5000
 # 3. Click ⚙️ → Project settings
 # 4. Scroll to "Your apps" → Web app → Config
 #
-REACT_APP_FIREBASE_PROJECT_ID=guild-4f46b
+REACT_APP_FIREBASE_PROJECT_ID=guild-dev-7f06e
 REACT_APP_FIREBASE_API_KEY=your-firebase-api-key-here
-REACT_APP_FIREBASE_AUTH_DOMAIN=guild-4f46b.firebaseapp.com
-REACT_APP_FIREBASE_STORAGE_BUCKET=guild-4f46b.appspot.com
+REACT_APP_FIREBASE_AUTH_DOMAIN=guild-dev-7f06e.firebaseapp.com
+REACT_APP_FIREBASE_STORAGE_BUCKET=guild-dev-7f06e.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your-sender-id-here
 REACT_APP_FIREBASE_APP_ID=your-app-id-here
 

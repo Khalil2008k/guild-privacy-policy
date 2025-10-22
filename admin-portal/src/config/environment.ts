@@ -50,9 +50,9 @@ const developmentConfig: AdminEnvironmentConfig = {
   apiUrl: process.env.REACT_APP_API_URL || 'http://localhost:3000/api/v1',
   firebaseConfig: {
     apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
-    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "guild-4f46b.firebaseapp.com",
-    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "guild-4f46b",
-    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "guild-4f46b.firebasestorage.app",
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "guild-dev-7f06e.firebaseapp.com",
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "guild-dev-7f06e",
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "guild-dev-7f06e.firebasestorage.app",
     messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "654144998705",
     appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:654144998705:web:9c49a52bd633a436853410",
     measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-MQX879CXFY"

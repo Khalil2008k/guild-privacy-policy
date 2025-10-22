@@ -21,12 +21,36 @@
       }
     },
     "production": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://guild-yf7q.onrender.com/api",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "guild-dev-7f06e",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "guild-dev-7f06e.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "guild-dev-7f06e.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "654144998705",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:654144998705:web:9c49a52bd633a436853410",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-MQX879CXFY"
+      },
       "android": {
-        "buildType": "aab"
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      }
+    }
   }
 }

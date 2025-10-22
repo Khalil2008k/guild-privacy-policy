@@ -160,11 +160,13 @@ function getCurrentEnvironment(): Environment {
     return 'production';
   }
 
-  if (typeof __DEV__ !== 'undefined' && !__DEV__) {
-    return 'production';
+  // In Expo/React Native, __DEV__ is true for development
+  if (typeof __DEV__ !== 'undefined') {
+    return __DEV__ ? 'development' : 'production';
   }
 
-  return 'production';
+  // Default to development if nothing else is set
+  return 'development';
 }
 
 /**

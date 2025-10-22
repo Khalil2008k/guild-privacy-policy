@@ -1039,6 +1039,46 @@ class JobService {
       throw error;
     }
   }
+
+  /**
+   * Get all jobs (alias for getOpenJobs for backwards compatibility)
+   */
+  async getJobs(): Promise<Job[]> {
+    try {
+      const response = await this.getOpenJobs();
+      return response.jobs || [];
+    } catch (error) {
+      console.error('Error getting jobs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get job categories
+   */
+  async getCategories(): Promise<string[]> {
+    // Return predefined categories (can be extended to fetch from backend/Firestore)
+    return [
+      'Technology',
+      'Design',
+      'Writing',
+      'Marketing',
+      'Video & Animation',
+      'Music & Audio',
+      'Programming',
+      'Business',
+      'Lifestyle',
+      'Photography',
+      'Translation',
+      'Legal',
+      'Finance',
+      'Education',
+      'Engineering',
+      'Construction',
+      'Healthcare',
+      'Other'
+    ];
+  }
 }
 
 export { JobService };

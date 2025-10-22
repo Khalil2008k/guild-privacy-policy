@@ -1,20 +1,36 @@
 export default {
   expo: {
     name: "GUILD",
-    slug: "guild",
+    slug: "guild-2",
     owner: "mazen123333",
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
-    // iOS specific splash configuration
+    icon: "./assets/icon.png",
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#000000"
+    },
+    // iOS specific configuration
     ios: {
-      bundleIdentifier: "com.mazen123333.guild2",
+      bundleIdentifier: "com.mazen123333.guild",
       supportsTablet: true,
       requireFullScreen: false,
+      config: {
+        usesNonExemptEncryption: false
+      },
+      infoPlist: {
+        NSCameraUsageDescription: "GUILD needs camera access to scan QR codes and upload photos.",
+        NSPhotoLibraryUsageDescription: "GUILD needs photo library access to upload images.",
+        NSLocationWhenInUseUsageDescription: "GUILD uses your location to show nearby jobs and guilds.",
+        NSMicrophoneUsageDescription: "GUILD needs microphone access for video calls."
+      }
     },
-    // Android specific splash configuration  
+    // Android specific configuration  
     android: {
-      package: "com.mazen123333.guild2",
+      package: "com.mazen123333.guild",
+      versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#000000"
@@ -22,6 +38,9 @@ export default {
       permissions: [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
         "FOREGROUND_SERVICE"
       ]
     },
@@ -37,9 +56,6 @@ export default {
     extra: {
       eas: {
         projectId: "03fc46b1-43ec-4b63-a1fc-329d0e5f1d1b"
-      },
-      router: {
-        origin: 'http://localhost:8081'
       }
     },
     plugins: [
