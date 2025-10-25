@@ -152,30 +152,28 @@ export default function JobDiscussionScreen() {
       <View style={[
         styles.messageContainer,
         isOwnMessage ? styles.ownMessage : styles.otherMessage,
-        { flexDirection: isRTL ? 'row-reverse' : 'row' }
       ]}>
-        <View style={[styles.avatar, { backgroundColor: theme.primary + '20' }]}>
-          <User size={16} color={theme.primary} />
-        </View>
-
         <View style={[
           styles.messageContent,
-          { backgroundColor: isOwnMessage ? theme.primary : theme.surface }
+          { 
+            backgroundColor: isOwnMessage ? theme.primary : adaptiveColors.surface,
+            alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
+          }
         ]}>
           {!isOwnMessage && (
-            <Text style={[styles.senderName, { color: theme.textSecondary }]}>
+            <Text style={[styles.senderName, { color: adaptiveColors.textSecondary }]}>
               {item.senderName}
             </Text>
           )}
 
           <Text style={[
             styles.messageText,
-            { color: isOwnMessage ? theme.buttonText : theme.textPrimary }
+            { color: isOwnMessage ? '#000000' : adaptiveColors.text }
           ]}>
             {item.message}
           </Text>
 
-          <Text style={[styles.timestamp, { color: theme.textSecondary }]}>
+          <Text style={styles.timestamp}>
             {formatTime(item.timestamp)}
           </Text>
         </View>
@@ -228,9 +226,6 @@ export default function JobDiscussionScreen() {
           </TouchableOpacity>
           
           <View style={styles.headerCenter}>
-            <View style={[styles.iconBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
-              <MessageCircle size={20} color="#000000" />
-            </View>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>
                 {isRTL ? 'مناقشة الوظيفة' : 'Job Discussion'}
@@ -385,19 +380,11 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTextContainer: {
-    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 16,
@@ -431,42 +418,43 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   messageContainer: {
-    marginBottom: 16,
-    alignItems: 'flex-end',
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   ownMessage: {
-    alignSelf: 'flex-end',
+    alignItems: 'flex-end',
   },
   otherMessage: {
-    alignSelf: 'flex-start',
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 8,
+    alignItems: 'flex-start',
   },
   messageContent: {
-    maxWidth: '75%',
-    padding: 12,
-    borderRadius: 16,
-    borderBottomRightRadius: 4,
+    maxWidth: '80%',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   senderName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginBottom: 4,
+    opacity: 0.8,
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
+    marginBottom: 4,
   },
   timestamp: {
     fontSize: 10,
-    marginTop: 4,
+    color: '#000000',
+    opacity: 0.6,
     alignSelf: 'flex-end',
+    marginTop: 2,
   },
   inputContainer: {
     flexDirection: 'row',
