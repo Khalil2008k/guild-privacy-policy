@@ -12,17 +12,17 @@
 ### Step 1: Deploy Firestore Rules
 ```bash
 cd GUILD-3
-firebase deploy --only firestore:rules --project guild-dev-7f06e
+firebase deploy --only firestore:rules --project guild-7f06e
 ```
 
 ### Step 2: Deploy Storage Rules
 ```bash
-firebase deploy --only storage --project guild-dev-7f06e
+firebase deploy --only storage --project guild-7f06e
 ```
 
 ### Step 3: Verify
 ```bash
-firebase deploy --only firestore:rules,storage --project guild-dev-7f06e
+firebase deploy --only firestore:rules,storage --project guild-7f06e
 ```
 
 ---
@@ -81,7 +81,7 @@ This allows:
 
 **You MUST deploy BOTH Firestore and Storage rules:**
 ```bash
-firebase deploy --only firestore:rules,storage --project guild-dev-7f06e
+firebase deploy --only firestore:rules,storage --project guild-7f06e
 ```
 
 If you only deploy one, the other will remain unchanged and may cause permission errors.
@@ -129,13 +129,13 @@ After deployment:
 ## 🔍 Troubleshooting
 
 ### Still getting `storage/unauthorized`?
-1. Check if rules were deployed: `firebase deploy --only storage --project guild-dev-7f06e`
+1. Check if rules were deployed: `firebase deploy --only storage --project guild-7f06e`
 2. Wait 1-2 minutes for rules to propagate
 3. Restart the app
 4. Check Firebase Console → Storage → Rules tab
 
 ### Files not appearing in chat?
-1. Check Firestore rules: `firebase deploy --only firestore:rules --project guild-dev-7f06e`
+1. Check Firestore rules: `firebase deploy --only firestore:rules --project guild-7f06e`
 2. Check `file_uploads` collection in Firebase Console
 3. Check browser console for errors
 
