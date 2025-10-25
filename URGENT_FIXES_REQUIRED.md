@@ -275,3 +275,4 @@ I cannot do these for you - they require access to:
 **Current Status**: App is ready to work once you update Render env vars and Firestore rules.
 
 
+

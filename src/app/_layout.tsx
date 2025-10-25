@@ -20,6 +20,7 @@ import { appCheckService } from '../services/appCheck';
 import { CustomAlertProvider } from '../services/CustomAlertService';
 import { PaymentSheetProvider } from '../services/PaymentSheetService';
 import { RealPaymentProvider } from '../contexts/RealPaymentContext';
+import { ensureFirebaseCacheCleared } from '../config/clearFirebaseCache';
 
 // ⚡⚡⚡ LUDICROUS SPEED - 1ms native splash!
 // Execute synchronously at module parse - INSTANT!
@@ -31,17 +32,24 @@ export default function RootLayout() {
   // ULTRA FAST - No state delays, instant rendering
   // Initialize services immediately in background
   React.useLayoutEffect(() => {
-    // Use layoutEffect for synchronous execution before paint
-    Promise.allSettled([
-      BackendConnectionManager.initialize(),
-      errorMonitoring.initialize(),
-      performanceMonitoring.initialize(),
-      appCheckService.initialize(),
-    ]).then(() => {
-      console.log('✅ App services initialized');
-    }).catch((error) => {
-      console.error('App initialization error:', error);
-    });
+    // 🔥 CRITICAL: Clear Firebase cache FIRST before any services initialize
+    ensureFirebaseCacheCleared()
+      .then(() => {
+        console.log('🔥 Firebase cache cleared, initializing services...');
+        // Use layoutEffect for synchronous execution before paint
+        return Promise.allSettled([
+          BackendConnectionManager.initialize(),
+          errorMonitoring.initialize(),
+          performanceMonitoring.initialize(),
+          appCheckService.initialize(),
+        ]);
+      })
+      .then(() => {
+        console.log('✅ App services initialized');
+      })
+      .catch((error) => {
+        console.error('App initialization error:', error);
+      });
   }, []);
 
   return (

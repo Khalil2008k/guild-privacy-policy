@@ -3,7 +3,14 @@
  * Manages different environments: development, staging, production
  */
 
+import Constants from 'expo-constants';
+
 export type Environment = 'development' | 'staging' | 'production';
+
+// Helper to get env var from process.env or Constants.expoConfig.extra
+const getEnvVar = (key: string, fallback: string): string => {
+  return process.env[key] || Constants.expoConfig?.extra?.[key] || fallback;
+};
 
 interface EnvironmentConfig {
   name: Environment;
@@ -41,15 +48,15 @@ interface EnvironmentConfig {
 // Development Environment
 const developmentConfig: EnvironmentConfig = {
   name: 'development',
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://guild-yf7q.onrender.com/api',
+  apiUrl: getEnvVar('EXPO_PUBLIC_API_URL', 'https://guild-yf7q.onrender.com/api'),
   firebaseConfig: {
-    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
-    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "guild-dev-7f06e.firebaseapp.com",
-    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "guild-dev-7f06e",
-    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "guild-dev-7f06e.firebasestorage.app",
-    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "654144998705",
-    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:654144998705:web:9c49a52bd633a436853410",
-    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-MQX879CXFY"
+    apiKey: getEnvVar('EXPO_PUBLIC_FIREBASE_API_KEY', "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w"),
+    authDomain: getEnvVar('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN', "guild-4f46b.firebaseapp.com"),
+    projectId: getEnvVar('EXPO_PUBLIC_FIREBASE_PROJECT_ID', "guild-4f46b"),
+    storageBucket: getEnvVar('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET', "guild-4f46b.firebasestorage.app"),
+    messagingSenderId: getEnvVar('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', "654144998705"),
+    appId: getEnvVar('EXPO_PUBLIC_FIREBASE_APP_ID', "1:654144998705:web:880f16df9efe0ad4853410"),
+    measurementId: getEnvVar('EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID', "G-3F86RQH389")
   },
   features: {
     enableAnalytics: false,
@@ -112,12 +119,12 @@ const productionConfig: EnvironmentConfig = {
   apiUrl: process.env.EXPO_PUBLIC_PROD_API_URL || process.env.EXPO_PUBLIC_API_URL || 'https://guild-yf7q.onrender.com/api',
   firebaseConfig: {
     apiKey: process.env.EXPO_PUBLIC_PROD_FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
-    authDomain: process.env.EXPO_PUBLIC_PROD_FIREBASE_AUTH_DOMAIN || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "guild-dev-7f06e.firebaseapp.com",
-    projectId: process.env.EXPO_PUBLIC_PROD_FIREBASE_PROJECT_ID || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "guild-dev-7f06e",
-    storageBucket: process.env.EXPO_PUBLIC_PROD_FIREBASE_STORAGE_BUCKET || process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "guild-dev-7f06e.firebasestorage.app",
+    authDomain: process.env.EXPO_PUBLIC_PROD_FIREBASE_AUTH_DOMAIN || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "guild-4f46b.firebaseapp.com",
+    projectId: process.env.EXPO_PUBLIC_PROD_FIREBASE_PROJECT_ID || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "guild-4f46b",
+    storageBucket: process.env.EXPO_PUBLIC_PROD_FIREBASE_STORAGE_BUCKET || process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "guild-4f46b.firebasestorage.app",
     messagingSenderId: process.env.EXPO_PUBLIC_PROD_FIREBASE_MESSAGING_SENDER_ID || process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "654144998705",
-    appId: process.env.EXPO_PUBLIC_PROD_FIREBASE_APP_ID || process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:654144998705:web:9c49a52bd633a436853410",
-    measurementId: process.env.EXPO_PUBLIC_PROD_FIREBASE_MEASUREMENT_ID || process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-MQX879CXFY"
+    appId: process.env.EXPO_PUBLIC_PROD_FIREBASE_APP_ID || process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:654144998705:web:880f16df9efe0ad4853410",
+    measurementId: process.env.EXPO_PUBLIC_PROD_FIREBASE_MEASUREMENT_ID || process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-3F86RQH389"
   },
   features: {
     enableAnalytics: true,
@@ -221,13 +228,18 @@ export const getEnvironmentInfo = () => ({
   environment,
   config: {
     ...config,
-    firebaseConfig: {
-      ...config.firebaseConfig,
-      apiKey: config.firebaseConfig.apiKey.substring(0, 10) + '...' // Mask API key
-    }
-  },
-  timestamp: new Date().toISOString(),
+  firebaseConfig: {
+    projectId: config.firebaseConfig.projectId, // SHOW FULL PROJECT ID
+    authDomain: config.firebaseConfig.authDomain,
+    apiKey: config.firebaseConfig.apiKey.substring(0, 10) + '...' // Mask API key
+  }
+},
+timestamp: new Date().toISOString(),
 });
+
+// CRITICAL: Log Firebase project ID separately for debugging
+console.log('🔥 FIREBASE PROJECT ID:', config.firebaseConfig.projectId);
+console.log('🔥 FIREBASE AUTH DOMAIN:', config.firebaseConfig.authDomain);
 
 // Validate environment configuration
 export const validateEnvironmentConfig = (): { isValid: boolean; errors: string[] } => {

@@ -438,3 +438,4 @@ You're now ready to submit GUILD to both app stores!
 **Last Updated:** October 22, 2025  
 **Version:** 1.0.0
 
+

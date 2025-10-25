@@ -12,6 +12,9 @@ initializeEnvironment();
 // Use Firebase config from environment
 const firebaseConfig = config.firebaseConfig;
 
+// Note: Firebase cache clearing is now handled in _layout.tsx
+// before this module is imported, ensuring clean initialization
+
 let app;
 try {
   app = initializeApp(firebaseConfig);

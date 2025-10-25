@@ -356,3 +356,4 @@ And follow the prompts. EAS will handle the rest!
 **Configuration Version:** 1.0.0  
 **EAS CLI Version:** ≥ 12.0.0
 
+

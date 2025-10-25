@@ -11,15 +11,15 @@ import {
   StatusBar,
   FlatList,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import ModalHeader from '../components/ModalHeader';
 import { jobService, Job } from '../../services/jobService';
-import { Send, User, Clock, MessageCircle } from 'lucide-react-native';
+import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle } from 'lucide-react-native';
 
 interface Message {
   id: string;
@@ -207,25 +207,50 @@ export default function JobDiscussionScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[styles.container, { backgroundColor: adaptiveColors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
 
-      <ModalHeader
-        title={isRTL ? 'مناقشة الوظيفة' : 'Job Discussion'}
-        onBack={() => router.back()}
-      />
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[theme.primary, theme.primary + 'DD', theme.primary + 'AA']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }]}
+      >
+        <View style={[styles.headerContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            {isRTL ? <ArrowRight size={24} color="#000000" /> : <ArrowLeft size={24} color="#000000" />}
+          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
+            <View style={[styles.iconBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+              <MessageCircle size={20} color="#000000" />
+            </View>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>
+                {isRTL ? 'مناقشة الوظيفة' : 'Job Discussion'}
+              </Text>
+              <Text style={styles.headerSubtitle} numberOfLines={1}>
+                {job.title}
+              </Text>
+            </View>
+          </View>
 
-      {/* Job Header */}
-      <View style={[styles.jobHeader, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <Text style={[styles.jobTitle, { color: theme.textPrimary }]}>
-          {job.title}
-        </Text>
-        <Text style={[styles.jobBudget, { color: theme.primary }]}>
-          {job.budget} QR
-        </Text>
-      </View>
+          <View style={[styles.budgetBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+            <Coins size={16} color="#000000" />
+            <Text style={styles.budgetText}>
+              {typeof job.budget === 'object' 
+                ? `${job.budget.min}-${job.budget.max}` 
+                : job.budget} QR
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
 
       {/* Messages */}
       <FlatList
@@ -259,7 +284,6 @@ export default function JobDiscussionScreen() {
           maxLength={500}
           returnKeyType="send"
           onSubmitEditing={sendMessage}
-          blurOnSubmit={false}
         />
 
         <TouchableOpacity
@@ -280,25 +304,34 @@ export default function JobDiscussionScreen() {
       </View>
 
       {/* Action Buttons */}
-      <View style={[styles.actionsContainer, { backgroundColor: theme.surface }]}>
+      <View style={[styles.actionsContainer, { backgroundColor: adaptiveColors.background, borderTopColor: adaptiveColors.border }]}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.success + '20' }]}
+          style={styles.acceptButton}
           onPress={() => {
             // Navigate to job acceptance
             router.push(`/(modals)/job-accept/${jobId}`);
           }}
         >
-          <Text style={[styles.actionButtonText, { color: theme.success }]}>
-            {isRTL ? 'قبول الوظيفة' : 'Accept Job'}
-          </Text>
+          <LinearGradient
+            colors={[theme.primary, theme.primary + 'DD']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.acceptButtonGradient}
+          >
+            <CheckCircle size={20} color="#000000" />
+            <Text style={styles.acceptButtonText}>
+              {isRTL ? 'قبول الوظيفة' : 'Accept Job'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.error + '20' }]}
+          style={[styles.declineButton, { borderColor: theme.error }]}
           onPress={() => router.back()}
         >
-          <Text style={[styles.actionButtonText, { color: theme.error }]}>
-            {isRTL ? 'رفض الوظيفة' : 'Decline Job'}
+          <XCircle size={20} color={theme.error} />
+          <Text style={[styles.declineButtonText, { color: theme.error }]}>
+            {isRTL ? 'رفض' : 'Decline'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -327,18 +360,68 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
   },
-  jobHeader: {
-    padding: 16,
-    borderBottomWidth: 1,
+  headerGradient: {
+    paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  jobTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    gap: 12,
   },
-  jobBudget: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#000000',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(0,0,0,0.7)',
+    marginTop: 2,
+  },
+  budgetBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  budgetText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#000000',
   },
   messagesList: {
     flex: 1,
@@ -413,16 +496,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     gap: 12,
+    borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+  acceptButton: {
+    flex: 2,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  acceptButtonGradient: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
   },
-  actionButtonText: {
+  acceptButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  declineButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    gap: 6,
+  },
+  declineButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 

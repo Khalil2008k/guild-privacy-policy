@@ -56,7 +56,15 @@ export default {
     extra: {
       eas: {
         projectId: "03fc46b1-43ec-4b63-a1fc-329d0e5f1d1b"
-      }
+      },
+      // Force correct Firebase project (guild-4f46b)
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID: "guild-4f46b",
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "guild-4f46b.firebaseapp.com",
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "guild-4f46b.firebasestorage.app",
+      EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "654144998705",
+      EXPO_PUBLIC_FIREBASE_APP_ID: "1:654144998705:web:880f16df9efe0ad4853410",
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-3F86RQH389"
     },
     plugins: [
       "expo-router",

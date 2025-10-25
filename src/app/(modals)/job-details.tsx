@@ -10,10 +10,11 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { UserPreferencesService } from '../../services/UserPreferencesService';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, ArrowRight, Heart, Bookmark, Clock, DollarSign, MapPin, Navigation, CheckCircle, XCircle } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Heart, Bookmark, Clock, Coins, MapPin, Navigation, CheckCircle, XCircle, Briefcase, User } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
@@ -324,35 +325,61 @@ export default function JobDetailsScreen() {
   const isJobTaken = job.status === 'taken';
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-    >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          {isRTL ? <ArrowRight size={24} color={theme.textPrimary} /> : <ArrowLeft size={24} color={theme.textPrimary} />}
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
-          {isRTL ? 'تفاصيل الوظيفة' : 'Job Details'}
-        </Text>
-        <View style={[styles.headerActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <TouchableOpacity onPress={handleLike} style={styles.headerButton}>
-            <Heart 
-              size={24} 
-              color={isLiked ? theme.error : theme.textPrimary}
-              fill={isLiked ? theme.error : 'none'}
-            />
+    <View style={[styles.container, { backgroundColor: adaptiveColors.background }]}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[theme.primary, theme.primary + 'DD', theme.primary + 'AA']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }]}
+      >
+        <View style={[styles.headerContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            {isRTL ? <ArrowRight size={24} color="#000000" /> : <ArrowLeft size={24} color="#000000" />}
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-            <Bookmark 
-              size={24} 
-              color={isSaved ? theme.primary : theme.textPrimary}
-              fill={isSaved ? theme.primary : 'none'}
-            />
-          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
+            <View style={[styles.iconBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+              <Briefcase size={20} color="#000000" />
+            </View>
+            <Text style={styles.headerTitle}>
+              {isRTL ? 'تفاصيل الوظيفة' : 'Job Details'}
+            </Text>
+          </View>
+
+          <View style={[styles.headerActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <TouchableOpacity 
+              onPress={handleLike} 
+              style={[styles.headerActionButton, { backgroundColor: 'rgba(0,0,0,0.15)' }]}
+            >
+              <Heart 
+                size={20} 
+                color="#000000"
+                fill={isLiked ? '#000000' : 'none'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleSave} 
+              style={[styles.headerActionButton, { backgroundColor: 'rgba(0,0,0,0.15)' }]}
+            >
+              <Bookmark 
+                size={20} 
+                color="#000000"
+                fill={isSaved ? '#000000' : 'none'}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+      >
 
       {/* Job Info */}
       <View style={[styles.content, { backgroundColor: theme.surface }]}>
@@ -398,12 +425,12 @@ export default function JobDetailsScreen() {
 
         {/* Budget */}
         <View style={[styles.infoRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <DollarSign size={20} color={theme.primary} />
+          <Coins size={20} color={theme.primary} />
           <Text style={[styles.infoLabel, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left', marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
             {isRTL ? 'الميزانية:' : 'Budget:'}
           </Text>
           <Text style={[styles.infoValue, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
-            {job.salary || (isRTL ? 'قابل للتفاوض' : 'Negotiable')}
+            {job.salary ? `${job.salary} QR` : (isRTL ? 'قابل للتفاوض' : 'Negotiable')}
           </Text>
         </View>
 
@@ -451,33 +478,44 @@ export default function JobDetailsScreen() {
         )}
       </View>
 
-      {/* Take Job Button */}
-      <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 20 }]}>
+      </ScrollView>
+
+      {/* Fixed Bottom Button */}
+      <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 16, backgroundColor: adaptiveColors.background }]}>
         {isJobTaken ? (
-          <View style={[styles.takenBadge, { backgroundColor: theme.error + '20' }]}>
+          <View style={[styles.takenBadge, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
             <XCircle size={24} color={theme.error} />
             <Text style={[styles.takenText, { color: theme.error }]}>
-              Job no longer available
+              {isRTL ? 'الوظيفة غير متاحة' : 'Job no longer available'}
             </Text>
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.takeJobButton, { backgroundColor: theme.primary }]}
+            style={styles.takeJobButton}
             onPress={handleTakeJob}
             disabled={takingJob}
           >
-            {takingJob ? (
-              <ActivityIndicator color="#000000" />
-            ) : (
-              <>
-                <CheckCircle size={24} color="#000000" />
-                <Text style={styles.takeJobButtonText}>Take Job</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={[theme.primary, theme.primary + 'DD']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.takeJobButtonGradient}
+            >
+              {takingJob ? (
+                <ActivityIndicator color="#000000" />
+              ) : (
+                <>
+                  <CheckCircle size={24} color="#000000" />
+                  <Text style={styles.takeJobButtonText}>
+                    {isRTL ? 'قبول الوظيفة' : 'Take Job'}
+                  </Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -485,25 +523,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerGradient: {
+    paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000000',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  headerButton: {
-    padding: 8,
-    borderRadius: 20,
+  headerActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     margin: 20,
@@ -631,20 +705,28 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   takeJobButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  takeJobButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    gap: 10,
   },
   takeJobButtonText: {
     color: '#000000',
@@ -655,13 +737,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 18,
+    borderRadius: 16,
+    borderWidth: 2,
+    gap: 10,
   },
   takenText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
