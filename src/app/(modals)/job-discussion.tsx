@@ -10,6 +10,8 @@ import {
   Platform,
   StatusBar,
   FlatList,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomAlertService } from '../../services/CustomAlertService';
@@ -19,8 +21,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { jobService, Job } from '../../services/jobService';
+import { chatFileService } from '../../services/chatFileService';
 import { ChatInput } from '../../components/ChatInput';
-import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle, MoreVertical } from 'lucide-react-native';
+import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle, MoreVertical, Image as ImageIcon } from 'lucide-react-native';
 
 interface Message {
   id: string;
@@ -28,7 +31,15 @@ interface Message {
   senderName: string;
   message: string;
   timestamp: Date;
-  type: 'text' | 'system';
+  type: 'text' | 'system' | 'image' | 'file' | 'location';
+  imageUrl?: string;
+  fileUrl?: string;
+  fileName?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
 }
 
 export default function JobDiscussionScreen() {
@@ -146,25 +157,140 @@ export default function JobDiscussionScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleSendImage = (uri: string) => {
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة إرسال الصور ستكون متاحة قريباً' : 'Image sending will be available soon'
-    );
+  const handleSendImage = async (uri: string) => {
+    if (!user || !job) return;
+
+    setSending(true);
+    try {
+      // Create a temporary chat ID for this job discussion
+      const chatId = `job_discussion_${jobId}`;
+      
+      // Upload image
+      const { url } = await chatFileService.uploadFile(
+        chatId,
+        uri,
+        `image_${Date.now()}.jpg`,
+        'image/jpeg',
+        user.uid
+      );
+
+      // Add image message to local state
+      const imageMessage: Message = {
+        id: Date.now().toString(),
+        senderId: user.uid,
+        senderName: user.displayName || 'You',
+        message: '',
+        timestamp: new Date(),
+        type: 'image',
+        imageUrl: url,
+      };
+
+      setMessages(prev => [...prev, imageMessage]);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      CustomAlertService.showSuccess(
+        isRTL ? 'تم الإرسال' : 'Sent',
+        isRTL ? 'تم إرسال الصورة بنجاح' : 'Image sent successfully'
+      );
+    } catch (error) {
+      console.error('Error sending image:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل إرسال الصورة' : 'Failed to send image'
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
-  const handleSendFile = (uri: string, name: string, type: string) => {
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة إرسال الملفات ستكون متاحة قريباً' : 'File sending will be available soon'
-    );
+  const handleSendFile = async (uri: string, name: string, type: string) => {
+    if (!user || !job) return;
+
+    setSending(true);
+    try {
+      // Create a temporary chat ID for this job discussion
+      const chatId = `job_discussion_${jobId}`;
+      
+      // Upload file
+      const { url } = await chatFileService.uploadFile(
+        chatId,
+        uri,
+        name,
+        type,
+        user.uid
+      );
+
+      // Add file message to local state
+      const fileMessage: Message = {
+        id: Date.now().toString(),
+        senderId: user.uid,
+        senderName: user.displayName || 'You',
+        message: `📎 ${name}`,
+        timestamp: new Date(),
+        type: 'file',
+        fileUrl: url,
+        fileName: name,
+      };
+
+      setMessages(prev => [...prev, fileMessage]);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      CustomAlertService.showSuccess(
+        isRTL ? 'تم الإرسال' : 'Sent',
+        isRTL ? 'تم إرسال الملف بنجاح' : 'File sent successfully'
+      );
+    } catch (error) {
+      console.error('Error sending file:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل إرسال الملف' : 'Failed to send file'
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
-  const handleSendLocation = (location: { latitude: number; longitude: number; address?: string }) => {
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة إرسال الموقع ستكون متاحة قريباً' : 'Location sharing will be available soon'
-    );
+  const handleSendLocation = async (location: { latitude: number; longitude: number; address?: string }) => {
+    if (!user || !job) return;
+
+    try {
+      // Add location message to local state
+      const locationMessage: Message = {
+        id: Date.now().toString(),
+        senderId: user.uid,
+        senderName: user.displayName || 'You',
+        message: `📍 ${location.address || 'Shared Location'}`,
+        timestamp: new Date(),
+        type: 'location',
+        location: location,
+      };
+
+      setMessages(prev => [...prev, locationMessage]);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      CustomAlertService.showSuccess(
+        isRTL ? 'تم الإرسال' : 'Sent',
+        isRTL ? 'تم مشاركة الموقع بنجاح' : 'Location shared successfully'
+      );
+    } catch (error) {
+      console.error('Error sending location:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل مشاركة الموقع' : 'Failed to share location'
+      );
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -199,12 +325,68 @@ export default function JobDiscussionScreen() {
             </Text>
           )}
 
-          <Text style={[
-            styles.messageText,
-            { color: isOwnMessage ? '#000000' : (isDarkMode ? '#FFFFFF' : '#1A1A1A') }
-          ]}>
-            {item.message}
-          </Text>
+          {/* Image Message */}
+          {item.type === 'image' && item.imageUrl && (
+            <View style={styles.imageMessageContainer}>
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
+          {/* File Message */}
+          {item.type === 'file' && item.fileUrl && (
+            <TouchableOpacity
+              style={styles.fileMessageContainer}
+              onPress={() => {
+                // Open file URL
+                CustomAlertService.showInfo(
+                  isRTL ? 'فتح الملف' : 'Open File',
+                  isRTL ? 'سيتم فتح الملف في المتصفح' : 'File will open in browser'
+                );
+              }}
+            >
+              <Text style={[
+                styles.messageText,
+                { color: isOwnMessage ? '#000000' : (isDarkMode ? '#FFFFFF' : '#1A1A1A') }
+              ]}>
+                {item.message}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Location Message */}
+          {item.type === 'location' && item.location && (
+            <TouchableOpacity
+              style={styles.locationMessageContainer}
+              onPress={() => {
+                // Open location in maps
+                CustomAlertService.showInfo(
+                  isRTL ? 'فتح الموقع' : 'Open Location',
+                  isRTL ? 'سيتم فتح الموقع في الخرائط' : 'Location will open in maps'
+                );
+              }}
+            >
+              <Text style={[
+                styles.messageText,
+                { color: isOwnMessage ? '#000000' : (isDarkMode ? '#FFFFFF' : '#1A1A1A') }
+              ]}>
+                {item.message}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Text Message */}
+          {item.type === 'text' && (
+            <Text style={[
+              styles.messageText,
+              { color: isOwnMessage ? '#000000' : (isDarkMode ? '#FFFFFF' : '#1A1A1A') }
+            ]}>
+              {item.message}
+            </Text>
+          )}
 
           <Text style={[styles.timestamp, { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)') }]}>
             {formatTime(item.timestamp)}
@@ -531,6 +713,22 @@ const styles = StyleSheet.create({
   declineButtonText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  imageMessageContainer: {
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+  },
+  fileMessageContainer: {
+    marginBottom: 4,
+  },
+  locationMessageContainer: {
+    marginBottom: 4,
   },
 });
 
