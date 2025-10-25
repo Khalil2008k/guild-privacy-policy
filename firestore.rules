@@ -68,6 +68,13 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // ===== FILE UPLOADS METADATA =====
+    match /file_uploads/{fileId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uploadedBy;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.uploadedBy;
+    }
+
     // ===== ADMIN ONLY RULES =====
     match /admin/{document=**} {
       allow read, write: if request.auth != null && request.auth.token.admin == true;

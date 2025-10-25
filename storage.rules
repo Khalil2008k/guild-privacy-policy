@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// Firebase Storage Rules for GUILD App
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ===== CHAT FILES =====
+    // Allow authenticated users to upload files to chats they're part of
+    match /chats/{chatId}/files/{fileName} {
+      // Allow read if user is authenticated
+      allow read: if request.auth != null;
+      
+      // Allow write if user is authenticated (they must be part of the chat to send messages)
+      allow write: if request.auth != null;
+      
+      // Limit file size to 10MB
+      allow write: if request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // ===== USER PROFILE IMAGES =====
+    match /users/{userId}/profile/{fileName} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow write only for the user's own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Limit file size to 5MB
+      allow write: if request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // ===== JOB ATTACHMENTS =====
+    match /jobs/{jobId}/attachments/{fileName} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow write for authenticated users (job poster)
+      allow write: if request.auth != null;
+      
+      // Limit file size to 20MB
+      allow write: if request.resource.size < 20 * 1024 * 1024;
+    }
+    
+    // ===== GUILD IMAGES =====
+    match /guilds/{guildId}/images/{fileName} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow write for authenticated users (guild masters)
+      allow write: if request.auth != null;
+      
+      // Limit file size to 5MB
+      allow write: if request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // ===== ADMIN UPLOADS =====
+    match /admin/{allPaths=**} {
+      // Only admins can read/write
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // ===== DEFAULT DENY =====
+    // Deny all other requests by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
