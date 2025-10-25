@@ -19,8 +19,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { jobService, Job } from '../../services/jobService';
-import { chatService } from '../../services/chatService';
-import { ChatMessage } from '../../components/ChatMessage';
 import { ChatInput } from '../../components/ChatInput';
 import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle, MoreVertical } from 'lucide-react-native';
 
@@ -148,36 +146,6 @@ export default function JobDiscussionScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleEditMessage = (messageId: string, currentText: string) => {
-    // For now, show coming soon
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة تعديل الرسائل ستكون متاحة قريباً' : 'Message editing will be available soon'
-    );
-  };
-
-  const handleDeleteMessage = async (messageId: string) => {
-    // For now, show coming soon
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة حذف الرسائل ستكون متاحة قريباً' : 'Message deletion will be available soon'
-    );
-  };
-
-  const handleViewHistory = (messageId: string) => {
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة سجل التعديلات ستكون متاحة قريباً' : 'Edit history will be available soon'
-    );
-  };
-
-  const handleDownloadFile = (url: string, filename: string) => {
-    CustomAlertService.showInfo(
-      isRTL ? 'قريباً' : 'Coming Soon',
-      isRTL ? 'ميزة تحميل الملفات ستكون متاحة قريباً' : 'File download will be available soon'
-    );
-  };
-
   const handleSendImage = (uri: string) => {
     CustomAlertService.showInfo(
       isRTL ? 'قريباً' : 'Coming Soon',
@@ -199,27 +167,50 @@ export default function JobDiscussionScreen() {
     );
   };
 
-  const renderMessage = ({ item }: { item: any }) => {
+  const renderMessage = ({ item }: { item: Message }) => {
     const isOwnMessage = item.senderId === user?.uid;
-    
-    // Convert our simple message format to ChatMessage format
-    const chatMessage = {
-      ...item,
-      text: item.message,
-      createdAt: item.timestamp,
-      senderId: item.senderId,
-      senderName: item.senderName,
-    };
-    
+
     return (
-      <ChatMessage
-        message={chatMessage}
-        isOwnMessage={isOwnMessage}
-        onEdit={handleEditMessage}
-        onDelete={handleDeleteMessage}
-        onViewHistory={handleViewHistory}
-        onDownload={handleDownloadFile}
-      />
+      <TouchableOpacity
+        onLongPress={() => {
+          // Show options menu
+          CustomAlertService.showInfo(
+            isRTL ? 'خيارات الرسالة' : 'Message Options',
+            isRTL ? 'اضغط مطولاً لعرض خيارات الرسالة (قريباً)' : 'Long press for message options (Coming Soon)'
+          );
+        }}
+        delayLongPress={500}
+        style={[
+          styles.messageContainer,
+          isOwnMessage ? styles.ownMessage : styles.otherMessage,
+        ]}
+        activeOpacity={0.7}
+      >
+        <View style={[
+          styles.messageContent,
+          { 
+            backgroundColor: isOwnMessage ? theme.primary : (isDarkMode ? '#3A3A3A' : '#F0F0F0'),
+            alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
+          }
+        ]}>
+          {!isOwnMessage && (
+            <Text style={[styles.senderName, { color: isDarkMode ? theme.textSecondary : '#666666' }]}>
+              {item.senderName}
+            </Text>
+          )}
+
+          <Text style={[
+            styles.messageText,
+            { color: isOwnMessage ? '#000000' : (isDarkMode ? '#FFFFFF' : '#1A1A1A') }
+          ]}>
+            {item.message}
+          </Text>
+
+          <Text style={[styles.timestamp, { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)') }]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </View>
+      </TouchableOpacity>
     );
   };
 
