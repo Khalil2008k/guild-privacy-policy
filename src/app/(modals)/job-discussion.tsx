@@ -158,12 +158,17 @@ export default function JobDiscussionScreen() {
   };
 
   const handleSendImage = async (uri: string) => {
-    if (!user || !job) return;
+    console.log('🖼️ handleSendImage called with URI:', uri);
+    if (!user || !job) {
+      console.log('❌ No user or job');
+      return;
+    }
 
     setSending(true);
     try {
       // Create a temporary chat ID for this job discussion
       const chatId = `job_discussion_${jobId}`;
+      console.log('📤 Uploading image to chat:', chatId);
       
       // Upload image
       const { url } = await chatFileService.uploadFile(
@@ -173,6 +178,7 @@ export default function JobDiscussionScreen() {
         'image/jpeg',
         user.uid
       );
+      console.log('✅ Image uploaded, URL:', url);
 
       // Add image message to local state
       const imageMessage: Message = {
