@@ -19,7 +19,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { jobService, Job } from '../../services/jobService';
-import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle } from 'lucide-react-native';
+import { chatService } from '../../services/chatService';
+import { ChatMessage } from '../../components/ChatMessage';
+import { ChatInput } from '../../components/ChatInput';
+import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle, MoreVertical } from 'lucide-react-native';
 
 interface Message {
   id: string;
@@ -145,39 +148,78 @@ export default function JobDiscussionScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  const handleEditMessage = (messageId: string, currentText: string) => {
+    // For now, show coming soon
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة تعديل الرسائل ستكون متاحة قريباً' : 'Message editing will be available soon'
+    );
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    // For now, show coming soon
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة حذف الرسائل ستكون متاحة قريباً' : 'Message deletion will be available soon'
+    );
+  };
+
+  const handleViewHistory = (messageId: string) => {
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة سجل التعديلات ستكون متاحة قريباً' : 'Edit history will be available soon'
+    );
+  };
+
+  const handleDownloadFile = (url: string, filename: string) => {
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة تحميل الملفات ستكون متاحة قريباً' : 'File download will be available soon'
+    );
+  };
+
+  const handleSendImage = (uri: string) => {
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة إرسال الصور ستكون متاحة قريباً' : 'Image sending will be available soon'
+    );
+  };
+
+  const handleSendFile = (uri: string, name: string, type: string) => {
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة إرسال الملفات ستكون متاحة قريباً' : 'File sending will be available soon'
+    );
+  };
+
+  const handleSendLocation = (location: { latitude: number; longitude: number; address?: string }) => {
+    CustomAlertService.showInfo(
+      isRTL ? 'قريباً' : 'Coming Soon',
+      isRTL ? 'ميزة إرسال الموقع ستكون متاحة قريباً' : 'Location sharing will be available soon'
+    );
+  };
+
+  const renderMessage = ({ item }: { item: any }) => {
     const isOwnMessage = item.senderId === user?.uid;
-
+    
+    // Convert our simple message format to ChatMessage format
+    const chatMessage = {
+      ...item,
+      text: item.message,
+      createdAt: item.timestamp,
+      senderId: item.senderId,
+      senderName: item.senderName,
+    };
+    
     return (
-      <View style={[
-        styles.messageContainer,
-        isOwnMessage ? styles.ownMessage : styles.otherMessage,
-      ]}>
-        <View style={[
-          styles.messageContent,
-          { 
-            backgroundColor: isOwnMessage ? theme.primary : adaptiveColors.surface,
-            alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
-          }
-        ]}>
-          {!isOwnMessage && (
-            <Text style={[styles.senderName, { color: adaptiveColors.textSecondary }]}>
-              {item.senderName}
-            </Text>
-          )}
-
-          <Text style={[
-            styles.messageText,
-            { color: isOwnMessage ? '#000000' : adaptiveColors.text }
-          ]}>
-            {item.message}
-          </Text>
-
-          <Text style={styles.timestamp}>
-            {formatTime(item.timestamp)}
-          </Text>
-        </View>
-      </View>
+      <ChatMessage
+        message={chatMessage}
+        isOwnMessage={isOwnMessage}
+        onEdit={handleEditMessage}
+        onDelete={handleDeleteMessage}
+        onViewHistory={handleViewHistory}
+        onDownload={handleDownloadFile}
+      />
     );
   };
 
@@ -259,44 +301,16 @@ export default function JobDiscussionScreen() {
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
       />
 
-      {/* Message Input */}
-      <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-        <TextInput
-          style={[
-            styles.textInput,
-            {
-              backgroundColor: theme.background,
-              color: theme.textPrimary,
-              borderColor: theme.border,
-              textAlign: isRTL ? 'right' : 'left'
-            }
-          ]}
-          placeholder={isRTL ? 'اكتب رسالتك...' : 'Type your message...'}
-          placeholderTextColor={theme.textSecondary}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          multiline
-          maxLength={500}
-          returnKeyType="send"
-          onSubmitEditing={sendMessage}
-        />
-
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: newMessage.trim() ? theme.primary : theme.border,
-            }
-          ]}
-          onPress={sendMessage}
-          disabled={!newMessage.trim() || sending}
-        >
-          <Send
-            size={20}
-            color={newMessage.trim() ? theme.buttonText : theme.textSecondary}
-          />
-        </TouchableOpacity>
-      </View>
+      {/* Chat Input */}
+      <ChatInput
+        value={newMessage}
+        onChangeText={setNewMessage}
+        onSend={sendMessage}
+        onSendImage={handleSendImage}
+        onSendFile={handleSendFile}
+        onSendLocation={handleSendLocation}
+        disabled={sending}
+      />
 
       {/* Action Buttons */}
       <View style={[styles.actionsContainer, { backgroundColor: adaptiveColors.background, borderTopColor: adaptiveColors.border }]}>
