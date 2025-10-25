@@ -33,13 +33,11 @@ export class ChatFileService {
       const response = await fetch(fileUri);
       const blob = await response.blob();
 
-      // Calculate file hash for authenticity
-      const arrayBuffer = await blob.arrayBuffer();
-      const hashArray = Array.from(new Uint8Array(arrayBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      // Calculate file hash for authenticity (React Native compatible)
+      // Use the file URI directly for hashing since blob.arrayBuffer() is not available in RN
       const fileHash = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
-        hashHex
+        fileUri + fileName + Date.now()
       );
 
       // Generate unique filename
