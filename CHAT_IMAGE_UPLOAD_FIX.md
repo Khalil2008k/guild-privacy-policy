@@ -105,7 +105,7 @@ match /file_uploads/{fileId} {
 
 ```bash
 cd GUILD-3
-firebase deploy --only firestore:rules,storage --project guild-7f06e
+firebase deploy --only firestore:rules,storage --project guild-4f46b
 ```
 
 **Wait 1-2 minutes** for rules to propagate, then test.
@@ -167,7 +167,7 @@ After deploying the rules:
 
 1. **Check if rules were deployed**:
    ```bash
-   firebase deploy --only firestore:rules,storage --project guild-7f06e
+   firebase deploy --only firestore:rules,storage --project guild-4f46b
    ```
 
 2. **Wait for propagation**: Rules can take 1-2 minutes to apply globally
@@ -212,6 +212,6 @@ Users will get an error if they try to upload files larger than these limits.
 **🔥 Deploy the rules now to enable full chat functionality!**
 
 ```bash
-firebase deploy --only firestore:rules,storage --project guild-7f06e
+firebase deploy --only firestore:rules,storage --project guild-4f46b
 ```
 
