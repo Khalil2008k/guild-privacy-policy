@@ -34,12 +34,12 @@ if (isDevelopment && !firebaseConfig.apiKey) {
   
   // Fallback configuration for development
   firebaseConfig.apiKey = "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w";
-  firebaseConfig.authDomain = "guild-dev-7f06e.firebaseapp.com";
-  firebaseConfig.projectId = "guild-dev-7f06e";
-  firebaseConfig.storageBucket = "guild-dev-7f06e.firebasestorage.app";
+  firebaseConfig.authDomain = "guild-4f46b.firebaseapp.com";
+  firebaseConfig.projectId = "guild-4f46b";
+  firebaseConfig.storageBucket = "guild-4f46b.firebasestorage.app";
   firebaseConfig.messagingSenderId = "654144998705";
-  firebaseConfig.appId = "1:654144998705:web:9c49a52bd633a436853410";
-  firebaseConfig.measurementId = "G-MQX879CXFY";
+  firebaseConfig.appId = "1:654144998705:web:880f16df9efe0ad4853410";
+  firebaseConfig.measurementId = "G-3F86RQH389";
 }
 
 // Initialize Firebase
