@@ -157,7 +157,10 @@ export default function SignUpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { 
+        paddingTop: insets.top + 12,
+        flexDirection: isRTL ? 'row-reverse' : 'row',
+      }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -225,7 +228,7 @@ export default function SignUpScreen() {
         </View>
 
         {/* Email Input */}
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.inputIconContainer, { backgroundColor: theme.primary + '15' }]}>
             <Mail size={20} color={theme.primary} />
           </View>
@@ -247,7 +250,7 @@ export default function SignUpScreen() {
         </View>
 
         {/* Password Input */}
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.inputIconContainer, { backgroundColor: theme.primary + '15' }]}>
             <Lock size={20} color={theme.primary} />
           </View>
@@ -293,7 +296,7 @@ export default function SignUpScreen() {
         )}
 
         {/* Confirm Password Input */}
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.inputIconContainer, { backgroundColor: theme.primary + '15' }]}>
             <Lock size={20} color={theme.primary} />
           </View>

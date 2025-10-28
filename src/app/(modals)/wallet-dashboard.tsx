@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
@@ -15,6 +16,8 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useRealPayment } from '../../contexts/RealPaymentContext';
+import { realPaymentService } from '../../services/realPaymentService';
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -32,25 +35,66 @@ interface Transaction {
 
 export default function WalletDashboardScreen() {
   const { theme } = useTheme();
-  const { t } = useI18n();
+  const { t, isRTL } = useI18n();
   const insets = useSafeAreaInsets();
+  const { wallet, isLoading, refreshWallet } = useRealPayment();
 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Real wallet data - should be connected to backend
-  const walletData = {
-    totalBalance: 0.00,
-    availableBalance: 0.00,
-    pendingBalance: 0.00,
-    totalEarnings: 0.00,
-    monthlyEarnings: 0.00,
-    weeklyEarnings: 0.00,
-    yearlyEarnings: 0.00,
+  // Load wallet data and transactions
+  useEffect(() => {
+    loadWalletData();
+  }, []);
+
+  const loadWalletData = async () => {
+    try {
+      setLoading(true);
+      // Transactions are already in wallet from RealPaymentContext
+      if (wallet?.transactions) {
+        setTransactions(wallet.transactions.slice(0, 10));
+      }
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Real transactions - should be fetched from backend
-  const [recentTransactions] = useState<Transaction[]>([]);
+  // Calculate earnings from transactions
+  const walletData = {
+    totalBalance: wallet?.balance || 0.00,
+    availableBalance: wallet?.available || 0.00,
+    pendingBalance: wallet?.hold || 0.00,
+    totalEarnings: wallet?.totalEarned || 0.00,
+    monthlyEarnings: calculateMonthlyEarnings(),
+    weeklyEarnings: calculateWeeklyEarnings(),
+    yearlyEarnings: wallet?.totalEarned || 0.00,
+  };
+
+  const calculateMonthlyEarnings = () => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    return transactions
+      .filter(t => {
+        const txDate = new Date(t.date);
+        return txDate.getMonth() === thisMonth && t.type === 'income';
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
+
+  const calculateWeeklyEarnings = () => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return transactions
+      .filter(t => {
+        const txDate = new Date(t.date);
+        return txDate >= oneWeekAgo && t.type === 'income';
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
 
   const periods = [
     { key: 'week', label: 'Week', earnings: walletData.weeklyEarnings },
@@ -127,7 +171,14 @@ export default function WalletDashboardScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      await refreshWallet();
+      await loadWalletData();
+    } catch (error) {
+      console.error('Error refreshing wallet:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -166,66 +217,71 @@ export default function WalletDashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Balance Card */}
-        <LinearGradient
-          colors={[theme.primary, theme.primary + 'CC']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.balanceCard}
-        >
-          <View style={styles.balanceHeader}>
-            <Text style={[styles.balanceLabel, { color: theme.buttonText + 'CC' }]}>
-              Total Balance
+        {/* Loading State */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+              {isRTL ? 'جاري التحميل...' : 'Loading wallet...'}
             </Text>
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Toggle balance visibility
-              }}
-            >
-              <Ionicons name="eye-outline" size={20} color={theme.buttonText + 'CC'} />
-            </TouchableOpacity>
           </View>
-          
-          <Text style={[styles.balanceAmount, { color: theme.buttonText }]}>
-            {walletData.totalBalance.toLocaleString('en-US', { 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
-            })} QAR
-          </Text>
+        )}
 
-          <View style={styles.balanceDetails}>
-            <View style={styles.balanceDetailItem}>
-              <Text style={[styles.balanceDetailLabel, { color: theme.buttonText + 'CC' }]}>
-                Available
-              </Text>
-              <Text style={[styles.balanceDetailAmount, { color: theme.buttonText }]}>
-                {walletData.availableBalance.toLocaleString('en-US', { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: 2 
-                })} QAR
+        {/* Balance Card */}
+        {!loading && (
+          <LinearGradient
+            colors={[theme.primary, theme.primary + 'CC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.balanceCard}
+          >
+            <View style={styles.balanceHeader}>
+              <Text style={[styles.balanceLabel, { color: theme.buttonText + 'CC' }]}>
+                {isRTL ? 'الرصيد الإجمالي' : 'Total Balance'}
               </Text>
             </View>
             
-            <View style={styles.balanceDetailItem}>
-              <Text style={[styles.balanceDetailLabel, { color: theme.buttonText + 'CC' }]}>
-                Pending
-              </Text>
-              <Text style={[styles.balanceDetailAmount, { color: theme.buttonText }]}>
-                {walletData.pendingBalance.toLocaleString('en-US', { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: 2 
-                })} QAR
-              </Text>
+            <Text style={[styles.balanceAmount, { color: theme.buttonText }]}>
+              {walletData.totalBalance.toLocaleString('en-US', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+              })} {wallet?.currency || 'QAR'}
+            </Text>
+
+            <View style={styles.balanceDetails}>
+              <View style={styles.balanceDetailItem}>
+                <Text style={[styles.balanceDetailLabel, { color: theme.buttonText + 'CC' }]}>
+                  {isRTL ? 'متاح' : 'Available'}
+                </Text>
+                <Text style={[styles.balanceDetailAmount, { color: theme.buttonText }]}>
+                  {walletData.availableBalance.toLocaleString('en-US', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })} {wallet?.currency || 'QAR'}
+                </Text>
+              </View>
+              
+              <View style={styles.balanceDetailItem}>
+                <Text style={[styles.balanceDetailLabel, { color: theme.buttonText + 'CC' }]}>
+                  {isRTL ? 'قيد الانتظار' : 'Pending'}
+                </Text>
+                <Text style={[styles.balanceDetailAmount, { color: theme.buttonText }]}>
+                  {walletData.pendingBalance.toLocaleString('en-US', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })} {wallet?.currency || 'QAR'}
+                </Text>
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        )}
 
         {/* Quick Actions */}
-        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-            Quick Actions
-          </Text>
+        {!loading && (
+          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+              {isRTL ? 'إجراءات سريعة' : 'Quick Actions'}
+            </Text>
           
           <View style={styles.quickActionsGrid}>
             {quickActions.map((action) => (
@@ -246,14 +302,16 @@ export default function WalletDashboardScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+          </View>
+        )}
 
         {/* Earnings Overview */}
-        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Earnings Overview
-            </Text>
+        {!loading && (
+          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {isRTL ? 'نظرة عامة على الأرباح' : 'Earnings Overview'}
+              </Text>
             
             <View style={styles.periodSelector}>
               {periods.map((period) => (
@@ -290,31 +348,40 @@ export default function WalletDashboardScreen() {
               })} QAR
             </Text>
             <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
-              This {selectedPeriod}
+              {isRTL ? `هذا ${selectedPeriod === 'week' ? 'الأسبوع' : selectedPeriod === 'month' ? 'الشهر' : 'السنة'}` : `This ${selectedPeriod}`}
             </Text>
           </View>
-        </View>
+          </View>
+        )}
 
         {/* Recent Transactions */}
-        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Recent Transactions
-            </Text>
-            
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/(modals)/transaction-history');
-              }}
-            >
-              <Text style={[styles.viewAllText, { color: theme.primary }]}>
-                View All
+        {!loading && (
+          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {isRTL ? 'المعاملات الأخيرة' : 'Recent Transactions'}
               </Text>
-            </TouchableOpacity>
-          </View>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/(modals)/transaction-history');
+                }}
+              >
+                <Text style={[styles.viewAllText, { color: theme.primary }]}>
+                  {isRTL ? 'عرض الكل' : 'View All'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-          {recentTransactions.slice(0, 5).map((transaction) => (
+            {transactions.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={[styles.emptyText, { color: theme.textSecondary, textAlign: 'center' }]}>
+                  {isRTL ? 'لا توجد معاملات بعد' : 'No transactions yet'}
+                </Text>
+              </View>
+            ) : (
+              transactions.slice(0, 5).map((transaction) => (
             <TouchableOpacity
               key={transaction.id}
               style={[styles.transactionItem, { borderColor: theme.border }]}
@@ -364,8 +431,9 @@ export default function WalletDashboardScreen() {
                 </View>
               </View>
             </TouchableOpacity>
-          ))}
-        </View>
+          )))}
+          </View>
+        )}
 
         <View style={{ height: insets.bottom + 20 }} />
       </ScrollView>
@@ -382,6 +450,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerRow: {
     flexDirection: 'row',

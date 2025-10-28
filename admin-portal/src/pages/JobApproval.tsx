@@ -15,8 +15,8 @@ import {
   MessageSquare,
   Briefcase
 } from 'lucide-react';
-import { db } from '../utils/firebase';
-import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../utils/firebase';
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore';
 import { handleError } from '../utils/errorHandler';
 import { cache, CacheKeys } from '../utils/cache';
 import { validateRequired, sanitizeString } from '../utils/validation';
@@ -68,6 +68,35 @@ const JobApprovalPage: React.FC = () => {
     loadJobs();
   }, [filter]);
 
+  // Helper function to notify user about job approval/rejection
+  const notifyUser = async (userId: string, jobTitle: string, type: 'approved' | 'rejected', reason?: string) => {
+    try {
+      const notificationData = {
+        userId,
+        type: type === 'approved' ? 'JOB_APPROVED' : 'JOB_REJECTED',
+        title: type === 'approved' ? 'Job Approved ✅' : 'Job Rejected',
+        message: type === 'approved' 
+          ? `Your job "${jobTitle}" has been approved and is now visible to freelancers.`
+          : `Your job "${jobTitle}" was rejected. ${reason ? `Reason: ${reason}` : ''}`,
+        data: {
+          jobTitle,
+          status: type,
+          reason: reason || null
+        },
+        isRead: false,
+        createdAt: new Date(),
+        priority: 'high',
+        category: 'jobs'
+      };
+
+      await addDoc(collection(db, 'notifications'), notificationData);
+      console.log(`✅ Notification sent to user ${userId} about job ${type}`);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      // Don't throw - notification failure shouldn't block approval/rejection
+    }
+  };
+
   const loadJobs = async () => {
     try {
       setLoading(true);
@@ -115,13 +144,62 @@ const JobApprovalPage: React.FC = () => {
     }
 
     try {
+      // Get job details first to get clientId and title
       const jobRef = doc(db, 'jobs', jobId);
+      const jobSnap = await getDoc(jobRef);
+      
+      if (!jobSnap.exists()) {
+        alert('❌ Job not found');
+        return;
+      }
+
+      const jobData = jobSnap.data();
+      
+      // Deduct coins for promotions if applicable
+      if (jobData.promotionCost && jobData.promotionCost > 0) {
+        try {
+          // Call backend API to deduct coins
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/v1/coins/deduct`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+            },
+            body: JSON.stringify({
+              userId: jobData.clientId,
+              amount: jobData.promotionCost,
+              metadata: {
+                type: 'job_promotion',
+                description: `Promotion cost for job: ${jobData.title}`,
+                jobId: jobId
+              }
+            })
+          });
+
+          if (!response.ok) {
+            console.error('Failed to deduct coins:', await response.text());
+            alert('⚠️ Job approved but failed to deduct promotion coins. Please deduct manually.');
+          } else {
+            console.log('✅ Coins deducted successfully for promotions');
+          }
+        } catch (error) {
+          console.error('Error deducting coins:', error);
+          alert('⚠️ Job approved but failed to deduct promotion coins. Please deduct manually.');
+        }
+      }
+      
+      // Update job status
       await updateDoc(jobRef, {
         adminStatus: 'approved',
         approvedBy: currentAdmin.uid,
         approvedAt: new Date(),
         status: 'open' // Also mark as open for applicants
       });
+      
+      // Notify the job poster
+      if (jobData.clientId) {
+        await notifyUser(jobData.clientId, jobData.title, 'approved');
+      }
       
       // Invalidate cache and reload
       cache.invalidatePattern('jobs:.*');
@@ -160,8 +238,19 @@ const JobApprovalPage: React.FC = () => {
 
     try {
       const sanitizedReason = sanitizeString(rejectionReason);
-      const jobRef = doc(db, 'jobs', jobToReject);
       
+      // Get job details first to get clientId and title
+      const jobRef = doc(db, 'jobs', jobToReject);
+      const jobSnap = await getDoc(jobRef);
+      
+      if (!jobSnap.exists()) {
+        alert('❌ Job not found');
+        return;
+      }
+
+      const jobData = jobSnap.data();
+      
+      // Update job status
       await updateDoc(jobRef, {
         adminStatus: 'rejected',
         rejectedBy: currentAdmin.uid,
@@ -169,6 +258,11 @@ const JobApprovalPage: React.FC = () => {
         rejectionReason: sanitizedReason,
         status: 'rejected'
       });
+      
+      // Notify the job poster
+      if (jobData.clientId) {
+        await notifyUser(jobData.clientId, jobData.title, 'rejected', sanitizedReason);
+      }
       
       // Invalidate cache and reload
       cache.invalidatePattern('jobs:.*');

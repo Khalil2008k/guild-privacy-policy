@@ -1165,3 +1165,4 @@ This is the **Coin Store UI** - a premium, modern design with:
 4. ✅ Admin console (withdrawal management)
 
 Or would you like me to review/adjust the Coin Store UI first?
+

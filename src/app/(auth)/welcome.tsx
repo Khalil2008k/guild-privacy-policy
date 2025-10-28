@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useFonts, SignikaNegative_400Regular, SignikaNegative_700Bold } from '@expo-google-fonts/signika-negative';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
+import { useAuth } from '../../contexts/AuthContext';
 import { getContrastTextColor } from '../../utils/colorUtils';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
@@ -30,7 +31,7 @@ export default function WelcomeScreen() {
   // Advanced Light Mode Colors
   const adaptiveColors = {
     background: isDarkMode ? theme.background : '#FFFFFF',
-    text: isDarkMode ? theme.text : '#1A1A1A',
+    text: isDarkMode ? theme.textPrimary : '#1A1A1A',
     textSecondary: isDarkMode ? theme.textSecondary : '#666666',
     primary: theme.primary,
     // Sign Up button: theme color background → black text
@@ -51,6 +52,16 @@ export default function WelcomeScreen() {
   const slideUpAnim = useRef(new Animated.Value(30)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Tagline typing animation values
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const taglineScale = useRef(new Animated.Value(1)).current;
+  const taglineRotation = useRef(new Animated.Value(0)).current;
+  
+  // Sign in button fill animation
+  const signInFillAnim = useRef(new Animated.Value(0)).current;
+  const [isSignInPressed, setIsSignInPressed] = useState(false);
 
   useEffect(() => {
     // Staggered entrance animation
@@ -85,15 +96,92 @@ export default function WelcomeScreen() {
     ]).start();
   }, []);
 
+  // Separate useEffect for typing animation
+  useEffect(() => {
+    const taglineText = isRTL ? 'تواصل • تعاون • انجح' : 'Connect • Collaborate • Conquer';
+    
+    // Reset state
+    setDisplayedText('');
+    setCurrentIndex(0);
+    
+    const startTypingAnimation = () => {
+      let index = 0;
+      const typingInterval = setInterval(() => {
+        if (index < taglineText.length) {
+          setDisplayedText(taglineText.substring(0, index + 1));
+          setCurrentIndex(index + 1);
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          // After typing is complete, do a special effect
+          setTimeout(() => {
+            Animated.sequence([
+              Animated.parallel([
+                Animated.timing(taglineScale, {
+                  toValue: 1.1,
+                  duration: 300,
+                  easing: Easing.out(Easing.back(1.2)),
+                  useNativeDriver: true,
+                }),
+                Animated.timing(taglineRotation, {
+                  toValue: 1,
+                  duration: 300,
+                  easing: Easing.out(Easing.cubic),
+                  useNativeDriver: true,
+                }),
+              ]),
+              Animated.delay(500),
+              Animated.parallel([
+                Animated.timing(taglineScale, {
+                  toValue: 1,
+                  duration: 300,
+                  easing: Easing.out(Easing.cubic),
+                  useNativeDriver: true,
+                }),
+                Animated.timing(taglineRotation, {
+                  toValue: 0,
+                  duration: 300,
+                  easing: Easing.out(Easing.cubic),
+                  useNativeDriver: true,
+                }),
+              ]),
+            ]).start();
+          }, 1000);
+        }
+      }, 100); // 100ms delay between each character
+    };
+
+    // Start typing animation after initial load
+    const typingTimer = setTimeout(() => {
+      startTypingAnimation();
+    }, 2000);
+
+    return () => {
+      clearTimeout(typingTimer);
+    };
+  }, [isRTL]);
+
   const handleSignIn = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(auth)/sign-in');
+    
+    // Start fill animation
+    setIsSignInPressed(true);
+    Animated.timing(signInFillAnim, {
+      toValue: 1,
+      duration: 400, // Faster animation
+      easing: Easing.out(Easing.cubic), // Smooth easing
+      useNativeDriver: false, // We need layout animations for the fill effect
+    }).start(() => {
+      // Navigate after animation completes
+      router.push('/(auth)/sign-in');
+    });
   };
 
   const handleSignUp = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/(auth)/signup-complete');
   };
+
 
   const styles = StyleSheet.create({
     container: {
@@ -194,6 +282,22 @@ export default function WelcomeScreen() {
       justifyContent: 'center',
       flexDirection: 'row',
       gap: 12,
+      position: 'relative',
+    },
+    signInButtonFill: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 14, // Slightly smaller than button border radius
+      transformOrigin: 'center', // Start from center for proper border-to-center effect
+    },
+    signInButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      zIndex: 1, // Ensure content stays above the fill
     },
     signInButtonText: {
       fontSize: 18,
@@ -246,9 +350,27 @@ export default function WelcomeScreen() {
           <Text style={styles.subtitleText}>
             {isRTL ? 'انضم إلى مجتمع العمل الحر الأفضل' : 'Join the ultimate freelancing community'}
           </Text>
-          <Text style={styles.taglineText}>
-            {isRTL ? 'تواصل • تعاون • انجح' : 'Connect • Collaborate • Conquer'}
-          </Text>
+          <Animated.Text 
+            style={[
+              styles.taglineText,
+              {
+                transform: [
+                  { scale: taglineScale },
+                  { 
+                    rotate: taglineRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '2deg']
+                    })
+                  }
+                ],
+              }
+            ]}
+          >
+            {displayedText}
+            {currentIndex < (isRTL ? 'تواصل • تعاون • انجح' : 'Connect • Collaborate • Conquer').length && (
+              <Text style={[styles.taglineText, { opacity: 0.5 }]}>|</Text>
+            )}
+          </Animated.Text>
         </Animated.View>
 
         {/* Buttons Section */}
@@ -264,34 +386,79 @@ export default function WelcomeScreen() {
           <View style={styles.buttonContainer}>
             {/* Sign Up Button */}
             <TouchableOpacity
-              style={styles.signUpButton}
+              style={[styles.signUpButton, {
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+              }]}
               onPress={handleSignUp}
               activeOpacity={0.8}
             >
               <UserPlus 
                 size={20} 
                 color={getContrastTextColor(theme.primary)}
-                style={{ marginEnd: 8 }}
+                style={{ 
+                  marginRight: isRTL ? 0 : 8,
+                  marginLeft: isRTL ? 8 : 0,
+                }}
               />
-              <Text style={[styles.signUpButtonText, { color: getContrastTextColor(theme.primary) }]}>
+              <Text style={[styles.signUpButtonText, { 
+                color: getContrastTextColor(theme.primary),
+                textAlign: isRTL ? 'right' : 'left',
+              }]}>
                 {isRTL ? 'إنشاء حساب' : 'Create Account'}
               </Text>
             </TouchableOpacity>
 
             {/* Sign In Button */}
             <TouchableOpacity
-              style={styles.signInButton}
+              style={[styles.signInButton, {
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+                overflow: 'hidden', // Important for the fill effect
+              }]}
               onPress={handleSignIn}
               activeOpacity={0.7}
             >
-              <LogIn 
-                size={20} 
-                color={theme.textPrimary}
-                style={{ marginEnd: 8 }}
+              {/* Animated fill background - water fill effect from border to center */}
+              <Animated.View
+                style={[
+                  styles.signInButtonFill,
+                  {
+                    backgroundColor: theme.primary,
+                    transform: [
+                      {
+                        scale: signInFillAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1.1, 0.1], // Start from 1.1 (beyond border) and shrink to 0.1 (almost center)
+                        }),
+                      },
+                    ],
+                    opacity: signInFillAnim.interpolate({
+                      inputRange: [0, 0.1, 1],
+                      outputRange: [0, 1, 1],
+                    }),
+                  },
+                ]}
               />
-              <Text style={styles.signInButtonText}>
-                {isRTL ? 'تسجيل الدخول' : 'Sign In'}
-              </Text>
+              
+              {/* Button content */}
+              <View style={styles.signInButtonContent}>
+                <LogIn 
+                  size={20} 
+                  color={isSignInPressed ? getContrastTextColor(theme.primary) : adaptiveColors.signInButtonText}
+                  style={{ 
+                    marginRight: isRTL ? 0 : 8,
+                    marginLeft: isRTL ? 8 : 0,
+                  }}
+                />
+                <Text style={[
+                  styles.signInButtonText, 
+                  {
+                    textAlign: isRTL ? 'right' : 'left',
+                    color: isSignInPressed ? getContrastTextColor(theme.primary) : adaptiveColors.signInButtonText,
+                  }
+                ]}>
+                  {isRTL ? 'تسجيل الدخول' : 'Sign In'}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 

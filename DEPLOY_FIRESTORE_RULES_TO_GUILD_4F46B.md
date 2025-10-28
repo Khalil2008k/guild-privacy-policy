@@ -136,3 +136,4 @@ The backend should stop showing the UNAUTHENTICATED error.
 
 https://console.firebase.google.com/project/guild-4f46b/firestore/rules
 
+

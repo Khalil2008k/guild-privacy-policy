@@ -134,9 +134,9 @@ export function useAsyncOperation() {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const execute = useCallback(async <T>(
-    asyncFn: (signal: AbortSignal) => Promise<T>
-  ): Promise<T | null> => {
+  const execute = useCallback(async (
+    asyncFn: (signal: AbortSignal) => Promise<any>
+  ): Promise<any> => {
     // Cancel previous operation
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();

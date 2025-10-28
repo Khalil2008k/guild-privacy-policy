@@ -98,15 +98,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const typingTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const messageQueue = useRef<Message[]>([]);
 
-  // Initialize socket connection
+  // Initialize socket connection and chat listener
   useEffect(() => {
+    let chatUnsubscribe: (() => void) | undefined;
+    
     if (user) {
       initializeSocket();
-      loadChats();
+      loadChats().then((unsubscribe) => {
+        chatUnsubscribe = unsubscribe;
+      });
     }
     
     return () => {
       socketService.disconnect();
+      if (chatUnsubscribe) {
+        chatUnsubscribe();
+      }
     };
   }, [user]);
 
@@ -143,16 +150,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Load user's chats
+   * Load user's chats with real-time listener
    */
   const loadChats = async () => {
+    if (!user) return;
+    
     try {
-      const userChats = await chatService.getUserChats();
-      setChats(userChats);
+      // Set up real-time listener
+      const unsubscribe = chatService.listenToUserChats(user.uid, (userChats) => {
+        setChats(userChats);
+        
+        // Calculate total unread count
+        const total = userChats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+        setUnreadCount(total);
+      });
       
-      // Calculate total unread count
-      const total = userChats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
-      setUnreadCount(total);
+      // Return cleanup function
+      return unsubscribe;
     } catch (error) {
       console.error('Error loading chats:', error);
     }

@@ -96,7 +96,17 @@ export default function SearchScreen() {
   const loadCategories = async () => {
     try {
       const categoriesData = await jobService.getCategories();
-      setCategories(categoriesData);
+      // Transform string array to Category objects
+      const transformedCategories = [
+        { id: 'all', name: isRTL ? 'جميع الوظائف' : 'All Jobs', icon: '📋', count: 0 },
+        ...categoriesData.map((category, index) => ({
+          id: category.toLowerCase().replace(/\s+/g, '-'),
+          name: category,
+          icon: '📋',
+          count: 0 // No dummy data - real counts will be calculated
+        }))
+      ];
+      setCategories(transformedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
       // Fallback to basic categories
@@ -262,28 +272,28 @@ export default function SearchScreen() {
   };
 
   const handleJobPress = (job: Job) => {
-    // Navigate to job details
-    router.push(`/(main)/job-details/${job.id}`);
+    // Navigate to job details modal
+    router.push(`/(modals)/job/${job.id}` as any);
   };
 
   const handleHeartPress = (job: Job) => {
-    setFavoriteJobs(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(job.id)) {
-        newFavorites.delete(job.id);
-        CustomAlertService.showAlert(
-          isRTL ? 'تم إزالة الوظيفة من المفضلة' : 'Job removed from favorites',
-          isRTL ? 'تم إزالة هذه الوظيفة من قائمة المفضلة' : 'This job has been removed from your favorites'
-        );
-      } else {
-        newFavorites.add(job.id);
-        CustomAlertService.showAlert(
-          isRTL ? 'تم إضافة الوظيفة للمفضلة' : 'Job added to favorites',
-          isRTL ? 'تم حفظ هذه الوظيفة في قائمة المفضلة' : 'This job has been saved to your favorites'
-        );
-      }
-      return newFavorites;
-    });
+    try {
+      setFavoriteJobs(prev => {
+        const newFavorites = new Set(prev);
+        if (newFavorites.has(job.id)) {
+          newFavorites.delete(job.id);
+          // Show success message
+          console.log('Job removed from favorites');
+        } else {
+          newFavorites.add(job.id);
+          // Show success message
+          console.log('Job added to favorites');
+        }
+        return newFavorites;
+      });
+    } catch (error) {
+      console.error('Error handling heart press:', error);
+    }
   };
 
   const handleSharePress = (job: Job) => {
@@ -380,7 +390,7 @@ export default function SearchScreen() {
       >
         <View style={[
           styles.categoryIconContainer,
-          { backgroundColor: isSelected ? 'rgba(0,0,0,0.1)' : theme.primary + '15' }
+          { backgroundColor: 'transparent' }
         ]}>
           <CategoryIcon 
             size={20} 
@@ -557,7 +567,7 @@ export default function SearchScreen() {
         ]}>
           <MapPin size={14} color="#000000" />
           <Text style={[styles.jobMetaText, { color: '#000000' }]}>
-            {item.location}
+            {typeof item.location === 'object' ? item.location?.address || 'Location not specified' : item.location}
           </Text>
         </View>
         <View style={[
@@ -601,8 +611,8 @@ export default function SearchScreen() {
           </Text>
         </View>
         <View style={[styles.jobSkills, { flexDirection: layout.flexDirection }]}>
-          {item.skills.slice(0, 2).map((skill, index) => (
-            <View key={index} style={[
+          {(Array.isArray(item?.skills) ? item.skills : []).slice(0, 2).map((skill, index) => (
+            <View key={`${item.id}-skill-${index}`} style={[
               styles.skillTag, 
               { 
                 backgroundColor: theme.primary,
@@ -630,7 +640,7 @@ export default function SearchScreen() {
               </Text>
             </View>
           ))}
-          {item.skills.length > 2 && (
+          {(Array.isArray(item?.skills) ? item.skills.length : 0) > 2 && (
             <Text 
               style={[
                 styles.moreSkills, 
@@ -695,7 +705,7 @@ export default function SearchScreen() {
       ]}>
         <View style={[
           styles.searchIconContainer,
-          { backgroundColor: theme.primary + '15' }
+          { backgroundColor: 'transparent' }
         ]}>
           <Search size={18} color={theme.primary} />
         </View>
@@ -896,17 +906,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 2,
-    gap: 12,
+    marginBottom: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 1, // Reduced from 16 to 1 (15px reduction)
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 14,
   },
   searchIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -915,6 +925,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONT_FAMILY,
     fontWeight: '500',
+    lineHeight: 20,
   },
   clearButton: {
     width: 24,
@@ -929,46 +940,49 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoriesContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   categoriesList: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 14,
   },
   categoryItem: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginRight: 8,
-    minWidth: 70,
+    paddingVertical: -1, // Reduced from 14 to -1 (15px reduction)
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginRight: 12,
+    minWidth: 80,
     justifyContent: 'center',
   },
   categoryIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   categoryName: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: FONT_FAMILY,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+    fontWeight: '500',
   },
   categoryCountContainer: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 20,
   },
   categoryCount: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: FONT_FAMILY,
+    fontWeight: '600',
   },
   jobsList: {
     paddingHorizontal: 20,
@@ -1019,6 +1033,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   jobDescription: {
     fontSize: 14,

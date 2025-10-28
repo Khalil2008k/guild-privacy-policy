@@ -183,13 +183,22 @@ class JobService {
   async postJob(jobId: string): Promise<void> {
     try {
       const jobRef = doc(this.jobsCollection, jobId);
+      const jobDoc = await getDoc(jobRef);
+      
+      if (!jobDoc.exists()) {
+        throw new Error('Job not found');
+      }
+
+      const jobData = jobDoc.data() as Job;
+      
       await updateDoc(jobRef, {
         status: 'draft', // Keep as draft until admin approves
         adminStatus: 'pending_review', // Requires admin approval
         updatedAt: new Date(),
       });
 
-      await this.sendNotification(jobId, 'Job Submitted', 'Your job has been submitted for review. It will be visible to freelancers once approved by our team.');
+      // Notify the job poster
+      await this.sendNotification(jobData.clientId, 'Job Submitted', 'Your job has been submitted for review. It will be visible to freelancers once approved by our team.');
     } catch (error) {
       console.error('Error posting job:', error);
       throw new Error('Failed to post job');
@@ -217,10 +226,10 @@ class JobService {
           status: 'offered',
           updatedAt: new Date(),
         });
-      }
 
-      // Notify client about new offer
-      await this.sendNotification(offerData.jobId, 'New Offer Received', `You have received a new offer for ${offerData.price} QR.`);
+        // Notify client about new offer
+        await this.sendNotification(jobData.clientId, 'New Offer Received', `You have received a new offer for ${offerData.price} QR.`);
+      }
       
       return docRef.id;
     } catch (error) {
@@ -301,12 +310,21 @@ class JobService {
   async startWork(jobId: string): Promise<void> {
     try {
       const jobRef = doc(this.jobsCollection, jobId);
+      const jobDoc = await getDoc(jobRef);
+      
+      if (!jobDoc.exists()) {
+        throw new Error('Job not found');
+      }
+
+      const jobData = jobDoc.data() as Job;
+      
       await updateDoc(jobRef, {
         status: 'in-progress',
         updatedAt: new Date(),
       });
 
-      await this.sendNotification(jobId, 'Work Started', 'The freelancer has started working on your job.');
+      // Notify the client
+      await this.sendNotification(jobData.clientId, 'Work Started', 'The freelancer has started working on your job.');
     } catch (error) {
       console.error('Error starting work:', error);
       throw new Error('Failed to start work');
@@ -317,12 +335,21 @@ class JobService {
   async submitWork(jobId: string, submissionDetails?: string): Promise<void> {
     try {
       const jobRef = doc(this.jobsCollection, jobId);
+      const jobDoc = await getDoc(jobRef);
+      
+      if (!jobDoc.exists()) {
+        throw new Error('Job not found');
+      }
+
+      const jobData = jobDoc.data() as Job;
+      
       await updateDoc(jobRef, {
         status: 'submitted',
         updatedAt: new Date(),
       });
 
-      await this.sendNotification(jobId, 'Work Submitted', 'The freelancer has submitted the completed work for your review.');
+      // Notify the client
+      await this.sendNotification(jobData.clientId, 'Work Submitted', 'The freelancer has submitted the completed work for your review.');
     } catch (error) {
       console.error('Error submitting work:', error);
       throw new Error('Failed to submit work');
@@ -359,7 +386,10 @@ class JobService {
         releasedAt: new Date(),
       });
 
-      await this.sendNotification(jobId, 'Work Approved', 'The work has been approved and payment has been released.');
+      // Notify the freelancer
+      if (jobData.freelancerId) {
+        await this.sendNotification(jobData.freelancerId, 'Work Approved', 'The work has been approved and payment has been released.');
+      }
     } catch (error) {
       console.error('Error approving work:', error);
       throw new Error('Failed to approve work');
@@ -386,9 +416,12 @@ class JobService {
             status: 'disputed',
           });
         }
-      }
 
-      await this.sendNotification(jobId, 'Work Disputed', 'A dispute has been raised for this job. Our support team will review the case.');
+        // Notify the freelancer
+        if (jobData.freelancerId) {
+          await this.sendNotification(jobData.freelancerId, 'Work Disputed', 'A dispute has been raised for this job. Our support team will review the case.');
+        }
+      }
     } catch (error) {
       console.error('Error disputing work:', error);
       throw new Error('Failed to dispute work');
@@ -410,7 +443,11 @@ class JobService {
       if (jobData.status === 'submitted' && jobData.escrowId) {
         // Auto-approve and release escrow
         await this.approveWork(jobId);
-        await this.sendNotification(jobId, 'Auto-Release', 'Payment has been automatically released after 72 hours of no response.');
+        
+        // Notify the freelancer
+        if (jobData.freelancerId) {
+          await this.sendNotification(jobData.freelancerId, 'Auto-Release', 'Payment has been automatically released after 72 hours of no response.');
+        }
       }
     } catch (error) {
       console.error('Error auto-releasing escrow:', error);
@@ -552,7 +589,10 @@ class JobService {
         updatedAt: new Date(),
       });
 
-      await this.sendNotification(jobId, 'Job Cancelled', reason || 'The job has been cancelled.');
+      // Notify the freelancer (if assigned)
+      if (job.freelancerId) {
+        await this.sendNotification(job.freelancerId, 'Job Cancelled', reason || 'The job has been cancelled.');
+      }
       
       // Determine refund logic based on job status
       const wasAccepted = job.status === 'accepted' || job.status === 'in-progress';
@@ -589,22 +629,27 @@ class JobService {
     return deg * (Math.PI/180);
   }
 
-  // Send push notification - DISABLED due to Expo Go SDK 53 limitations
+  // Send notification to Firestore
   private async sendNotification(userId: string, title: string, body: string): Promise<void> {
     try {
-      // In a real app, you would get the user's push token from your database
-      // and send the notification through a push service
-      console.log('📱 Notification would be sent:', { userId, title, body });
-      // await Notifications.scheduleNotificationAsync({
-      //   content: {
-      //     title,
-      //     body,
-      //     sound: 'default',
-      //   },
-      //   trigger: null, // Send immediately
-      // });
+      await addDoc(collection(db, 'notifications'), {
+        userId,
+        type: 'JOB_APPLICATION_RECEIVED',
+        title,
+        message: body,
+        data: {
+          title,
+          message: body
+        },
+        isRead: false,
+        createdAt: new Date(),
+        priority: 'high',
+        category: 'jobs'
+      });
+      console.log('✅ Notification sent:', { userId, title, body });
     } catch (error) {
       console.error('Error sending notification:', error);
+      // Don't throw - notification failure shouldn't block the operation
     }
   }
 
@@ -822,7 +867,7 @@ class JobService {
       // Send notification
       let notificationSent = false;
       try {
-        await this.sendNotification(job.postedBy, 'Job Accepted', 'Your job has been accepted by a freelancer.');
+        await this.sendNotification(job.clientId, 'Job Accepted', 'Your job has been accepted by a freelancer.');
         notificationSent = true;
       } catch (error) {
         console.error('Failed to send notification:', error);

@@ -13,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
+import { BackendAPI } from '../../config/backend';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUserProfile } from '../../contexts/UserProfileContext';
@@ -23,7 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { walletAPIClient } from '../../services/walletAPIClient';
 import { router } from 'expo-router';
 import { Shield } from 'lucide-react-native';
-import { QrCode, CheckCircle, Grid, User, MessageCircle, Briefcase, Phone, IdCard, MapPin, ChevronLeft, ChevronRight, Check, Edit, Wallet, Users, FileText, File, Settings, Bell, BarChart3, Trophy, HelpCircle, LogOut, XCircle, Eye, EyeOff } from 'lucide-react-native';
+import { QrCode, CheckCircle, Grid, User, MessageCircle, Briefcase, Phone, IdCard, MapPin, ChevronLeft, ChevronRight, Check, Edit, Wallet, Users, FileText, File, Settings, Bell, BarChart3, Trophy, HelpCircle, LogOut, XCircle, Eye, EyeOff, X } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useI18n } from '../../contexts/I18nProvider';
 import * as ImagePicker from 'expo-image-picker';
@@ -118,7 +120,6 @@ export default function ProfileScreen() {
     phoneNumber: profile.phoneNumber,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [isUserInfoBlurred, setIsUserInfoBlurred] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
   const { wallet: fakeWallet, isLoading: fakeWalletLoading } = useRealPayment();
   const [showBalance, setShowBalance] = useState(true);
@@ -255,28 +256,47 @@ export default function ProfileScreen() {
       if (!result.canceled && result.assets[0]) {
         setIsLoading(true);
         
-        // Simulate face detection
-        const hasFace = await simulateFaceDetection(result.assets[0].uri);
+        // Process image with AI
+        const aiResult = await processImageWithAI(result.assets[0].uri);
         
-        if (!hasFace) {
+        if (!aiResult.success) {
+          // AI processing failed, ask user if they want to use original
           CustomAlertService.showConfirmation(
-            t('faceNotDetected'),
-            t('pleaseEnsureFaceVisible'),
-            () => takePhoto(),
-            undefined,
+            isRTL ? 'معالجة الصورة فشلت' : 'Image Processing Failed',
+            isRTL 
+              ? `فشل في معالجة الصورة: ${aiResult.error}. هل تريد استخدام الصورة الأصلية؟`
+              : `Image processing failed: ${aiResult.error}. Do you want to use the original image?`,
+            async () => {
+              await updateProfile({ 
+                profileImage: result.assets[0].uri,
+                faceDetected: false,
+                aiProcessed: false
+              });
+              console.log('📷 Profile image updated (original)');
+            },
+            () => {
+              // User chose not to use original, try again
+              takePhoto();
+            },
             isRTL
           );
-          setIsLoading(false);
           return;
         }
 
+        // AI processing successful
         await updateProfile({ 
-          profileImage: result.assets[0].uri,
-          faceDetected: true 
+          profileImage: aiResult.processedImageUri || result.assets[0].uri,
+          faceDetected: true,
+          aiProcessed: true
         });
         
-        console.log('📷 Profile image updated successfully');
-        setIsLoading(false);
+        console.log('🤖 Profile image processed with AI successfully');
+        CustomAlertService.showSuccess(
+          isRTL ? 'تم معالجة الصورة!' : 'Image Processed!',
+          isRTL 
+            ? 'تم تحسين صورتك الشخصية وإزالة الخلفية بنجاح'
+            : 'Your profile picture has been enhanced and background removed successfully'
+        );
       }
     } catch (error) {
       console.error('📷 Error taking photo:', error);
@@ -285,10 +305,63 @@ export default function ProfileScreen() {
     }
   };
 
-  // Simulate face detection
-  const simulateFaceDetection = async (imageUri: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return Math.random() > 0.2; // 80% success rate
+  // Real AI face detection and background removal
+  const processImageWithAI = async (imageUri: string): Promise<{ success: boolean; processedImageUri?: string; error?: string }> => {
+    try {
+      setIsLoading(true);
+      
+      // Convert URI to File object for React Native
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      // Create a File-like object for React Native
+      const file = {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'profile-image.jpg',
+        data: blob
+      };
+      
+      // Create FormData for API call
+      const formData = new FormData();
+      formData.append('image', blob, 'profile-image.jpg');
+      formData.append('qualityThreshold', '0.7');
+      formData.append('backgroundRemovalMethod', 'grabcut');
+      formData.append('enableFallback', 'true');
+      formData.append('enableCaching', 'true');
+      
+      // Call AI service via BackendAPI
+      const aiResponse = await BackendAPI.post('/profile-picture-ai/process', formData);
+      
+      if (!aiResponse.success) {
+        throw new Error(`AI service failed: ${aiResponse.error}`);
+      }
+      
+      const aiResult = aiResponse;
+      
+      if (aiResult.success && aiResult.result) {
+        // AI processing successful
+        return {
+          success: true,
+          processedImageUri: aiResult.result.processedImageUrl,
+        };
+      } else {
+        // AI processing failed, use original image
+        return {
+          success: false,
+          error: aiResult.error || 'AI processing failed',
+        };
+      }
+      
+    } catch (error) {
+      console.error('🤖 AI processing error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle save changes
@@ -527,6 +600,11 @@ export default function ProfileScreen() {
                     <User size={115} color="#CCCCCC" />
                   </View>
                 )}
+                
+                {/* Shield Icon - Bottom Left Corner */}
+                <View style={styles.shieldBadge}>
+                  <Shield size={20} color="#000000" />
+                </View>
               </View>
             </View>
 
@@ -579,28 +657,23 @@ export default function ProfileScreen() {
                       : userGuildStatus.guild?.displayText
                     }
                   </Text>
-                  {isUserInfoBlurred && (
-                    <View style={styles.blurOverlay} />
-                  )}
                 </View>
-                <TouchableOpacity 
-                  style={styles.unblurButton}
-                  onPress={() => setIsUserInfoBlurred(!isUserInfoBlurred)}
-                >
-                  <Text style={styles.unblurButtonText}>
-                    {isUserInfoBlurred ? 'Show Info' : 'Hide Info'}
-                  </Text>
-                </TouchableOpacity>
               </View>
               
               {/* All Icons - Horizontal Row */}
               <View style={styles.allIconsRow}>
                 {/* Verification Status - Admin given */}
                 <TouchableOpacity style={styles.iconButton}>
-                  {profile.isVerified ? (
-                    <CheckCircle size={20} color="#000000" />
+                  {true ? ( // Temporarily set to true for testing
+                    <View style={styles.shieldContainer}>
+                      <Shield size={20} color="#000000" />
+                      <Check size={12} color="#000000" style={styles.shieldIcon} />
+                    </View>
                   ) : (
-                    <XCircle size={20} color="#CCCCCC" />
+                    <View style={styles.shieldContainer}>
+                      <Shield size={20} color="#CCCCCC" />
+                      <X size={14} color="#CCCCCC" style={styles.shieldIcon} />
+                    </View>
                   )}
                 </TouchableOpacity>
                 {/* Chat - Leads to chat screen */}
@@ -832,16 +905,16 @@ export default function ProfileScreen() {
                   {t('skills')}
                 </Text>
                 <View style={styles.skillsList}>
-                  {profile.skills.map((skill, index) => (
+                  {(Array.isArray(profile?.skills) ? profile.skills : []).map((skill, index) => (
                     <View 
-                      key={index}
+                      key={`${profile?.id || "profile"}-skill-${index}`}
                       style={[styles.skillChip, { 
                         backgroundColor: theme.primary + '20',
                         borderColor: theme.primary 
                       }]}
                     >
                       <Text style={[styles.skillText, { color: theme.primary }]}>
-                        {skill}
+                        {String(skill)}
                       </Text>
                     </View>
                   ))}
@@ -1578,6 +1651,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginLeft: -80,
     marginTop: -70,
+    position: 'relative',
+  },
+  shieldBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#000000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   userPhotoRect: {
     width: 173,
@@ -1684,6 +1776,16 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 8,
   },
+  shieldContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shieldIcon: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+  },
   gridIcon: {
     width: 24,
     height: 24,
@@ -1707,29 +1809,6 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     width: '100%',
     position: 'relative',
-  },
-  blurOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(191, 255, 0, 0.95)',
-    borderRadius: 8,
-  },
-  unblurButton: {
-    backgroundColor: '#000000',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  unblurButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: FONT_FAMILY,
   },
   infoText: {
     fontSize: 14,

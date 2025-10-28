@@ -256,7 +256,7 @@ export default function ProfileSettingsScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: [ImagePicker.MediaType.Images],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -990,9 +990,9 @@ export default function ProfileSettingsScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>{t('skills') || 'Skills'}</Text>
               <View style={styles.skillsContainer}>
-                {profile.skills.map((skill, index) => (
-                  <View key={index} style={styles.skillChip}>
-                    <Text style={styles.skillText}>{skill}</Text>
+                {(Array.isArray(profile?.skills) ? profile.skills : []).map((skill, index) => (
+                  <View key={`${profile?.id || "profile"}-skill-${index}`} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{String(skill)}</Text>
                     {isEditing && (
                       <TouchableOpacity 
                         style={styles.skillRemoveButton}

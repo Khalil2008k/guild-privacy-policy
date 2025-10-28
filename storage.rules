@@ -1,69 +1,75 @@
 rules_version = '2';
 
-// Firebase Storage Rules for GUILD App
 service firebase.storage {
   match /b/{bucket}/o {
     
+    // Helper function to check if user is participant in chat
+    function isParticipant(chatId) {
+      return request.auth != null
+        && exists(/databases/(default)/documents/chats/$(chatId))
+        && (request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants);
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // ===== VOICE MESSAGES =====
+    match /chats/{chatId}/voice/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // ===== VIDEO MESSAGES =====
+    match /chats/{chatId}/video/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 50 * 1024 * 1024;
+    }
+    
+    // ===== VIDEO THUMBNAILS =====
+    match /chats/{chatId}/video/thumbnails/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 2 * 1024 * 1024;
+    }
+    
+    // ===== CHAT IMAGES =====
+    match /chats/{chatId}/images/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 5 * 1024 * 1024;
+    }
+    
     // ===== CHAT FILES =====
-    // Allow authenticated users to upload files to chats they're part of
     match /chats/{chatId}/files/{fileName} {
-      // Allow read if user is authenticated
-      allow read: if request.auth != null;
-      
-      // Allow write if user is authenticated (they must be part of the chat to send messages)
-      allow write: if request.auth != null;
-      
-      // Limit file size to 10MB
-      allow write: if request.resource.size < 10 * 1024 * 1024;
+      allow read, write: if isParticipant(chatId) && request.resource.size < 25 * 1024 * 1024;
     }
     
     // ===== USER PROFILE IMAGES =====
     match /users/{userId}/profile/{fileName} {
-      // Allow read for all authenticated users
       allow read: if request.auth != null;
-      
-      // Allow write only for the user's own profile
       allow write: if request.auth != null && request.auth.uid == userId;
-      
-      // Limit file size to 5MB
-      allow write: if request.resource.size < 5 * 1024 * 1024;
+      allow write: if request.resource.size < 5 * 1024 * 1024; // 5MB limit
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
     
     // ===== JOB ATTACHMENTS =====
     match /jobs/{jobId}/attachments/{fileName} {
-      // Allow read for all authenticated users
       allow read: if request.auth != null;
-      
-      // Allow write for authenticated users (job poster)
       allow write: if request.auth != null;
-      
-      // Limit file size to 20MB
-      allow write: if request.resource.size < 20 * 1024 * 1024;
+      allow write: if request.resource.size < 20 * 1024 * 1024; // 20MB limit
     }
     
     // ===== GUILD IMAGES =====
     match /guilds/{guildId}/images/{fileName} {
-      // Allow read for all authenticated users
       allow read: if request.auth != null;
-      
-      // Allow write for authenticated users (guild masters)
       allow write: if request.auth != null;
-      
-      // Limit file size to 5MB
-      allow write: if request.resource.size < 5 * 1024 * 1024;
+      allow write: if request.resource.size < 5 * 1024 * 1024; // 5MB limit
     }
     
     // ===== ADMIN UPLOADS =====
     match /admin/{allPaths=**} {
-      // Only admins can read/write
-      allow read, write: if request.auth != null && request.auth.token.admin == true;
+      allow read, write: if isAdmin();
     }
     
     // ===== DEFAULT DENY =====
-    // Deny all other requests by default
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 }
-

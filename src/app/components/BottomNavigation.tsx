@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { RTLText } from './primitives/primitives';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface NavItem {
   key: string;
@@ -53,6 +54,8 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeRoute = '/' }: BottomNavigationProps) {
   const { bottom } = useSafeAreaInsets();
+  const { theme } = useTheme();
+  
   const animatedValues = React.useRef(
     navItems.reduce((acc, item) => {
       acc[item.key] = new Animated.Value(item.route === activeRoute ? 1 : 0);
@@ -63,6 +66,13 @@ export default function BottomNavigation({ activeRoute = '/' }: BottomNavigation
   const scaleValues = React.useRef(
     navItems.reduce((acc, item) => {
       acc[item.key] = new Animated.Value(1);
+      return acc;
+    }, {} as Record<string, Animated.Value>)
+  ).current;
+
+  const glowValues = React.useRef(
+    navItems.reduce((acc, item) => {
+      acc[item.key] = new Animated.Value(0);
       return acc;
     }, {} as Record<string, Animated.Value>)
   ).current;
@@ -87,22 +97,41 @@ export default function BottomNavigation({ activeRoute = '/' }: BottomNavigation
   }, [activeRoute, animatedValues, scaleValues]);
 
   const handlePress = (item: NavItem) => {
-    if (item.route !== activeRoute) {
-      // Add press animation - scale down to 0.85 for more noticeable effect
+    // Skip glow for middle item (Guild)
+    const isMiddleItem = item.key === 'guild';
+    
+    // Always animate on press for better feedback
+    Animated.sequence([
+      Animated.timing(scaleValues[item.key], {
+        toValue: 0.8,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValues[item.key], {
+        toValue: 1,
+        tension: 150,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Add glow effect (except for middle item)
+    if (!isMiddleItem) {
       Animated.sequence([
-        Animated.timing(scaleValues[item.key], {
-          toValue: 0.85,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleValues[item.key], {
+        Animated.timing(glowValues[item.key], {
           toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
+          duration: 150,
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowValues[item.key], {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: false,
         }),
       ]).start();
-      
+    }
+    
+    if (item.route !== activeRoute) {
       router.push(item.route);
     }
   };
@@ -133,6 +162,16 @@ export default function BottomNavigation({ activeRoute = '/' }: BottomNavigation
             outputRange: [0, 1],
           });
 
+          const glowOpacity = glowValues[item.key].interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 0.9],
+          });
+
+          const glowScale = glowValues[item.key].interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 1.3],
+          });
+
           return (
             <TouchableOpacity
               key={item.key}
@@ -140,6 +179,20 @@ export default function BottomNavigation({ activeRoute = '/' }: BottomNavigation
               onPress={() => handlePress(item)}
               activeOpacity={0.8}
             >
+              {/* Glow effect wrapper (except for middle item) */}
+              {item.key !== 'guild' && (
+                <Animated.View
+                  style={[
+                    styles.glowBackground,
+                    {
+                      backgroundColor: '#BCFF31', // Neon green glow for visibility
+                      opacity: glowOpacity,
+                      transform: [{ scale: glowScale }],
+                    },
+                  ]}
+                />
+              )}
+              
               <Animated.View
                 style={[
                   styles.activeBackground,
@@ -219,6 +272,15 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 16,
+  },
+  glowBackground: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 18,
+    zIndex: -1,
   },
   iconContainer: {
     position: 'relative',

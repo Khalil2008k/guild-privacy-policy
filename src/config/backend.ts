@@ -14,7 +14,7 @@ import { authTokenService } from '../services/authTokenService';
 // - iOS Simulator: use 'localhost'
 // - Android Emulator: use '10.0.2.2'
 const BACKEND_CONFIG = {
-  baseURL: 'https://guild-yf7q.onrender.com/api',  // Production backend on Render
+  baseURL: 'https://guild-yf7q.onrender.com',  // Production backend on Render (removed /api)
   timeout: 10000,
   retries: 3,
 };
@@ -76,7 +76,13 @@ export class BackendAPI {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+        console.log('❌ Backend error response:', errorData);
+        const errorMessage = 
+          errorData.error?.message || 
+          errorData.error || 
+          errorData.message || 
+          `HTTP ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       return await response.json();

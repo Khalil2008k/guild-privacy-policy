@@ -38,6 +38,21 @@ config.transformer = {
   },
 };
 
+// Enable Fast Refresh for development
+config.server = {
+  ...config.server,
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      // Enable Fast Refresh headers
+      res.setHeader('X-React-Refresh', 'true');
+      return middleware(req, res, next);
+    };
+  },
+};
+
+// Enable Fast Refresh for better development experience
+config.resetCache = false;
+
 // Resolver enhancements for better module resolution
 config.resolver = {
   ...config.resolver,

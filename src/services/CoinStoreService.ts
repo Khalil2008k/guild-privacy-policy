@@ -1,79 +1,54 @@
-import { BackendAPI } from '@/config/backend';
+/**
+ * Coin Store Service
+ * Handles coin purchase API calls
+ */
 
-export interface CoinPack {
-  coins: Record<string, number>;
-  value: number;
-  price: number;
+import { BackendAPI } from '../config/backend';
+
+export interface PurchaseCoinsRequest {
+  coins: { [symbol: string]: number };
+  paymentMethod?: string;
 }
 
-export interface PurchaseResult {
-  purchaseId: string;
-  paymentUrl: string;
-  coins: Record<string, number>;
-  coinValue: number;
-  purchasePrice: number;
-  pspFee: number;
-  platformRevenue: number;
+export interface PurchaseCoinsResponse {
+  success: boolean;
+  data?: {
+    transactionId: string;
+    coins: { [symbol: string]: number };
+    totalQAR: number;
+    paymentUrl?: string;
+  };
+  error?: string;
 }
 
-class CoinStoreService {
+export class CoinStoreService {
+  /**
+   * Purchase coins from the store
+   */
+  static async purchaseCoins(coins: { [symbol: string]: number }): Promise<any> {
+    try {
+      const response = await BackendAPI.post('/coins/purchase', {
+        coins,
+        paymentMethod: 'fatora', // Default to Fatora PSP
+      });
+
+      return response;
+    } catch (error: any) {
+      console.error('Error purchasing coins:', error);
+      throw new Error(error.message || 'Failed to purchase coins');
+    }
+  }
+
   /**
    * Get coin catalog
    */
-  async getCoinCatalog() {
+  static async getCoinCatalog() {
     try {
       const response = await BackendAPI.get('/coins/catalog');
-      return response.data.data;
+      return response;
     } catch (error) {
-      console.error('Error getting coin catalog:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create coin purchase
-   */
-  async createPurchase(data: {
-    coins?: Record<string, number>;
-    customAmount?: number;
-  }): Promise<PurchaseResult> {
-    try {
-      const response = await BackendAPI.post('/coins/purchase', data);
-      return response.data.data;
-    } catch (error) {
-      console.error('Error creating purchase:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get purchase by ID
-   */
-  async getPurchase(purchaseId: string) {
-    try {
-      const response = await BackendAPI.get(`/coins/purchase/${purchaseId}`);
-      return response.data.data;
-    } catch (error) {
-      console.error('Error getting purchase:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get purchase history
-   */
-  async getPurchaseHistory(limit: number = 20) {
-    try {
-      const response = await BackendAPI.get('/coins/purchases', {
-        params: { limit },
-      });
-      return response.data.data;
-    } catch (error) {
-      console.error('Error getting purchase history:', error);
+      console.error('Error fetching coin catalog:', error);
       throw error;
     }
   }
 }
-
-export const coinStoreService = new CoinStoreService();
-

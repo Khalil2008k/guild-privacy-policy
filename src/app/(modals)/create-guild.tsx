@@ -12,9 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useI18n } from '@/contexts/I18nProvider';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealPayment } from '@/contexts/RealPaymentContext';
 import CustomAlert from '@/app/components/CustomAlert';
-import { ArrowLeft, Shield, Users, MapPin, FileText, Lock, Globe, Check } from 'lucide-react-native';
+import { ArrowLeft, Shield, Users, MapPin, FileText, Lock, Globe, Check, Coins } from 'lucide-react-native';
 import AppBottomNavigation from '@/app/components/AppBottomNavigation';
+import { CustomAlertService } from '@/services/CustomAlertService';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -162,7 +165,7 @@ export default function CreateGuildScreen() {
     );
   }, []);
 
-  const handleCreateGuild = useCallback(() => {
+  const handleCreateGuild = useCallback(async () => {
     if (!formData.name.trim()) {
       setShowNameErrorAlert(true);
       return;
@@ -178,8 +181,38 @@ export default function CreateGuildScreen() {
       return;
     }
 
-    setShowSuccessAlert(true);
-  }, [formData, selectedCategories]);
+    // Check if user has sufficient coins (2500 QR worth)
+    const GUILD_CREATION_COST = 2500; // 2500 QR worth of coins
+    if (!wallet || wallet.balance < GUILD_CREATION_COST) {
+      CustomAlertService.showError(
+        t('error'),
+        isRTL 
+          ? `رصيدك غير كافٍ. تحتاج إلى عملات بقيمة ${GUILD_CREATION_COST} ريال قطري لإنشاء نقابة.`
+          : `Insufficient balance. You need ${GUILD_CREATION_COST} QR worth of coins to create a guild.`
+      );
+      return;
+    }
+
+    // Process coin payment for guild creation
+    try {
+      const success = await processPayment(
+        GUILD_CREATION_COST,
+        'guild_creation',
+        `Guild creation: ${formData.name}`,
+        'system' // Payment goes to system (platform)
+      );
+
+      if (success) {
+        setShowSuccessAlert(true);
+      }
+    } catch (error) {
+      console.error('Error creating guild:', error);
+      CustomAlertService.showError(
+        t('error'),
+        isRTL ? 'فشل في إنشاء النقابة' : 'Failed to create guild'
+      );
+    }
+  }, [formData, selectedCategories, wallet, processPayment, t, isRTL]);
   
   const handleSuccessConfirm = useCallback(() => {
     setShowSuccessAlert(false);

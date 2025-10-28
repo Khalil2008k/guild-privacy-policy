@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Shield } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -61,6 +62,16 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
   
   // Determine current route from pathname if not provided
   const activeRoute = currentRoute || pathname;
+  
+  // Animation values for each nav item
+  const animationRefs = useRef<{ [key: string]: Animated.Value }>({});
+  
+  // Initialize animation values
+  navRoutes.forEach(route => {
+    if (!animationRefs.current[route.key]) {
+      animationRefs.current[route.key] = new Animated.Value(0);
+    }
+  });
 
   const handleNavPress = useCallback((route: NavRoute) => {
     if (route.path === activeRoute) return; // Don't navigate if already on this route
@@ -80,6 +91,19 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
     }
     return activeRoute?.startsWith(routePath);
   }, [activeRoute]);
+  
+  // Animate tabs when active state changes
+  useEffect(() => {
+    navRoutes.forEach(route => {
+      const active = isActive(route.path);
+      Animated.spring(animationRefs.current[route.key], {
+        toValue: active ? 1 : 0,
+        useNativeDriver: false,
+        tension: 100,
+        friction: 7,
+      }).start();
+    });
+  }, [activeRoute, isActive]);
 
   const styles = StyleSheet.create({
     container: {
@@ -106,6 +130,39 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 8,
+      position: 'relative',
+    },
+    navItemInner: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    topIndicator: {
+      position: 'absolute',
+      top: -4,
+      left: '25%',
+      right: '25%',
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: theme.primary,
+    },
+    spotlightGlow: {
+      position: 'absolute',
+      top: -20,
+      left: '50%',
+      width: 60,
+      height: 60,
+      marginLeft: -30,
+      borderRadius: 30,
+      opacity: 0.3,
+    },
+    iconGlow: {
+      position: 'absolute',
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.primary,
+      opacity: 0.2,
     },
     centerNavItem: {
       flex: 1,
@@ -177,6 +234,23 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
           );
         }
 
+        const animValue = animationRefs.current[route.key];
+        
+        // Animated values
+        const indicatorOpacity = animValue;
+        const spotlightOpacity = animValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.3],
+        });
+        const iconGlowScale = animValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.8, 1.2],
+        });
+        const iconGlowOpacity = animValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.4],
+        });
+
         return (
           <TouchableOpacity
             key={route.key}
@@ -184,13 +258,52 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
             onPress={() => handleNavPress(route)}
             activeOpacity={0.7}
           >
-            {route.icon({ size: 22, color: active ? '#FFFFFF' : '#CCCCCC' })}
-            <Text style={[
-              styles.navText,
-              active && styles.navTextActive
-            ]}>
-              {route.label}
-            </Text>
+            {/* Top Indicator Line */}
+            <Animated.View 
+              style={[
+                styles.topIndicator,
+                { opacity: indicatorOpacity }
+              ]} 
+            />
+            
+            {/* Spotlight Glow Effect */}
+            <Animated.View 
+              style={[
+                styles.spotlightGlow,
+                { opacity: spotlightOpacity }
+              ]}
+            >
+              <LinearGradient
+                colors={[theme.primary + '80', theme.primary + '00']}
+                style={{ flex: 1, borderRadius: 30 }}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+              />
+            </Animated.View>
+            
+            <View style={styles.navItemInner}>
+              {/* Icon Glow */}
+              <Animated.View 
+                style={[
+                  styles.iconGlow,
+                  {
+                    opacity: iconGlowOpacity,
+                    transform: [{ scale: iconGlowScale }],
+                  }
+                ]}
+              />
+              
+              {/* Icon */}
+              {route.icon({ size: 22, color: active ? theme.primary : '#CCCCCC' })}
+              
+              {/* Label */}
+              <Text style={[
+                styles.navText,
+                active && styles.navTextActive
+              ]}>
+                {route.label}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}

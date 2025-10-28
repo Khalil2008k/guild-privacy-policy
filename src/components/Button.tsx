@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, ViewStyle, TextStyle, Platform, View } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nProvider';
 
 interface ButtonProps {
   title: string;
@@ -32,13 +33,14 @@ export default function Button({
   testID = 'button',
 }: ButtonProps) {
   const { theme } = useTheme();
+  const { isRTL } = useI18n();
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
-      flexDirection: 'row',
+      flexDirection: isRTL ? 'row-reverse' : 'row',
       opacity: disabled || loading ? 0.5 : 1,
       ...Platform.select({
         web: {
@@ -155,7 +157,10 @@ export default function Button({
       )}
 
       {!loading && leftIcon && (
-        <View testID="icon" style={{ marginRight: 8 }}>
+        <View testID="icon" style={{ 
+          marginRight: isRTL ? 0 : 8,
+          marginLeft: isRTL ? 8 : 0,
+        }}>
           {leftIcon}
         </View>
       )}
@@ -165,7 +170,10 @@ export default function Button({
       </Text>
 
       {!loading && rightIcon && (
-        <View style={{ marginLeft: 8 }}>
+        <View style={{ 
+          marginLeft: isRTL ? 0 : 8,
+          marginRight: isRTL ? 8 : 0,
+        }}>
           {rightIcon}
         </View>
       )}

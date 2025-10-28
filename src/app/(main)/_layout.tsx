@@ -20,7 +20,7 @@ export default function MainLayout() {
   return (
     <RouteErrorBoundary routeName="Main App" fallbackRoute="/(auth)/splash">
       <View style={styles.container}>
-        <Slot />
+        <Slot initialRouteName="home" />
         <AppBottomNavigation />
       </View>
     </RouteErrorBoundary>

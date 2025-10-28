@@ -8,7 +8,6 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Shield } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nProvider';
@@ -74,10 +73,11 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
       onRequestClose={onDismiss}
     >
       <View style={styles.modalOverlay}>
-        <BlurView 
-          intensity={isDarkMode ? 40 : 60} 
-          tint={isDarkMode ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+        <View 
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)' }
+          ]}
         />
         
         <TouchableOpacity 

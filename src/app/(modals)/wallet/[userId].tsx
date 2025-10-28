@@ -13,11 +13,12 @@ import {
   TrendingDown, 
   CreditCard,
   Banknote,
-  ArrowUpDown,
+  ShoppingBag,
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowUpDown
 } from 'lucide-react-native';
 import { realPaymentService, Wallet as RealWallet, Transaction } from '@/services/realPaymentService';
 import { CustomAlertService } from '@/services/CustomAlertService';
@@ -33,13 +34,13 @@ export default function UserWalletScreen() {
 
   const adaptiveColors = {
     background: isDarkMode ? theme.background : '#FFFFFF',
-    text: isDarkMode ? theme.text : '#1A1A1A',
+    text: isDarkMode ? theme.textPrimary : '#1A1A1A',
     textSecondary: isDarkMode ? theme.textSecondary : '#666666',
     surface: isDarkMode ? theme.surface : '#F8F9FA',
     border: isDarkMode ? theme.border : 'rgba(0,0,0,0.08)',
     primary: theme.primary,
     buttonText: '#000000',
-  };
+  } as const;
 
   const [wallet, setWallet] = useState<RealWallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,37 +86,85 @@ export default function UserWalletScreen() {
     );
   };
 
-  const handleWithdraw = () => {
-    Alert.alert(
-      isRTL ? 'طلب سحب' : 'Request Withdrawal',
-      isRTL 
-        ? 'هل تريد طلب سحب من محفظتك؟'
-        : 'Do you want to request a withdrawal from your wallet?',
-      [
-        { text: isRTL ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { 
-          text: isRTL ? 'طلب السحب' : 'Request Withdrawal', 
-          style: 'default',
-          onPress: () => {
-            CustomAlertService.showSuccess(
-              isRTL ? 'تم إرسال الطلب' : 'Request Sent',
-              isRTL 
-                ? 'تم إرسال طلب السحب بنجاح. سيتم مراجعته خلال 24 ساعة.'
-                : 'Withdrawal request sent successfully. It will be reviewed within 24 hours.'
-            );
+  const handleWithdraw = async () => {
+    try {
+      // Show withdrawal amount input
+      Alert.prompt(
+        isRTL ? 'طلب سحب' : 'Request Withdrawal',
+        isRTL 
+          ? 'أدخل المبلغ المراد سحبه (QAR)'
+          : 'Enter the amount to withdraw (QAR)',
+        [
+          { text: isRTL ? 'إلغاء' : 'Cancel', style: 'cancel' },
+          { 
+            text: isRTL ? 'طلب السحب' : 'Request Withdrawal', 
+            style: 'default',
+            onPress: async (amount) => {
+              if (!amount || isNaN(parseFloat(amount))) {
+                CustomAlertService.showError(
+                  isRTL ? 'خطأ' : 'Error',
+                  isRTL ? 'يرجى إدخال مبلغ صحيح' : 'Please enter a valid amount'
+                );
+                return;
+              }
+
+              const withdrawalAmount = parseFloat(amount);
+              
+              // Check if user has sufficient balance
+              if (wallet && wallet.balance < withdrawalAmount) {
+                CustomAlertService.showError(
+                  isRTL ? 'رصيد غير كافٍ' : 'Insufficient Balance',
+                  isRTL 
+                    ? `رصيدك الحالي: ${wallet.balance.toFixed(2)} QAR`
+                    : `Your current balance: ${wallet.balance.toFixed(2)} QAR`
+                );
+                return;
+              }
+
+              try {
+                // Call real withdrawal API
+                const result = await realPaymentService.requestWithdrawal({
+                  amount: withdrawalAmount,
+                  currency: 'QAR',
+                  method: 'bank_transfer',
+                  accountDetails: {
+                    accountNumber: 'N/A', // Will be filled by user in future
+                    accountHolderName: 'N/A'
+                  }
+                });
+
+                if (result.success) {
+                  CustomAlertService.showSuccess(
+                    isRTL ? 'تم إرسال الطلب' : 'Request Sent',
+                    isRTL 
+                      ? `تم إرسال طلب السحب بنجاح. رقم المعاملة: ${result.transactionId}`
+                      : `Withdrawal request sent successfully. Transaction ID: ${result.transactionId}`
+                  );
+                  
+                  // Refresh wallet data
+                  await loadWalletData();
+                } else {
+                  throw new Error(result.message || 'Withdrawal request failed');
+                }
+              } catch (error) {
+                console.error('Withdrawal error:', error);
+                CustomAlertService.showError(
+                  isRTL ? 'خطأ في السحب' : 'Withdrawal Error',
+                  error instanceof Error ? error.message : 'Failed to process withdrawal request'
+                );
+              }
+            }
           }
-        }
-      ]
-    );
+        ],
+        'plain-text'
+      );
+    } catch (error) {
+      console.error('Error showing withdrawal dialog:', error);
+    }
   };
 
-  const handleTransfer = () => {
-    CustomAlertService.showInfo(
-      isRTL ? 'تحويل' : 'Transfer',
-      isRTL 
-        ? 'ميزة التحويل قيد التطوير. ستكون متاحة قريباً.'
-        : 'Transfer feature is under development. Coming soon.'
-    );
+  const handleStore = () => {
+    router.push('/(modals)/coin-store');
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -242,15 +291,12 @@ export default function UserWalletScreen() {
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: adaptiveColors.surface, borderColor: adaptiveColors.border }]}
-            onPress={handleTransfer}
+            onPress={handleStore}
             activeOpacity={0.7}
           >
-            <ArrowUpDown size={20} color={adaptiveColors.textSecondary} />
-            <Text style={[styles.actionButtonText, { color: adaptiveColors.textSecondary }]}>
-              {isRTL ? 'تحويل' : 'Transfer'}
-            </Text>
-            <Text style={[styles.comingSoonText, { color: adaptiveColors.textSecondary }]}>
-              {isRTL ? '(قريباً)' : '(Coming Soon)'}
+            <ShoppingBag size={20} color={theme.primary} />
+            <Text style={[styles.actionButtonText, { color: adaptiveColors.text }]}>
+              {isRTL ? 'متجر' : 'Store'}
             </Text>
           </TouchableOpacity>
         </View>

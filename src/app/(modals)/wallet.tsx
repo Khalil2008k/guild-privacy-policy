@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   StyleSheet, 
@@ -9,7 +9,11 @@ import {
   ActivityIndicator,
   Dimensions,
   Modal,
-  RefreshControl
+  RefreshControl,
+  Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -18,10 +22,15 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { Ionicons } from '@expo/vector-icons';
-import { Shield, TrendingUp, TrendingDown, Eye, EyeOff } from 'lucide-react-native';
+import { Shield, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag, Coins, Wallet as WalletIcon } from 'lucide-react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
 
 const { width, height } = Dimensions.get('window');
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface TransactionItem {
   id: string;
@@ -48,6 +57,12 @@ export default function WalletScreen() {
   const [showTransactionDetail, setShowTransactionDetail] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
 
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const balanceAnim = useRef(new Animated.Value(0)).current;
+
   const periods = [
     { label: '1D', value: '1D' },
     { label: '5D', value: '5D' },
@@ -59,6 +74,30 @@ export default function WalletScreen() {
 
   useEffect(() => {
     loadTransactionHistory();
+    
+    // Animate on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(balanceAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [wallet]);
 
   const loadTransactionHistory = async () => {
@@ -90,6 +129,8 @@ export default function WalletScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      // Animate refresh
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       await refreshWallet();
       await loadTransactionHistory();
     } catch (error) {
@@ -99,25 +140,16 @@ export default function WalletScreen() {
     }
   };
 
-  const handleDeposit = () => {
-    CustomAlertService.showInfo(
-      'Coming Soon',
-      'Deposit functionality will be available after beta testing. Currently using Guild Coins for all transactions.'
-    );
+  const handleStore = () => {
+    router.push('/(modals)/coin-store');
   };
 
   const handleWithdraw = () => {
-    CustomAlertService.showInfo(
-      'Coming Soon',
-      'Withdraw functionality will be available after beta testing. Currently using Guild Coins for all transactions.'
-    );
+    router.push('/(modals)/coin-withdrawal');
   };
 
-  const handleTransfer = () => {
-    CustomAlertService.showInfo(
-      'Coming Soon',
-      'Transfer functionality will be available after beta testing. Currently using Guild Coins for all transactions.'
-    );
+  const handleMyCoins = () => {
+    router.push('/(modals)/coin-wallet');
   };
 
   const getTransactionIcon = (type: string, description: string) => {
@@ -148,21 +180,38 @@ export default function WalletScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: theme.primary }]}>
         <View style={[styles.headerContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={[styles.backButton, {
+              backgroundColor: 'rgba(0,0,0,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(0,0,0,0.2)',
+            }]}
             onPress={() => router.back()}
           >
             <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color="#000000" />
           </TouchableOpacity>
           
-          <View style={[styles.headerCenter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.headerCenter, { 
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+            marginRight: isRTL ? 0 : 20,
+            marginLeft: isRTL ? 20 : 0,
+          }]}>
             <Shield size={24} color="#000000" />
-            <Text style={[styles.headerTitle, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+            <Text style={[styles.headerTitle, { 
+              marginLeft: isRTL ? 0 : 8, 
+              marginRight: isRTL ? 8 : 0,
+              textAlign: isRTL ? 'right' : 'left',
+              writingDirection: isRTL ? 'rtl' : 'ltr',
+            }]}>
               {isRTL ? 'المحفظة' : 'Wallet'}
             </Text>
           </View>
           
           <TouchableOpacity 
-            style={styles.headerRight}
+            style={[styles.headerRight, {
+              backgroundColor: 'rgba(0,0,0,0.1)',
+              borderWidth: 1,
+              borderColor: 'rgba(0,0,0,0.2)',
+            }]}
             onPress={() => setShowMenu(true)}
           >
             <Ionicons name="ellipsis-horizontal" size={24} color="#000000" />
@@ -185,17 +234,17 @@ export default function WalletScreen() {
         {/* Balance Card - Dark background */}
         <View style={[styles.balanceCard, { backgroundColor: theme.primary }]}>
           <View style={[styles.balanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.balanceLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
-              {isRTL ? 'رصيدك' : 'Your Balance'}
+            <Text style={[styles.balanceLabel, { textAlign: isRTL ? 'right' : 'left', color: '#000000' }]}>
+              {isRTL ? 'قيمة العملات' : 'Coins Worth'}
             </Text>
             <View style={[styles.percentageChange, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TrendingUp size={16} color="#000000" />
-              <Text style={[styles.percentageText, { color: '#000000' }]}>+10.2%</Text>
+              <Coins size={16} color="#000000" />
+              <Text style={[styles.percentageText, { color: '#000000' }]}>{(wallet?.balance || 0).toLocaleString()}</Text>
             </View>
           </View>
           
           <View style={[styles.balanceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={styles.balanceAmount}>
+            <Text style={[styles.balanceAmount, { color: '#000000' }]}>
               {isLoading ? '...' : showBalance ? `${(wallet?.balance || 0).toLocaleString()}` : '••••••'}
             </Text>
             <TouchableOpacity 
@@ -209,9 +258,14 @@ export default function WalletScreen() {
               )}
             </TouchableOpacity>
           </View>
-          <Text style={[styles.balanceCurrency, { textAlign: isRTL ? 'right' : 'left' }]}>
-            {isRTL ? 'عملات جيلد 🪙' : 'Guild Coins 🪙'}
-          </Text>
+          <View style={[styles.balanceCurrencyRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.balanceCurrency, { textAlign: isRTL ? 'right' : 'left', color: '#000000' }]}>
+              {isRTL ? 'ريال قطري' : 'Qatari Riyal'}
+            </Text>
+            <Text style={[styles.balanceCurrencyCode, { textAlign: isRTL ? 'right' : 'left', color: '#000000' }]}>
+              QAR
+            </Text>
+          </View>
           
           {/* Period Selector - Like the image */}
           <View style={styles.periodSelector}>
@@ -222,7 +276,10 @@ export default function WalletScreen() {
                   styles.periodButton,
                   selectedPeriod === period.value && styles.periodButtonActive
                 ]}
-                onPress={() => setSelectedPeriod(period.value)}
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setSelectedPeriod(period.value);
+                }}
               >
                 <Text style={[
                   styles.periodButtonText,
@@ -261,14 +318,14 @@ export default function WalletScreen() {
         {/* Action Buttons */}
         <View style={[styles.actionButtonsContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity 
-            style={[styles.actionButtonCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-            onPress={handleDeposit}
+            style={[styles.actionButtonCard, { backgroundColor: theme.primary }]}
+            onPress={handleStore}
           >
-            <View style={[styles.actionButtonIcon, { backgroundColor: theme.primary }]}>
-              <Ionicons name="card-outline" size={24} color="#000000" />
+            <View style={[styles.actionButtonIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+              <ShoppingBag size={24} color="#000000" />
             </View>
-            <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>
-              {isRTL ? 'إيداع' : 'Deposit'}
+            <Text style={[styles.actionButtonText, { color: '#000000' }]}>
+              {isRTL ? 'متجر' : 'Store'}
             </Text>
           </TouchableOpacity>
           
@@ -277,22 +334,22 @@ export default function WalletScreen() {
             onPress={handleWithdraw}
           >
             <View style={[styles.actionButtonIcon, { backgroundColor: theme.primary }]}>
-              <Ionicons name="cash-outline" size={24} color="#000000" />
+              <WalletIcon size={24} color="#000000" />
             </View>
-            <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>
+            <Text style={[styles.actionButtonText, { color: theme.textPrimary || '#000000' }]}>
               {isRTL ? 'سحب' : 'Withdraw'}
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.actionButtonCard, { backgroundColor: theme.primary }]}
-            onPress={handleTransfer}
+            style={[styles.actionButtonCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+            onPress={handleMyCoins}
           >
-            <View style={[styles.actionButtonIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-              <Ionicons name="swap-horizontal" size={24} color="#000000" />
+            <View style={[styles.actionButtonIcon, { backgroundColor: theme.primary }]}>
+              <Coins size={24} color="#000000" />
             </View>
-            <Text style={[styles.actionButtonText, { color: '#000000' }]}>
-              {isRTL ? 'تحويل' : 'Transfer'}
+            <Text style={[styles.actionButtonText, { color: theme.textPrimary || '#000000' }]}>
+              {isRTL ? 'عملاتي' : 'My Coins'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -327,6 +384,7 @@ export default function WalletScreen() {
                 key={transaction.id} 
                 style={[styles.transactionItem, { backgroundColor: theme.surface, borderColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                 onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                   setSelectedTransaction(transaction);
                   setShowTransactionDetail(true);
                 }}
@@ -389,7 +447,7 @@ export default function WalletScreen() {
                     {isRTL ? 'المبلغ' : 'Amount'}
                   </Text>
                   <Text style={[styles.detailAmount, { color: selectedTransaction.type === 'credit' ? '#00C9A7' : '#FF6B6B', textAlign: isRTL ? 'right' : 'left' }]}>
-                    {selectedTransaction.type === 'credit' ? '+' : '-'}{selectedTransaction.amount.toLocaleString()} 🪙
+                    {selectedTransaction.type === 'credit' ? '+' : '-'}{selectedTransaction.amount.toLocaleString()} {isRTL ? 'عملة' : 'Coins'}
                   </Text>
                 </View>
 
@@ -576,6 +634,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerContent: {
     flexDirection: 'row',
@@ -584,6 +644,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerCenter: {
     flexDirection: 'row',
@@ -599,6 +665,12 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     padding: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   scrollView: {
     flex: 1,
@@ -609,6 +681,11 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 24,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   balanceHeader: {
     flexDirection: 'row',
@@ -650,12 +727,24 @@ const styles = StyleSheet.create({
   eyeIconButton: {
     padding: 4,
   },
+  balanceCurrencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
   balanceCurrency: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: '#000000',
     opacity: 0.7,
-    marginBottom: 24,
+  },
+  balanceCurrencyCode: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#000000',
+    opacity: 0.9,
   },
   periodSelector: {
     flexDirection: 'row',

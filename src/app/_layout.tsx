@@ -21,6 +21,8 @@ import { CustomAlertProvider } from '../services/CustomAlertService';
 import { PaymentSheetProvider } from '../services/PaymentSheetService';
 import { RealPaymentProvider } from '../contexts/RealPaymentContext';
 import { ensureFirebaseCacheCleared } from '../config/clearFirebaseCache';
+import MessageNotificationService from '../services/MessageNotificationService';
+import { configureNotificationHandlers } from '../services/push';
 
 // ⚡⚡⚡ LUDICROUS SPEED - 1ms native splash!
 // Execute synchronously at module parse - INSTANT!
@@ -36,12 +38,16 @@ export default function RootLayout() {
     ensureFirebaseCacheCleared()
       .then(() => {
         console.log('🔥 Firebase cache cleared, initializing services...');
+        // Configure notification handlers first
+        configureNotificationHandlers();
+        
         // Use layoutEffect for synchronous execution before paint
         return Promise.allSettled([
           BackendConnectionManager.initialize(),
           errorMonitoring.initialize(),
           performanceMonitoring.initialize(),
           appCheckService.initialize(),
+          MessageNotificationService.initialize(),
         ]);
       })
       .then(() => {

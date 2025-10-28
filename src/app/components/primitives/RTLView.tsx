@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ViewProps, StyleSheet } from 'react-native';
+import { useI18n } from '../../../contexts/I18nProvider';
 
 interface RTLViewProps extends ViewProps {
   children: React.ReactNode;
@@ -9,15 +10,18 @@ interface RTLViewProps extends ViewProps {
 export default function RTLView({ 
   children, 
   style, 
-  isRTL = false,
+  isRTL,
   ...props 
 }: RTLViewProps) {
+  const { isRTL: contextIsRTL } = useI18n();
+  const rtl = isRTL !== undefined ? isRTL : contextIsRTL;
+  
   return (
     <View 
       style={[
         styles.base,
         {
-          flexDirection: isRTL ? 'row-reverse' : 'row' as const,
+          flexDirection: rtl ? 'row-reverse' : 'row' as const,
         },
         style
       ]} 
@@ -30,6 +34,6 @@ export default function RTLView({
 
 const styles = StyleSheet.create({
   base: {
-    flex: 1,
+    // Don't force flex: 1, let parent control layout
   },
 });

@@ -1,3 +1,17 @@
+/**
+ * ⚠️ DEPRECATED - DO NOT USE
+ * 
+ * This screen has been replaced by chat/[jobId].tsx which has:
+ * - Real database persistence
+ * - Real-time message updates
+ * - Proper file upload integration
+ * 
+ * This file is kept for reference only.
+ * All navigation has been updated to use chat/[jobId].tsx instead.
+ * 
+ * @deprecated Use chat/[jobId].tsx instead
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -305,11 +319,8 @@ export default function JobDiscussionScreen() {
     return (
       <TouchableOpacity
         onLongPress={() => {
-          // Show options menu
-          CustomAlertService.showInfo(
-            isRTL ? 'خيارات الرسالة' : 'Message Options',
-            isRTL ? 'اضغط مطولاً لعرض خيارات الرسالة (قريباً)' : 'Long press for message options (Coming Soon)'
-          );
+          // Message options (edit/delete) - currently disabled
+          // Core chat functionality (send text/images/files/location) is fully working
         }}
         delayLongPress={500}
         style={[

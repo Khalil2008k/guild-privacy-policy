@@ -50,6 +50,7 @@ interface Job {
   title: string;
   description: string;
   status: 'open' | 'in-progress' | 'completed';
+  adminStatus?: 'pending_review' | 'approved' | 'rejected';
   budget: number;
   location?: string;
   category: string;
@@ -66,7 +67,7 @@ export default function MyJobsScreen() {
   
   const adaptiveColors = React.useMemo(() => getAdaptiveColors(theme, isDarkMode), [theme, isDarkMode]);
   
-  const [tab, setTab] = useState<'open' | 'in-progress' | 'completed'>('open');
+  const [tab, setTab] = useState<'open' | 'in-progress' | 'completed' | 'pending'>('open');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,13 +82,25 @@ export default function MyJobsScreen() {
     try {
       setLoading(true);
       
-      // Query jobs from Firebase where user is either client or worker
       const jobsRef = collection(db, 'jobs');
-      const q = query(
-        jobsRef,
-        where('status', '==', tab),
-        orderBy('createdAt', 'desc')
-      );
+      let q;
+      
+      // Handle pending review tab separately
+      if (tab === 'pending') {
+        q = query(
+          jobsRef,
+          where('clientId', '==', user.uid),
+          where('adminStatus', '==', 'pending_review'),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        q = query(
+          jobsRef,
+          where('clientId', '==', user.uid),
+          where('status', '==', tab),
+          orderBy('createdAt', 'desc')
+        );
+      }
 
       const snapshot = await getDocs(q);
       
@@ -99,19 +112,13 @@ export default function MyJobsScreen() {
             createdAt: doc.data().createdAt?.toDate() || new Date(),
           })) as Job[];
         
-        // Filter to only show user's jobs (as client or worker)
-        const userJobs = jobsData.filter(job => 
-          job.clientId === user.uid || job.workerId === user.uid
-        );
-        
-        setJobs(userJobs);
+        setJobs(jobsData);
       } else {
         setJobs([]);
       }
     } catch (error) {
       console.error('Error loading jobs:', error);
-      // Fallback to mock data for beta testing
-      setJobs(getMockJobs());
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -148,7 +155,16 @@ export default function MyJobsScreen() {
     },
   ];
 
-  const getStatusIcon = (status: Job['status']) => {
+  const getStatusIcon = (status: Job['status'], adminStatus?: string) => {
+    // Show pending review status first
+    if (adminStatus === 'pending_review') {
+      return <Clock size={18} color="#F59E0B" />;
+    }
+    
+    if (adminStatus === 'rejected') {
+      return <AlertCircle size={18} color={theme.error} />;
+    }
+    
     switch (status) {
       case 'open':
         return <AlertCircle size={18} color={theme.primary} />;
@@ -156,10 +172,21 @@ export default function MyJobsScreen() {
         return <Loader size={18} color="#F59E0B" />;
       case 'completed':
         return <CheckCircle size={18} color="#10B981" />;
+      default:
+        return <AlertCircle size={18} color={theme.textSecondary} />;
     }
   };
 
-  const getStatusColor = (status: Job['status']) => {
+  const getStatusColor = (status: Job['status'], adminStatus?: string) => {
+    // Handle admin status colors
+    if (adminStatus === 'pending_review') {
+      return '#F59E0B';
+    }
+    
+    if (adminStatus === 'rejected') {
+      return theme.error;
+    }
+    
     switch (status) {
       case 'open':
         return theme.primary;
@@ -167,6 +194,8 @@ export default function MyJobsScreen() {
         return '#F59E0B';
       case 'completed':
         return '#10B981';
+      default:
+        return theme.textSecondary;
     }
   };
 
@@ -399,7 +428,7 @@ export default function MyJobsScreen() {
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
-        {(['open', 'in-progress', 'completed'] as const).map(tabKey => (
+        {(['pending', 'open', 'in-progress', 'completed'] as const).map(tabKey => (
           <TouchableOpacity
             key={tabKey}
             style={[styles.tabButton, tab === tabKey && styles.tabButtonActive]}
@@ -407,7 +436,9 @@ export default function MyJobsScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
-              {tabKey === 'open' 
+              {tabKey === 'pending'
+                ? (isRTL ? 'قيد المراجعة' : 'Pending')
+                : tabKey === 'open' 
                 ? (isRTL ? 'مفتوح' : 'Open')
                 : tabKey === 'in-progress'
                 ? (isRTL ? 'قيد التنفيذ' : 'In Progress')
@@ -439,7 +470,7 @@ export default function MyJobsScreen() {
         >
           {jobs.length > 0 ? (
             jobs.map(job => {
-              const statusColor = getStatusColor(job.status);
+              const statusColor = getStatusColor(job.status, job.adminStatus);
               return (
                 <TouchableOpacity
                   key={job.id}
@@ -455,9 +486,18 @@ export default function MyJobsScreen() {
                       </Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                      {getStatusIcon(job.status)}
+                      {getStatusIcon(job.status, job.adminStatus)}
                       <Text style={[styles.statusText, { color: statusColor }]}>
-                        {job.status}
+                        {job.adminStatus === 'pending_review' 
+                          ? (isRTL ? 'قيد المراجعة' : 'Pending Review')
+                          : job.adminStatus === 'rejected'
+                          ? (isRTL ? 'مرفوض' : 'Rejected')
+                          : job.status === 'open'
+                          ? (isRTL ? 'مفتوح' : 'Open')
+                          : job.status === 'in-progress'
+                          ? (isRTL ? 'قيد التنفيذ' : 'In Progress')
+                          : (isRTL ? 'مكتمل' : 'Completed')
+                        }
                       </Text>
                     </View>
                   </View>
@@ -498,6 +538,7 @@ export default function MyJobsScreen() {
                 {isRTL ? 'لا توجد وظائف' : 'No jobs found'}
               </Text>
               <Text style={styles.emptySubtext}>
+                {tab === 'pending' && (isRTL ? 'لا توجد وظائف قيد المراجعة' : 'You don\'t have any jobs pending review')}
                 {tab === 'open' && (isRTL ? 'ليس لديك وظائف مفتوحة حاليًا' : 'You don\'t have any open jobs')}
                 {tab === 'in-progress' && (isRTL ? 'ليس لديك وظائف قيد التنفيذ' : 'You don\'t have any jobs in progress')}
                 {tab === 'completed' && (isRTL ? 'ليس لديك وظائف مكتملة بعد' : 'You haven\'t completed any jobs yet')}

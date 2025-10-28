@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { 
-  Briefcase, DollarSign, MapPin, Clock, AlertTriangle, Code, Palette, 
+  Briefcase, Coins, MapPin, Clock, Code, Palette, 
   Megaphone, PenTool, Users, Wrench, FileText, Camera, Video, Music, 
   Languages, Headphones, ShoppingCart, Search, BarChart3, Shield, Car, 
   Home, Utensils, GraduationCap, Dumbbell, Heart, Baby, Dog, Hammer, 
@@ -166,11 +166,33 @@ export default function JobCard({ job, onPress, showStatus = false }: JobCardPro
     }
   };
 
+  const roundToProperCoinValue = (amount: number): number => {
+    // Round to proper coin denominations: 5, 10, 50, 100, 200, 500 QR
+    if (amount <= 5) return 5;
+    if (amount <= 10) return 10;
+    if (amount <= 50) return Math.ceil(amount / 5) * 5; // Round to nearest 5
+    if (amount <= 100) return Math.ceil(amount / 10) * 10; // Round to nearest 10
+    if (amount <= 200) return Math.ceil(amount / 50) * 50; // Round to nearest 50
+    if (amount <= 500) return Math.ceil(amount / 100) * 100; // Round to nearest 100
+    if (amount <= 1000) return Math.ceil(amount / 200) * 200; // Round to nearest 200
+    if (amount <= 5000) return Math.ceil(amount / 500) * 500; // Round to nearest 500
+    return Math.ceil(amount / 1000) * 1000; // Round to nearest 1000
+  };
+
   const formatBudget = () => {
     if (typeof job.budget === 'string') {
-      return job.budget;
+      // Extract numbers from string and round them
+      const numbers = job.budget.match(/\d+/g);
+      if (numbers && numbers.length > 0) {
+        const amount = parseInt(numbers[0]);
+        const rounded = roundToProperCoinValue(amount);
+        return `${rounded} QR`;
+      }
+      return job.budget.replace(/Coins/gi, 'QR');
     }
-    return `QR ${job.budget.min}-${job.budget.max}`;
+    const minRounded = roundToProperCoinValue(job.budget.min || 0);
+    const maxRounded = roundToProperCoinValue(job.budget.max || 0);
+    return `${minRounded}-${maxRounded} QR`;
   };
 
   const formatLocation = () => {
@@ -190,7 +212,7 @@ export default function JobCard({ job, onPress, showStatus = false }: JobCardPro
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>
+            <Text style={[styles.title, { color: theme.textPrimary, flex: 1 }]} numberOfLines={2}>
               {job.title}
             </Text>
             {job.category && (
@@ -207,11 +229,6 @@ export default function JobCard({ job, onPress, showStatus = false }: JobCardPro
             </View>
           )}
         </View>
-        {job.isUrgent && (
-          <View style={styles.urgentBadge}>
-            <AlertTriangle size={14} color="#FF3B30" />
-          </View>
-        )}
       </View>
 
       {/* Description */}
@@ -220,27 +237,27 @@ export default function JobCard({ job, onPress, showStatus = false }: JobCardPro
       </Text>
 
       {/* Details */}
-      <View style={styles.details}>
+      <View style={styles.detailsContainer}>
         {/* Budget */}
-        <View style={styles.detailRow}>
-          <DollarSign size={16} color="#00C9A7" />
-          <Text style={[styles.detailText, { color: theme.textPrimary }]}>
+        <View style={styles.detailItem}>
+          <Coins size={14} color="#00C9A7" />
+          <Text style={[styles.detailText, { color: theme.textPrimary, fontWeight: '600' }]} numberOfLines={1}>
             {formatBudget()}
           </Text>
         </View>
 
         {/* Location */}
-        <View style={styles.detailRow}>
-          <MapPin size={16} color={theme.textSecondary} />
+        <View style={styles.detailItem}>
+          <MapPin size={14} color={theme.textSecondary} />
           <Text style={[styles.detailText, { color: theme.textSecondary }]} numberOfLines={1}>
             {formatLocation()}
           </Text>
         </View>
 
         {/* Time */}
-        <View style={styles.detailRow}>
-          <Clock size={16} color={theme.textSecondary} />
-          <Text style={[styles.detailText, { color: theme.textSecondary }]}>
+        <View style={styles.detailItem}>
+          <Clock size={14} color={theme.textSecondary} />
+          <Text style={[styles.detailText, { color: theme.textSecondary }]} numberOfLines={1}>
             {job.timeNeeded}
           </Text>
         </View>
@@ -249,19 +266,19 @@ export default function JobCard({ job, onPress, showStatus = false }: JobCardPro
       {/* Skills */}
       {job.skills && job.skills.length > 0 && (
         <View style={styles.skills}>
-          {job.skills.slice(0, 3).map((skill, index) => (
+          {(Array.isArray(job?.skills) ? job.skills : []).slice(0, 3).map((skill, index) => (
             <View
-              key={index}
+              key={`${job?.id || "job"}-skill-${index}`}
               style={[styles.skillTag, { backgroundColor: theme.primary + '15' }]}
             >
               <Text style={[styles.skillText, { color: theme.primary }]}>
-                {skill}
+                {String(skill)}
               </Text>
             </View>
           ))}
-          {job.skills.length > 3 && (
+          {(Array.isArray(job?.skills) ? job.skills.length : 0) > 3 && (
             <Text style={[styles.moreSkills, { color: theme.textSecondary }]}>
-              +{job.skills.length - 3}
+              +{(Array.isArray(job?.skills) ? job.skills.length : 0) - 3}
             </Text>
           )}
         </View>
@@ -297,6 +314,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
+    position: 'relative',
   },
   titleContainer: {
     flex: 1,
@@ -304,19 +322,21 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: 4,
+    gap: 8,
   },
   categoryIcon: {
     padding: 6,
     borderRadius: 8,
-    marginLeft: 8,
+    flexShrink: 0,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
+    flexShrink: 1,
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -330,34 +350,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
   },
-  urgentBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FF3B3015',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   description: {
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
   },
-  details: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  detailsContainer: {
+    gap: 8,
     marginBottom: 12,
   },
-  detailRow: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    flex: 1,
+    gap: 6,
+    marginBottom: 4,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
+    flex: 1,
   },
   skills: {
     flexDirection: 'row',

@@ -21,7 +21,8 @@ import {
   ChevronRight, 
   Eye, 
   EyeOff, 
-  Fingerprint
+  Fingerprint,
+  Check
 } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
@@ -29,6 +30,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import BiometricAuthService from '../../utils/biometricAuth';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { detectAuthInputType, getInputPlaceholder, getInputIcon, AuthInputType } from '../../utils/authInputDetector';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -44,6 +46,7 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -75,7 +78,37 @@ export default function SignInScreen() {
 
     // Check biometric availability
     checkBiometricAvailability();
+    
+    // Load saved credentials if "Remember Me" was enabled
+    loadSavedCredentials();
   }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('rememberedEmail');
+      const savedRememberMe = await AsyncStorage.getItem('rememberMe');
+      
+      console.log('🔐 Remember Me: Loading saved credentials...', { 
+        hasSavedEmail: !!savedEmail, 
+        rememberMeEnabled: savedRememberMe === 'true',
+        savedEmail: savedEmail || 'none'
+      });
+      
+      if (savedEmail && savedRememberMe === 'true') {
+        console.log('✅ Remember Me: Auto-filling email:', savedEmail);
+        setIdentifier(savedEmail);
+        setRememberMe(true);
+        const result = detectAuthInputType(savedEmail);
+        setDetectedType(result.type);
+      } else {
+        console.log('ℹ️ Remember Me: No saved credentials found', {
+          reason: !savedEmail ? 'No email saved' : 'Remember Me was not enabled'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Remember Me: Error loading saved credentials:', error);
+    }
+  };
 
   const checkBiometricAvailability = async () => {
     try {
@@ -205,7 +238,22 @@ export default function SignInScreen() {
 
     setLoading(true);
     try {
+      // Save credentials BEFORE sign-in to ensure it completes
+      if (rememberMe) {
+        console.log('💾 Remember Me: Saving email for next time:', inputResult.formattedValue);
+        await AsyncStorage.setItem('rememberedEmail', inputResult.formattedValue);
+        await AsyncStorage.setItem('rememberMe', 'true');
+        console.log('✅ Remember Me: Email saved successfully');
+      } else {
+        console.log('🗑️ Remember Me: Clearing saved credentials');
+        await AsyncStorage.removeItem('rememberedEmail');
+        await AsyncStorage.removeItem('rememberMe');
+        console.log('✅ Remember Me: Credentials cleared');
+      }
+      
+      // Now sign in
       await signInWithEmail(inputResult.formattedValue, password);
+      
       router.replace('/(main)/home');
     } catch (error: any) {
       // Expected authentication failures (wrong password, etc.) - not actual errors
@@ -319,7 +367,10 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { 
+        paddingTop: insets.top + 12,
+        flexDirection: isRTL ? 'row-reverse' : 'row',
+      }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -370,32 +421,30 @@ export default function SignInScreen() {
 
         {/* Unified Input: Email / Phone / Guild ID */}
         <View style={styles.inputContainer}>
-          <View style={[styles.inputWrapper, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={styles.inputIcon}>{getInputIcon(detectedType)}</Text>
-            <TextInput
-              placeholder={getInputPlaceholder(detectedType, isRTL)}
-              placeholderTextColor={theme.textSecondary}
-              value={identifier}
-              onChangeText={handleIdentifierChange}
-              keyboardType={detectedType === 'phone' ? 'phone-pad' : 'email-address'}
-              autoCapitalize={detectedType === 'gid' ? 'characters' : 'none'}
-              autoComplete={detectedType === 'email' ? 'email' : detectedType === 'phone' ? 'tel' : 'off'}
-              style={[styles.textInput, { 
-                flex: 1,
-                color: theme.textPrimary,
-                textAlign: isRTL ? 'right' : 'left'
-              }]}
-            />
-            {detectedType !== 'unknown' && (
-              <View style={[styles.typeIndicator, { backgroundColor: theme.primary + '20', borderColor: theme.primary }]}>
-                <Text style={[styles.typeIndicatorText, { color: theme.primary }]}>
-                  {detectedType === 'email' && (isRTL ? 'بريد' : 'Email')}
-                  {detectedType === 'phone' && (isRTL ? 'هاتف' : 'Phone')}
-                  {detectedType === 'gid' && (isRTL ? 'معرّف' : 'GID')}
-                </Text>
-              </View>
-            )}
-          </View>
+          <TextInput
+            placeholder={getInputPlaceholder(detectedType, isRTL)}
+            placeholderTextColor={theme.textSecondary}
+            value={identifier}
+            onChangeText={handleIdentifierChange}
+            keyboardType={detectedType === 'phone' ? 'phone-pad' : 'email-address'}
+            autoCapitalize={detectedType === 'gid' ? 'characters' : 'none'}
+            autoComplete={detectedType === 'email' ? 'email' : detectedType === 'phone' ? 'tel' : 'off'}
+            style={[styles.textInput, { 
+              backgroundColor: theme.surface, 
+              borderColor: theme.border, 
+              color: theme.textPrimary,
+              textAlign: isRTL ? 'right' : 'left'
+            }]}
+          />
+          {detectedType !== 'unknown' && (
+            <View style={[styles.typeIndicator, { backgroundColor: theme.primary + '20', borderColor: theme.primary }]}>
+              <Text style={[styles.typeIndicatorText, { color: theme.primary }]}>
+                {detectedType === 'email' && (isRTL ? 'بريد' : 'Email')}
+                {detectedType === 'phone' && (isRTL ? 'هاتف' : 'Phone')}
+                {detectedType === 'gid' && (isRTL ? 'معرّف' : 'GID')}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Password Input (only for email/GID, not phone) */}
@@ -436,26 +485,56 @@ export default function SignInScreen() {
           </Text>
         )}
 
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPasswordButton}
-            onPress={handleForgotPassword}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
-              {isRTL ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
-            </Text>
-          </TouchableOpacity>
+          {/* Remember Me & Forgot Password */}
+          <View style={[styles.rememberForgotContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            {/* Remember Me Checkbox */}
+            <TouchableOpacity
+              style={[styles.rememberMeContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              onPress={() => setRememberMe(!rememberMe)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.checkbox,
+                { 
+                  backgroundColor: rememberMe ? theme.primary : 'transparent',
+                  borderColor: rememberMe ? theme.primary : theme.border
+                }
+              ]}>
+                {rememberMe && <Check size={16} color="#000000" strokeWidth={3} />}
+              </View>
+              <Text style={[styles.rememberMeText, { color: theme.textPrimary }]}>
+                {isRTL ? 'تذكرني' : 'Remember Me'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={handleForgotPassword}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
+                {isRTL ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
         {/* Fingerprint Option */}
           {biometricAvailable && (
         <TouchableOpacity
-          style={[styles.fingerprintButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          style={[styles.fingerprintButton, { 
+            backgroundColor: theme.surface, 
+            borderColor: theme.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          }]}
           onPress={handleBiometricAuth}
           activeOpacity={0.8}
         >
               <Fingerprint size={24} color={theme.primary} />
-          <Text style={[styles.fingerprintText, { color: theme.textPrimary }]}>
+          <Text style={[styles.fingerprintText, { 
+            color: theme.textPrimary,
+            textAlign: isRTL ? 'right' : 'left',
+          }]}>
             {isRTL ? 'تسجيل الدخول ببصمة الإصبع' : 'Sign in with Fingerprint'}
           </Text>
         </TouchableOpacity>
@@ -481,12 +560,20 @@ export default function SignInScreen() {
         </TouchableOpacity>
 
           {/* Sign Up Link */}
-          <View style={styles.signUpContainer}>
-            <Text style={[styles.signUpText, { color: theme.textSecondary }]}>
+          <View style={[styles.signUpContainer, {
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          }]}>
+            <Text style={[styles.signUpText, { 
+              color: theme.textSecondary,
+              textAlign: isRTL ? 'right' : 'left',
+            }]}>
               {isRTL ? 'ليس لديك حساب؟' : "Don't have an account?"}
           </Text>
             <TouchableOpacity onPress={handleSignUp} activeOpacity={0.7}>
-              <Text style={[styles.signUpLink, { color: theme.primary }]}>
+              <Text style={[styles.signUpLink, { 
+                color: theme.primary,
+                textAlign: isRTL ? 'right' : 'left',
+              }]}>
                 {isRTL ? ' إنشاء حساب' : ' Sign Up'}
               </Text>
             </TouchableOpacity>
@@ -588,12 +675,35 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     position: 'absolute',
-    top: 18,
+    top: 8,
     padding: 8,
   },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
+  rememberForgotContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 24,
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rememberMeText: {
+    fontSize: 14,
+    fontFamily: FONT_FAMILY,
+    fontWeight: '500',
+  },
+  forgotPasswordButton: {
+    padding: 4,
   },
   forgotPasswordText: {
     fontSize: 14,

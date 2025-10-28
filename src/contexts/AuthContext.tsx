@@ -19,7 +19,12 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { config } from '../config/environment';
 import { notificationService } from '../services/notificationService';
 import { firebaseInitService } from '../services/firebase/FirebaseInitService';
+import { initializeUserSafely } from '../services/userInit';
+import { registerPushTokenSafely, configureNotificationHandlers } from '../services/push';
 import { authTokenService } from '../services/authTokenService';
+import GlobalChatNotificationService from '../services/GlobalChatNotificationService';
+import PresenceService from '../services/PresenceService';
+import MessageNotificationService from '../services/MessageNotificationService';
 
 interface AuthContextType {
   user: User | null;
@@ -112,6 +117,25 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       if (user) {
         console.log('🔥 AUTH: User signed in, calling onUserSignIn');
         
+        // Start global chat notification listener
+        GlobalChatNotificationService.startListening(user.uid);
+        
+        // Connect user to presence service
+        try {
+          await PresenceService.connectUser(user.uid);
+          console.log('🔥 AUTH: User connected to presence service');
+        } catch (error) {
+          console.error('🔥 AUTH: Failed to connect to presence service:', error);
+        }
+        
+        // Register device for push notifications
+        try {
+          await MessageNotificationService.registerDeviceToken(user.uid);
+          console.log('🔥 AUTH: Device token registered for push notifications');
+        } catch (error) {
+          console.error('🔥 AUTH: Failed to register device token:', error);
+        }
+        
         // Store auth token securely
         try {
           const token = await user.getIdToken();
@@ -121,17 +145,29 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
           console.warn('🔥 AUTH: Failed to store auth token:', tokenError);
         }
         
-        // Initialize Firebase structures for user (wallet, profile, etc.)
+        // Initialize Firebase structures for user (wallet, profile, etc.) - SAFE VERSION
         try {
-          await firebaseInitService.initializeUser(user.uid, {
-            email: user.email || undefined,
-            displayName: user.displayName || undefined,
-            phoneNumber: user.phoneNumber || undefined,
-            fullName: user.displayName || undefined,
-          });
-          console.log('🔥 AUTH: Firebase structures initialized for user');
+          const initializedUserId = await initializeUserSafely();
+          if (initializedUserId) {
+            console.log('🔥 AUTH: User bootstrap completed successfully');
+            
+            // Register push token after user bootstrap
+            try {
+              const pushToken = await registerPushTokenSafely(user.uid);
+              if (pushToken) {
+                console.log('🔥 AUTH: Push token registered successfully');
+              } else {
+                console.log('🔥 AUTH: Push token registration skipped (not supported/failed)');
+              }
+            } catch (pushError) {
+              console.warn('🔥 AUTH: Push token registration warning:', pushError);
+              // Don't block auth flow, just log the warning
+            }
+          } else {
+            console.log('🔥 AUTH: User bootstrap skipped (offline/permission issues)');
+          }
         } catch (initError) {
-          console.warn('🔥 AUTH: Firebase initialization warning:', initError);
+          console.warn('🔥 AUTH: User bootstrap warning:', initError);
           // Don't block auth flow, just log the warning
         }
         
@@ -174,6 +210,10 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
         const now = Date.now();
         await AsyncStorage.setItem('lastActivityTime', now.toString());
         console.log('✅ Activity updated on app resume:', new Date(now).toISOString());
+      } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // Clean up typing indicators when app goes to background
+        PresenceService.forceStopAllTyping();
+        console.log('🧹 Cleaned up typing indicators on app background');
       }
     });
 
@@ -300,6 +340,20 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
         });
 
         console.log('✅ Wallet document created in Firestore:', result.user.uid);
+
+        // Create welcome chat with admin
+        console.log('🔥 SIGNUP: Creating welcome chat with admin');
+        try {
+          const AdminChatService = (await import('../services/AdminChatService')).default;
+          await AdminChatService.createWelcomeChat(
+            result.user.uid,
+            displayName || result.user.email?.split('@')[0] || 'User'
+          );
+          console.log('✅ Welcome chat created successfully');
+        } catch (chatError) {
+          console.error('⚠️ Failed to create welcome chat (non-critical):', chatError);
+          // Don't throw - chat creation failure shouldn't block signup
+        }
       }
       
       console.log('🔥 SIGNUP: signUpWithEmail completed successfully');
@@ -329,6 +383,20 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
     }
     try {
       console.log('🔥 AUTH: Starting signOut process');
+      
+      // Stop global chat notification listener
+      GlobalChatNotificationService.stopListening();
+      
+      // Clean up presence service (typing indicators, etc.)
+      PresenceService.cleanup();
+      
+      // Disconnect from presence service
+      try {
+        await PresenceService.disconnectUser();
+        console.log('🔥 AUTH: User disconnected from presence service');
+      } catch (error) {
+        console.error('🔥 AUTH: Failed to disconnect from presence service:', error);
+      }
       
       // Clear user state immediately
       setUser(null);
@@ -591,6 +659,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       throw error;
     }
   };
+
 
   const value = {
     user,

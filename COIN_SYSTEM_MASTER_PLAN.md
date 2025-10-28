@@ -1150,3 +1150,4 @@ This is **Part 1 of the Master Plan**. The document is getting very long. Should
 **What's your preference?** I want to ensure you have the most useful format for implementation.
 
 Also, **are you happy with the design decisions** I've made so far (coin selection algorithm, schema structure, service architecture)? Any changes before I continue?
+

@@ -1,0 +1,5 @@
+# Ignore native directories - let EAS generate them
+android/
+ios/
+
+

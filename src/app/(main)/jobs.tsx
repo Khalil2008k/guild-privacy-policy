@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { jobService, Job } from '@/services/jobService';
-import { Briefcase, Plus, UserCheck, Users, History, AlertTriangle } from 'lucide-react-native';
+import { Briefcase, Plus, UserCheck, Users, History } from 'lucide-react-native';
 import JobCard from '@/components/JobCard';
 
 type UserRole = 'poster' | 'doer';

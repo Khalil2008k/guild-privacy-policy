@@ -40,3 +40,4 @@ Once you have it, paste the entire `firebaseConfig` object and I'll update all t
 
 **GO TO:** https://console.firebase.google.com/project/guild-4f46b/settings/general
 
+

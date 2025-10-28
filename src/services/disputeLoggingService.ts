@@ -82,21 +82,36 @@ export interface DisputeLog {
 
 export class DisputeLoggingService {
   /**
-   * Get device information
+   * Get device information (platform-aware)
    */
   private async getDeviceInfo(): Promise<DeviceInfo> {
     try {
+      // Get device ID based on platform
+      let deviceId = 'unknown';
+      try {
+        if (Device.osName === 'Android') {
+          deviceId = Application.androidId || 'unknown-android';
+        } else if (Device.osName === 'iOS') {
+          deviceId = (await Application.getIosIdForVendorAsync()) || 'unknown-ios';
+        } else {
+          deviceId = 'unknown-platform';
+        }
+      } catch (idError) {
+        console.warn('[DisputeLogging] Error getting device ID:', idError);
+        deviceId = `unknown-${Device.osName || 'platform'}`;
+      }
+
       return {
         platform: Device.osName || 'unknown',
         osVersion: Device.osVersion || 'unknown',
         appVersion: Application.nativeApplicationVersion || '1.0.0',
-        deviceId: Application.androidId || (await Application.getIosIdForVendorAsync()) || 'unknown',
+        deviceId,
         deviceName: Device.deviceName || 'unknown',
         manufacturer: Device.manufacturer || 'unknown',
         modelName: Device.modelName || 'unknown',
       };
     } catch (error) {
-      console.error('Error getting device info:', error);
+      console.error('[DisputeLogging] Error getting device info:', error);
       return {
         platform: 'unknown',
         osVersion: 'unknown',
@@ -136,6 +151,31 @@ export class DisputeLoggingService {
   }
 
   /**
+   * Remove undefined values from object (Firestore doesn't accept undefined)
+   */
+  private cleanObject(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return null;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanObject(item)).filter(item => item !== undefined);
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          cleaned[key] = this.cleanObject(value);
+        }
+      }
+      return cleaned;
+    }
+    
+    return obj;
+  }
+
+  /**
    * Log original message with full metadata
    */
   async logMessage(
@@ -165,35 +205,36 @@ export class DisputeLoggingService {
         }))
       );
 
-      const messageLog: Omit<MessageLog, 'timestamp'> = {
-        messageId,
-        chatId,
-        senderId,
-        recipientIds,
-        content,
-        contentHash,
-        deviceInfo,
-        networkInfo,
-        status: 'sent',
-        attachments: attachmentsWithHash,
-        metadata,
-        timestamp: serverTimestamp() as Timestamp,
-      };
+      // Clean metadata to remove undefined values
+      const cleanedMetadata = this.cleanObject(metadata);
 
       // Store in message-audit-trail collection
       const auditRef = doc(db, 'message-audit-trail', messageId);
-      await setDoc(
-        auditRef,
-        {
-          originalMessage: messageLog,
-          edits: [],
-          deletions: [],
-          views: [],
-          reports: [],
-          createdAt: serverTimestamp(),
+      
+      // Build the data object and clean it
+      const dataToSave = this.cleanObject({
+        originalMessage: {
+          messageId,
+          chatId,
+          senderId,
+          recipientIds: recipientIds || [],
+          content: content || '',
+          contentHash,
+          deviceInfo,
+          networkInfo,
+          status: 'sent',
+          attachments: attachmentsWithHash,
+          metadata: cleanedMetadata,
+          timestamp: serverTimestamp(),
         },
-        { merge: true }
-      );
+        edits: [],
+        deletions: [],
+        views: [],
+        reports: [],
+        createdAt: serverTimestamp(),
+      });
+
+      await setDoc(auditRef, dataToSave, { merge: true });
 
       console.log('[DisputeLogging] Message logged successfully:', messageId);
     } catch (error) {
@@ -216,39 +257,39 @@ export class DisputeLoggingService {
       const deviceInfo = await this.getDeviceInfo();
       const contentHash = await this.generateContentHash(newContent);
 
-      const editLog: Omit<EditLog, 'editTimestamp'> = {
-        messageId,
-        originalContent,
-        newContent,
-        editorId,
-        editReason,
-        deviceInfo,
-        contentHash,
-        editTimestamp: serverTimestamp() as Timestamp,
-      };
-
       // Add to edits array in audit trail
       const auditRef = doc(db, 'message-audit-trail', messageId);
       const auditSnap = await getDoc(auditRef);
+
+      const editLog = this.cleanObject({
+        messageId,
+        originalContent: originalContent || '',
+        newContent: newContent || '',
+        editorId,
+        editReason: editReason || null,
+        deviceInfo,
+        contentHash,
+        editTimestamp: serverTimestamp(),
+      });
 
       if (auditSnap.exists()) {
         const currentEdits = auditSnap.data().edits || [];
         await setDoc(
           auditRef,
-          {
+          this.cleanObject({
             edits: [...currentEdits, editLog],
             lastEditedAt: serverTimestamp(),
-          },
+          }),
           { merge: true }
         );
       } else {
         // Create audit trail if it doesn't exist
-        await setDoc(auditRef, {
+        await setDoc(auditRef, this.cleanObject({
           messageId,
           edits: [editLog],
           createdAt: serverTimestamp(),
           lastEditedAt: serverTimestamp(),
-        });
+        }));
       }
 
       console.log('[DisputeLogging] Edit logged successfully:', messageId);
@@ -271,41 +312,41 @@ export class DisputeLoggingService {
       const deviceInfo = await this.getDeviceInfo();
       const contentHash = await this.generateContentHash(originalContent);
 
-      const deletionLog: Omit<DeletionLog, 'deletedTimestamp'> = {
-        messageId,
-        deletedBy,
-        originalContent,
-        deletionReason,
-        softDelete,
-        deviceInfo,
-        contentHash,
-        deletedTimestamp: serverTimestamp() as Timestamp,
-      };
-
       // Add to deletions array in audit trail
       const auditRef = doc(db, 'message-audit-trail', messageId);
       const auditSnap = await getDoc(auditRef);
+
+      const deletionLog = this.cleanObject({
+        messageId,
+        deletedBy,
+        originalContent: originalContent || '',
+        deletionReason: deletionReason || null,
+        softDelete,
+        deviceInfo,
+        contentHash,
+        deletedTimestamp: serverTimestamp(),
+      });
 
       if (auditSnap.exists()) {
         const currentDeletions = auditSnap.data().deletions || [];
         await setDoc(
           auditRef,
-          {
+          this.cleanObject({
             deletions: [...currentDeletions, deletionLog],
             lastDeletedAt: serverTimestamp(),
             isDeleted: true,
-          },
+          }),
           { merge: true }
         );
       } else {
         // Create audit trail if it doesn't exist
-        await setDoc(auditRef, {
+        await setDoc(auditRef, this.cleanObject({
           messageId,
           deletions: [deletionLog],
           createdAt: serverTimestamp(),
           lastDeletedAt: serverTimestamp(),
           isDeleted: true,
-        });
+        }));
       }
 
       console.log('[DisputeLogging] Deletion logged successfully:', messageId);

@@ -21,6 +21,7 @@ interface UserProfile {
   } | null;
   skills: string[];
   faceDetected: boolean;
+  aiProcessed: boolean;
   completedAt: string | null;
   isProfileComplete: boolean;
   isVerified?: boolean;
@@ -48,6 +49,7 @@ const defaultProfile: UserProfile = {
   location: null,
   skills: [],
   faceDetected: false,
+  aiProcessed: false,
   completedAt: null,
   isProfileComplete: false,
   isVerified: false,

@@ -152,7 +152,7 @@ export function getInputPlaceholder(type: AuthInputType, isRTL: boolean): string
 export function getInputIcon(type: AuthInputType): string {
   switch (type) {
     case 'email':
-      return '✉️';
+      return ''; // Remove emoji to make it look like password input
     case 'phone':
       return '📱';
     case 'gid':

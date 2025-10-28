@@ -596,9 +596,9 @@ export default function JobTemplatesScreen() {
               </View>
 
               <View style={styles.skillsContainer}>
-                {template.skills.map((skill, index) => (
-                  <View key={index} style={styles.skillTag}>
-                    <Text style={styles.skillTagText}>{skill}</Text>
+                {(Array.isArray(template?.skills) ? template.skills : []).map((skill, index) => (
+                  <View key={`${template?.id || "template"}-skill-${index}`} style={styles.skillTag}>
+                    <Text style={styles.skillTagText}>{String(skill)}</Text>
                   </View>
                 ))}
               </View>

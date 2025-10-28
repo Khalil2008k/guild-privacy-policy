@@ -210,7 +210,7 @@ export default function JobSearchScreen() {
         {/* Budget Range */}
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-            Budget Range (QAR)
+            Budget Range (QR)
           </Text>
           <View style={styles.budgetRow}>
             <View style={styles.budgetInput}>

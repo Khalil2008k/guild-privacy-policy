@@ -1,8 +1,14 @@
 /**
  * GUILD Payment System Tests (Beta - Guild Coins)
  * Tests wallet, transactions, and Guild Coins system
+ * 
+ * NOTE: These tests are for legacy PaymentService
+ * Current system uses CoinWalletAPIClient instead
+ * Tests disabled pending migration
  */
 
+// Commented out - using CoinWalletAPIClient instead
+/*
 import { PaymentService } from '../../src/services/paymentService';
 import { 
   createMockUser, 
@@ -11,7 +17,7 @@ import {
   mockApiError,
 } from '../utils/testHelpers';
 
-describe('Payment System Tests (Guild Coins)', () => {
+describe.skip('Payment System Tests (Guild Coins) - LEGACY', () => {
   let paymentService: PaymentService;
 
   beforeEach(() => {
@@ -238,5 +244,6 @@ describe('Payment System Tests (Guild Coins)', () => {
     });
   });
 });
+*/ // End of commented legacy PaymentService tests
 
 

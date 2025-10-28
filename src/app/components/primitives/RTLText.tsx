@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, TextProps, StyleSheet, TextStyle } from 'react-native';
+import { useI18n } from '../../../contexts/I18nProvider';
 
 interface RTLTextProps extends TextProps {
   children: React.ReactNode;
@@ -11,15 +12,18 @@ export default function RTLText({
   children, 
   style, 
   fontFamily = 'NotoSansArabic',
-  isRTL = false,
+  isRTL,
   ...props 
 }: RTLTextProps) {
+  const { isRTL: contextIsRTL } = useI18n();
+  const rtl = isRTL !== undefined ? isRTL : contextIsRTL;
+  
   const textStyle: TextStyle[] = [
     styles.base,
     {
       fontFamily,
-      textAlign: isRTL ? 'right' : 'left' as const,
-      writingDirection: isRTL ? 'rtl' : 'ltr' as const,
+      textAlign: rtl ? 'right' : 'left' as const,
+      writingDirection: rtl ? 'rtl' : 'ltr' as const,
     },
     style as TextStyle,
   ];

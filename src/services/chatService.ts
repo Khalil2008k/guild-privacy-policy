@@ -1,6 +1,9 @@
 /**
  * Chat Service - Firebase integration for chat functionality
  * Handles chat operations and persistence
+ * 
+ * SCHEMA:
+ * chats/{chatId}/messages/{messageId} has map: readBy: { [uid]: Timestamp }
  */
 
 import { 
@@ -18,12 +21,14 @@ import {
   onSnapshot,
   serverTimestamp,
   addDoc,
+  writeBatch,
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { BackendAPI } from '../config/backend';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import ChatStorageProvider from './ChatStorageProvider';
 
 export interface Chat {
   id: string;
@@ -36,7 +41,7 @@ export interface Chat {
     senderId: string;
     timestamp: Date;
   };
-  unreadCount: number;
+  unreadCount: Record<string, number> | number; // Support both old (number) and new (map) formats
   isActive: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -47,7 +52,7 @@ export interface Message {
   chatId: string;
   senderId: string;
   text: string;
-  type: 'TEXT' | 'IMAGE' | 'FILE' | 'VOICE';
+  type: 'TEXT' | 'IMAGE' | 'FILE' | 'VOICE' | 'voice' | 'video';
   attachments?: string[];
   status: 'sent' | 'delivered' | 'read';
   readBy: string[];
@@ -55,6 +60,8 @@ export interface Message {
   editedAt?: Timestamp;
   deletedAt?: Timestamp;
   deletedBy?: string;
+  duration?: number; // For voice/video messages
+  thumbnailUrl?: string; // For video messages
   editHistory?: Array<{
     text: string;
     editedAt: Timestamp;
@@ -99,16 +106,53 @@ class ChatService {
 
     const chatsQuery = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', userId),
-      where('isActive', '==', true),
-      orderBy('updatedAt', 'desc')
+      where('participants', 'array-contains', userId)
     );
 
     const snapshot = await getDocs(chatsQuery);
-    return snapshot.docs.map(doc => ({
+    const chats = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Chat));
+    
+    // Filter active chats and sort by updatedAt
+    return chats
+      .filter(chat => chat.isActive !== false)
+      .sort((a, b) => {
+        const aTime = a.updatedAt?.toMillis?.() || 0;
+        const bTime = b.updatedAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+  }
+
+  /**
+   * Listen to user's chats in real-time
+   */
+  listenToUserChats(userId: string, callback: (chats: Chat[]) => void): () => void {
+    const chatsQuery = query(
+      collection(db, 'chats'),
+      where('participants', 'array-contains', userId)
+    );
+
+    const unsubscribe = onSnapshot(chatsQuery, (snapshot) => {
+      const chats = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Chat));
+      
+      // Filter active chats and sort by updatedAt
+      const activeChats = chats
+        .filter(chat => chat.isActive !== false)
+        .sort((a, b) => {
+          const aTime = a.updatedAt?.toMillis?.() || 0;
+          const bTime = b.updatedAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+      
+      callback(activeChats);
+    });
+
+    return unsubscribe;
   }
 
   /**
@@ -128,8 +172,8 @@ class ChatService {
     // Fallback to Firebase
     const userId = await this.getCurrentUserId();
     if (!userId) {
-      console.warn('User not authenticated for chat service - returning empty list');
-      return [];
+      console.warn('User not authenticated for chat service - throwing error');
+      throw new Error('User not authenticated');
     }
 
     // Check if chat already exists
@@ -200,44 +244,28 @@ class ChatService {
     lastMessageId?: string
   ): Promise<Message[]> {
     try {
-      // Try backend first
-      const response = await BackendAPI.get(`/chat/${chatId}/messages`, {
-        params: { limit: limitCount, lastMessageId }
+      // Use ChatStorageProvider to get messages
+      const messages = await ChatStorageProvider.getMessages(chatId, {
+        limit: limitCount,
+        startAfterId: lastMessageId
       });
-      if (response && response.data) {
-        return response.data.messages;
-      }
+
+      // Convert to Message format expected by the rest of the app
+      return messages.map(msg => ({
+        id: msg.id,
+        chatId: msg.chatId,
+        senderId: msg.senderId,
+        text: msg.text,
+        type: msg.type,
+        status: 'sent' as const,
+        createdAt: msg.createdAt instanceof Date ? Timestamp.fromDate(msg.createdAt) : msg.createdAt,
+        updatedAt: msg.updatedAt instanceof Date ? Timestamp.fromDate(msg.updatedAt) : msg.updatedAt,
+        readBy: Array.isArray(msg.readBy) ? msg.readBy : Object.keys(msg.readBy || {})
+      } as Message));
     } catch (error) {
-      console.log('Falling back to Firebase for messages:', error);
+      console.error('Error getting chat messages:', error);
+      throw error;
     }
-
-    // Fallback to Firebase
-    let messagesQuery = query(
-      collection(db, 'chats', chatId, 'messages'),
-      orderBy('createdAt', 'desc'),
-      limit(limitCount)
-    );
-
-    if (lastMessageId) {
-      const lastDoc = await getDoc(doc(db, 'chats', chatId, 'messages', lastMessageId));
-      if (lastDoc.exists()) {
-        messagesQuery = query(
-          collection(db, 'chats', chatId, 'messages'),
-          orderBy('createdAt', 'desc'),
-          startAfter(lastDoc),
-          limit(limitCount)
-        );
-      }
-    }
-
-    const snapshot = await getDocs(messagesQuery);
-    const messages = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Message));
-
-    // Return in chronological order
-    return messages.reverse();
   }
 
   /**
@@ -270,30 +298,81 @@ class ChatService {
   }
 
   /**
-   * Listen to chat messages
+   * Listen to chat messages (never clears UI on error, maintains last good state)
    */
   listenToMessages(
     chatId: string,
     callback: (messages: Message[]) => void
   ): () => void {
-    const unsubscribe = onSnapshot(
-      query(
-        collection(db, 'chats', chatId, 'messages'),
-        orderBy('createdAt', 'asc')
-      ),
-      (snapshot) => {
-        const messages = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Message));
-        callback(messages);
-      },
-      (error) => {
-        console.error('Error listening to messages:', error);
-      }
-    );
+    const useFirestore = ChatStorageProvider.shouldUseFirestore(chatId);
+    console.log(`📱 Storage → ${useFirestore ? 'Firestore' : 'Local'} (listenToMessages: ${chatId})`);
+    
+    if (useFirestore) {
+      // Firestore real-time listener with error resilience
+      let lastGood: Message[] = [];
+      
+      const unsubscribe = onSnapshot(
+        query(
+          collection(db, 'chats', chatId, 'messages'),
+          orderBy('createdAt', 'asc'),
+          limit(200)
+        ),
+        (snapshot) => {
+          lastGood = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          } as Message));
+          callback(lastGood);
+        },
+        (error) => {
+          console.error('messages onSnapshot error', error.code, error.message);
+          // Don't nuke UI - keep showing last good state
+          callback(lastGood);
+        }
+      );
+      return unsubscribe;
+    } else {
+      // LocalStorage polling (simplified for now)
+      let lastGood: Message[] = [];
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          const messages = await ChatStorageProvider.getMessages(chatId);
+          lastGood = messages.map(msg => ({
+            id: msg.id,
+            chatId: msg.chatId,
+            senderId: msg.senderId,
+            text: msg.text,
+            type: msg.type,
+            createdAt: msg.createdAt instanceof Date ? Timestamp.fromDate(msg.createdAt) : msg.createdAt,
+            updatedAt: msg.updatedAt instanceof Date ? Timestamp.fromDate(msg.updatedAt) : msg.updatedAt,
+            readBy: Array.isArray(msg.readBy) ? msg.readBy : Object.keys(msg.readBy || {}),
+            status: 'sent' as const
+          }));
+          callback(lastGood);
+        } catch (error) {
+          console.error('Error polling local messages:', error);
+          // Don't nuke UI - keep showing last good state
+          callback(lastGood);
+        }
+      }, 1000);
+      
+      return () => clearInterval(pollInterval);
+    }
+  }
 
-    return unsubscribe;
+  /**
+   * Mark chat as read for current user
+   */
+  async markChatAsRead(chatId: string, userId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'chats', chatId), {
+        [`unreadCount.${userId}`]: 0,
+      });
+      console.log('✅ Chat marked as read:', chatId);
+    } catch (error) {
+      console.error('Error marking chat as read:', error);
+    }
   }
 
   /**
@@ -308,15 +387,27 @@ class ChatService {
         type: 'TEXT' as const,
         status: 'sent' as const,
         readBy: [senderId],
-        createdAt: serverTimestamp(),
       };
 
-      const messageRef = await addDoc(
-        collection(db, 'chats', chatId, 'messages'),
-        messageData
-      );
+      // Use ChatStorageProvider to send message
+      const messageId = await ChatStorageProvider.sendMessage(chatId, messageData);
 
-      // Update chat's last message
+      // Update chat metadata (this stays in Firestore for all chats)
+      const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      const chatData = chatDoc.data();
+      
+      // Update unread count for other participants
+      const unreadUpdate: any = {};
+      if (chatData?.participants) {
+        chatData.participants.forEach((participantId: string) => {
+          if (participantId !== senderId) {
+            const currentUnread = chatData.unreadCount?.[participantId] || 0;
+            unreadUpdate[`unreadCount.${participantId}`] = currentUnread + 1;
+          }
+        });
+      }
+
+      // Update chat's last message and unread counts
       await updateDoc(doc(db, 'chats', chatId), {
         lastMessage: {
           text,
@@ -324,9 +415,10 @@ class ChatService {
           timestamp: serverTimestamp(),
         },
         updatedAt: serverTimestamp(),
+        ...unreadUpdate,
       });
 
-      return messageRef.id;
+      return messageId;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -366,26 +458,10 @@ class ChatService {
    */
   async editMessage(chatId: string, messageId: string, newText: string): Promise<void> {
     try {
-      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-      const messageSnap = await getDoc(messageRef);
-      
-      if (!messageSnap.exists()) {
-        throw new Error('Message not found');
-      }
-
-      const oldMessage = messageSnap.data();
-      
-      // Create edit history entry
-      const editHistoryEntry = {
-        text: oldMessage.text,
-        editedAt: serverTimestamp(),
-      };
-
-      // Update message with new text and edit history
-      await updateDoc(messageRef, {
+      // Use ChatStorageProvider to update message
+      await ChatStorageProvider.updateMessage(chatId, messageId, {
         text: newText,
-        editedAt: serverTimestamp(),
-        editHistory: [...(oldMessage.editHistory || []), editHistoryEntry],
+        updatedAt: new Date()
       });
     } catch (error) {
       console.error('Error editing message:', error);
@@ -398,12 +474,8 @@ class ChatService {
    */
   async deleteMessage(chatId: string, messageId: string, userId: string): Promise<void> {
     try {
-      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-      
-      await updateDoc(messageRef, {
-        deletedAt: serverTimestamp(),
-        deletedBy: userId,
-      });
+      // Use ChatStorageProvider to delete message
+      await ChatStorageProvider.deleteMessage(chatId, messageId);
     } catch (error) {
       console.error('Error deleting message:', error);
       throw error;
@@ -423,6 +495,73 @@ class ChatService {
   }
 
   /**
+   * Get current user ID
+   */
+  getMyUid(): string | null {
+    return auth.currentUser?.uid || null;
+  }
+
+  /**
+   * Mark messages as read by user
+   */
+  async markAsRead(chatId: string, messageIds: string[], uid: string): Promise<void> {
+    if (!messageIds.length || !uid) {
+      console.log('📖 markAsRead: No message IDs or UID provided');
+      return;
+    }
+
+    const useFirestore = ChatStorageProvider.shouldUseFirestore(chatId);
+    console.log(`📱 Storage → ${useFirestore ? 'Firestore' : 'Local'} (markAsRead: ${chatId})`);
+
+    try {
+      console.log(`📖 markAsRead: Marking ${messageIds.length} messages as read for user ${uid}`);
+      
+      if (useFirestore) {
+        // Firestore batch update
+        const batch = writeBatch(db);
+        let updatedCount = 0;
+
+        for (const messageId of messageIds) {
+          const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+          
+          // Get current message data to check if already read
+          const messageDoc = await getDoc(messageRef);
+          if (messageDoc.exists()) {
+            const messageData = messageDoc.data();
+            const readBy = messageData.readBy || {};
+            
+            // Skip if already read by this user
+            if (readBy[uid]) {
+              console.log(`📖 markAsRead: Message ${messageId} already read by ${uid}`);
+              continue;
+            }
+            
+            // Add read receipt
+            batch.update(messageRef, {
+              [`readBy.${uid}`]: serverTimestamp()
+            });
+            updatedCount++;
+          }
+        }
+
+        if (updatedCount > 0) {
+          await batch.commit();
+          console.log(`📖 markAsRead: Successfully marked ${updatedCount} messages as read`);
+        } else {
+          console.log('📖 markAsRead: No messages needed updating');
+        }
+      } else {
+        // LocalStorage update (simplified - just log for now)
+        console.log(`📖 markAsRead: LocalStorage read receipts not implemented yet`);
+        console.log(`📖 markAsRead: Would mark ${messageIds.length} messages as read for user ${uid}`);
+      }
+    } catch (error) {
+      console.error('📖 markAsRead: Error marking messages as read:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Clean up listeners
    */
   cleanup(): void {
@@ -432,5 +571,18 @@ class ChatService {
 }
 
 // Export singleton instance
+// Standalone defensive listener function
+export function listenMessages(chatId: string, onNext: (msgs: any[]) => void) {
+  const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(200));
+  let lastGood: any[] = [];
+  return onSnapshot(q, (snap) => {
+    lastGood = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    onNext(lastGood);
+  }, (err) => {
+    console.error("listenMessages error", err.code, err.message);
+    onNext(lastGood); // keep UI
+  });
+}
+
 export const chatService = new ChatService();
 

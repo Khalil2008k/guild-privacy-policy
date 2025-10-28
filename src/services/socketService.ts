@@ -15,6 +15,7 @@ import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { config } from '../config/environment';
+import { maybeConnectSocket, disconnectSocketSafely } from './socket';
 
 // Event types for type safety
 export interface SocketEvents {
@@ -72,39 +73,21 @@ class SocketService {
   }
 
   /**
-   * Initialize socket connection
+   * Initialize socket connection (with strict auth token requirement) - SAFE VERSION
    */
   async connect(): Promise<void> {
     try {
-      // Get auth token
-      const token = await AsyncStorage.getItem('authToken');
-      if (!token) {
-        console.warn('No auth token found for socket connection - skipping socket connection');
-        return;
-      }
-
-      // Get socket URL from config
-      const socketUrl = config.apiUrl.replace('/api/v1', '').replace('/api', '');
-
-      console.log(`Connecting to socket server: ${socketUrl}`);
-
-      // Create socket instance
-      this.socket = io(socketUrl, {
-        auth: { token },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: this.maxReconnectAttempts,
-        reconnectionDelay: this.reconnectDelay,
-        reconnectionDelayMax: 10000,
-        timeout: 20000,
-        autoConnect: true,
-      });
-
-      this.setupEventHandlers();
+      // Use safe socket connection that only connects with valid token
+      this.socket = await maybeConnectSocket();
       
-      console.log('Socket connection initiated with token');
+      if (this.socket) {
+        this.setupEventHandlers();
+        console.log('✅ Socket connection initiated with authenticated token');
+      } else {
+        console.log('Socket connection skipped (no token/offline)');
+      }
     } catch (error) {
-      console.error('Socket connection error:', error);
+      console.error('❌ Socket connection error:', error);
     }
   }
 
@@ -390,13 +373,12 @@ class SocketService {
   }
 
   /**
-   * Disconnect socket
+   * Disconnect socket safely
    */
   disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    // Use safe disconnect method
+    disconnectSocketSafely(this.socket);
+    this.socket = null;
     
     if (this.networkUnsubscribe) {
       this.networkUnsubscribe();

@@ -9,6 +9,9 @@ import {
   Pressable,
   ActivityIndicator,
   Dimensions,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
 } from 'react-native';
 import { CustomAlertService } from '../services/CustomAlertService';
 import { useTheme } from '../contexts/ThemeContext';
@@ -23,11 +26,21 @@ import {
   History,
   AlertCircle,
   Check,
-  CheckCheck
+  CheckCheck,
+  Play,
+  Pause,
+  Volume2,
+  Video as VideoIcon,
 } from 'lucide-react-native';
 import { Message } from '../services/chatService';
+import { Video } from 'expo-av';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Helper function to safely cast styles
+const asViewStyle = (...styles: any[]): ViewStyle[] => styles.map(style => style as ViewStyle);
+const asTextStyle = (...styles: any[]): TextStyle[] => styles.map(style => style as TextStyle);
+const asImageStyle = (...styles: any[]): ImageStyle[] => styles.map(style => style as ImageStyle);
 
 interface ChatMessageProps {
   message: Message & {
@@ -63,6 +76,17 @@ export function ChatMessage({
   const [showMenu, setShowMenu] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  
+  // Voice playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  
+  // Video playback state
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [videoRef, setVideoRef] = useState<Video | null>(null);
 
   const handleLongPress = () => {
     if (message.deletedAt && !isAdmin) return; // Can't interact with deleted messages
@@ -107,6 +131,108 @@ export function ChatMessage({
     });
   };
 
+  // Voice playback functions using HTML5 Audio
+  const playVoiceMessage = async () => {
+    if (!message.attachments || !message.attachments[0]) return;
+
+    try {
+      if (audioElement) {
+        if (isPlaying) {
+          audioElement.pause();
+          setIsPlaying(false);
+        } else {
+          await audioElement.play();
+          setIsPlaying(true);
+        }
+      } else {
+        // Create new audio element
+        const audio = new Audio(message.attachments[0]);
+        
+        audio.addEventListener('loadedmetadata', () => {
+          setPlaybackDuration(audio.duration * 1000);
+        });
+        
+        audio.addEventListener('timeupdate', () => {
+          setPlaybackPosition(audio.currentTime * 1000);
+        });
+        
+        audio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          setPlaybackPosition(0);
+        });
+        
+        audio.addEventListener('error', (e) => {
+          console.error('Audio playback error:', e);
+          setIsPlaying(false);
+        });
+        
+        setAudioElement(audio);
+        await audio.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing voice message:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل تشغيل الرسالة الصوتية' : 'Failed to play voice message'
+      );
+    }
+  };
+
+  const formatDuration = (milliseconds: number) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Video playback functions using expo-av Video
+  const playVideoMessage = async () => {
+    if (!message.attachments || !message.attachments[0]) return;
+
+    try {
+      setShowVideoPlayer(true);
+      
+      if (videoRef) {
+        if (isPlayingVideo) {
+          await videoRef.pauseAsync();
+          setIsPlayingVideo(false);
+        } else {
+          await videoRef.playAsync();
+          setIsPlayingVideo(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error playing video message:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل تشغيل الفيديو' : 'Failed to play video'
+      );
+    }
+  };
+
+  const closeVideoPlayer = () => {
+    if (videoRef) {
+      videoRef.pauseAsync();
+    }
+    setShowVideoPlayer(false);
+    setIsPlayingVideo(false);
+    setVideoRef(null);
+  };
+
+  // Cleanup audio and video on unmount
+  React.useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+      }
+      if (videoRef) {
+        videoRef.pauseAsync();
+      }
+    };
+  }, [audioElement, videoRef]);
+
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -126,10 +252,10 @@ export function ChatMessage({
   // Deleted message view
   if (message.deletedAt && !isAdmin) {
     return (
-      <View style={[styles.messageContainer, isOwnMessage && styles.ownMessage]}>
-        <View style={[styles.deletedBubble, { backgroundColor: theme.surface }]}>
+      <View style={[...asViewStyle(styles.messageContainer), isOwnMessage && asViewStyle(styles.ownMessage)]}>
+        <View style={[...asViewStyle(styles.deletedBubble), { backgroundColor: theme.surface }]}>
           <AlertCircle size={16} color={theme.textSecondary} />
-          <Text style={[styles.deletedText, { color: theme.textSecondary }]}>
+          <Text style={[...asTextStyle(styles.deletedText), { color: theme.textSecondary }]}>
             {isRTL ? 'تم حذف هذه الرسالة' : 'This message was deleted'}
           </Text>
         </View>
@@ -143,12 +269,12 @@ export function ChatMessage({
       <TouchableOpacity
         onLongPress={handleLongPress}
         delayLongPress={500}
-        style={[styles.messageContainer, isOwnMessage && styles.ownMessage]}
+        style={[...asViewStyle(styles.messageContainer), isOwnMessage && asViewStyle(styles.ownMessage)]}
       >
-        <View style={[styles.messageBubble, { backgroundColor: theme.error + '20', borderColor: theme.error, borderWidth: 1 }]}>
+        <View style={[...asViewStyle(styles.messageBubble), { backgroundColor: theme.error + '20', borderColor: theme.error, borderWidth: 1 }]}>
           <View style={styles.deletedHeader}>
             <AlertCircle size={16} color={theme.error} />
-            <Text style={[styles.deletedLabel, { color: theme.error }]}>
+            <Text style={[...asTextStyle(styles.deletedLabel), { color: theme.error }]}>
               {isRTL ? 'محذوف (مرئي للمسؤول فقط)' : 'Deleted (Admin View)'}
             </Text>
           </View>
@@ -164,24 +290,24 @@ export function ChatMessage({
     if (message.type === 'TEXT' || !message.type) {
       return (
         <>
-          <Text style={[styles.messageText, { color: isOwnMessage ? '#FFFFFF' : theme.textPrimary }]}>
+          <Text style={[...asTextStyle(styles.messageText), { color: isOwnMessage ? '#000000' : theme.textPrimary }]}>
             {message.text}
           </Text>
           {message.editedAt && (
             <View style={styles.editedBadge}>
-              <Edit2 size={10} color={isOwnMessage ? '#FFFFFF' : theme.textSecondary} />
-              <Text style={[styles.editedText, { color: isOwnMessage ? '#FFFFFF' : theme.textSecondary }]}>
+              <Edit2 size={10} color={isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary} />
+              <Text style={[...asTextStyle(styles.editedText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
                 {isRTL ? 'معدل' : 'edited'}
               </Text>
               {isAdmin && message.editHistory && message.editHistory.length > 0 && (
                 <TouchableOpacity onPress={handleViewHistory} style={styles.historyButton}>
-                  <History size={10} color={isOwnMessage ? '#FFFFFF' : theme.primary} />
+                  <History size={10} color={isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.primary} />
                 </TouchableOpacity>
               )}
             </View>
           )}
           <View style={styles.messageFooter}>
-            <Text style={[styles.timeText, { color: isOwnMessage ? '#FFFFFF' : theme.textSecondary }]}>
+            <Text style={[...asTextStyle(styles.timeText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
               {formatTime(message.createdAt)}
             </Text>
             {isOwnMessage && (
@@ -194,6 +320,86 @@ export function ChatMessage({
       );
     }
 
+    // Voice message
+    if (message.type === 'voice') {
+      const duration = message.duration || 0;
+      const formattedDuration = formatDuration(duration * 1000);
+      
+      return (
+        <TouchableOpacity 
+          style={styles.voiceContainer}
+          onPress={playVoiceMessage}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.voiceButton,
+            { backgroundColor: isOwnMessage ? theme.primary : theme.surface }
+          ]}>
+            {isPlaying ? (
+              <Pause size={20} color={isOwnMessage ? '#000000' : theme.primary} />
+            ) : (
+              <Play size={20} color={isOwnMessage ? '#000000' : theme.primary} />
+            )}
+          </View>
+          
+          <View style={styles.voiceInfo}>
+            <View style={styles.voiceWaveform}>
+              {/* Simple waveform visualization */}
+              {Array.from({ length: 20 }, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.waveformBar,
+                    {
+                      height: Math.random() * 20 + 5,
+                      backgroundColor: isOwnMessage ? 'rgba(0,0,0,0.3)' : theme.primary,
+                      opacity: isPlaying && i < (playbackPosition / playbackDuration) * 20 ? 1 : 0.3,
+                    }
+                  ]}
+                />
+              ))}
+            </View>
+            
+            <Text style={[
+              styles.voiceDuration,
+              { color: isOwnMessage ? 'rgba(0,0,0,0.7)' : theme.textSecondary }
+            ]}>
+              {isPlaying ? formatDuration(playbackPosition) : formattedDuration}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // Video message
+    if (message.type === 'video') {
+      const duration = message.duration || 0;
+      const formattedDuration = formatDuration(duration * 1000);
+      const thumbnailUrl = message.thumbnailUrl || message.attachments?.[0];
+
+      return (
+        <TouchableOpacity
+          style={styles.videoContainer}
+          onPress={playVideoMessage}
+          activeOpacity={0.7}
+        >
+          <View style={styles.videoThumbnail}>
+            <Image
+              source={{ uri: thumbnailUrl }}
+              style={asImageStyle(styles.videoThumbnailImage)}
+              resizeMode="cover"
+            />
+            <View style={styles.videoPlayButton}>
+              <Play size={24} color="#FFFFFF" />
+            </View>
+            <View style={styles.videoDuration}>
+              <Text style={styles.videoDurationText}>{formattedDuration}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
     // Image message
     if (message.type === 'IMAGE') {
       return (
@@ -201,14 +407,14 @@ export function ChatMessage({
           {message.uploadStatus === 'uploading' ? (
             <View style={styles.uploadingContainer}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.uploadingText, { color: theme.textPrimary }]}>
+              <Text style={[...asTextStyle(styles.uploadingText), { color: theme.textPrimary }]}>
                 {isRTL ? 'جاري الرفع...' : 'Uploading...'}
               </Text>
             </View>
           ) : message.uploadStatus === 'failed' ? (
             <View style={styles.errorContainer}>
               <AlertCircle size={32} color={theme.error} />
-              <Text style={[styles.errorText, { color: theme.error }]}>
+              <Text style={[...asTextStyle(styles.errorText), { color: theme.error }]}>
                 {isRTL ? 'فشل الرفع' : 'Upload failed'}
               </Text>
             </View>
@@ -217,7 +423,7 @@ export function ChatMessage({
               <TouchableOpacity onPress={() => setShowFullImage(true)} activeOpacity={0.9}>
                 <Image
                   source={{ uri: message.attachments?.[0] }}
-                  style={styles.messageImage}
+                  style={asImageStyle(styles.messageImage)}
                   resizeMode="cover"
                   onLoadStart={() => setImageLoading(true)}
                   onLoadEnd={() => setImageLoading(false)}
@@ -230,14 +436,22 @@ export function ChatMessage({
                 <View style={styles.imageOverlay}>
                   <ZoomIn size={20} color="#FFFFFF" />
                 </View>
+                {/* Download button for images */}
+                <TouchableOpacity 
+                  onPress={() => onDownload?.(message.attachments?.[0] || '', message.fileMetadata?.originalName || 'image.jpg')}
+                  style={styles.imageDownloadButton}
+                  activeOpacity={0.7}
+                >
+                  <Download size={18} color="#FFFFFF" />
+                </TouchableOpacity>
               </TouchableOpacity>
               {message.text && (
-                <Text style={[styles.imageCaptionText, { color: isOwnMessage ? '#FFFFFF' : theme.textPrimary }]}>
+                <Text style={[...asTextStyle(styles.imageCaptionText), { color: isOwnMessage ? '#000000' : theme.textPrimary }]}>
                   {message.text}
                 </Text>
               )}
               <View style={styles.messageFooter}>
-                <Text style={[styles.timeText, { color: isOwnMessage ? '#FFFFFF' : theme.textSecondary }]}>
+                <Text style={[...asTextStyle(styles.timeText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
                   {formatTime(message.createdAt)}
                 </Text>
                 {isOwnMessage && (
@@ -259,14 +473,14 @@ export function ChatMessage({
           {message.uploadStatus === 'uploading' ? (
             <View style={styles.uploadingContainer}>
               <ActivityIndicator size="small" color={theme.primary} />
-              <Text style={[styles.uploadingText, { color: theme.textPrimary }]}>
+              <Text style={[...asTextStyle(styles.uploadingText), { color: theme.textPrimary }]}>
                 {isRTL ? 'جاري رفع' : 'Uploading'} {message.fileMetadata?.originalName}...
               </Text>
             </View>
           ) : message.uploadStatus === 'failed' ? (
             <View style={styles.errorContainer}>
               <AlertCircle size={24} color={theme.error} />
-              <Text style={[styles.errorText, { color: theme.error }]}>
+              <Text style={[...asTextStyle(styles.errorText), { color: theme.error }]}>
                 {isRTL ? 'فشل الرفع' : 'Upload failed'}
               </Text>
             </View>
@@ -277,20 +491,20 @@ export function ChatMessage({
               </View>
               <View style={styles.fileInfo}>
                 <Text
-                  style={[styles.fileName, { color: isOwnMessage ? '#FFFFFF' : theme.textPrimary }]}
+                  style={[...asTextStyle(styles.fileName), { color: isOwnMessage ? '#000000' : theme.textPrimary }]}
                   numberOfLines={1}
                 >
                   {message.fileMetadata?.originalName || 'Document'}
                 </Text>
-                <Text style={[styles.fileSize, { color: isOwnMessage ? '#FFFFFF' : theme.textSecondary }]}>
+                <Text style={[...asTextStyle(styles.fileSize), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
                   {message.fileMetadata?.size ? formatFileSize(message.fileMetadata.size) : ''}
                 </Text>
               </View>
               <TouchableOpacity onPress={handleDownload} style={styles.downloadButton}>
-                <Download size={20} color={theme.primary} />
+                <Download size={20} color={isOwnMessage ? '#000000' : theme.primary} />
               </TouchableOpacity>
               <View style={styles.messageFooter}>
-                <Text style={[styles.timeText, { color: isOwnMessage ? '#FFFFFF' : theme.textSecondary }]}>
+                <Text style={[...asTextStyle(styles.timeText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
                   {formatTime(message.createdAt)}
                 </Text>
                 {isOwnMessage && (
@@ -316,11 +530,11 @@ export function ChatMessage({
       onRequestClose={() => setShowMenu(false)}
     >
       <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
-        <View style={[styles.menuContainer, { backgroundColor: theme.surface }]}>
+        <View style={[...asViewStyle(styles.menuContainer), { backgroundColor: theme.surface }]}>
           {isOwnMessage && !message.deletedAt && message.type === 'TEXT' && (
             <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
               <Edit2 size={20} color={theme.textPrimary} />
-              <Text style={[styles.menuText, { color: theme.textPrimary }]}>
+              <Text style={[...asTextStyle(styles.menuText), { color: theme.textPrimary }]}>
                 {isRTL ? 'تعديل' : 'Edit'}
               </Text>
             </TouchableOpacity>
@@ -328,7 +542,7 @@ export function ChatMessage({
           {isOwnMessage && !message.deletedAt && (
             <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
               <Trash2 size={20} color={theme.error} />
-              <Text style={[styles.menuText, { color: theme.error }]}>
+              <Text style={[...asTextStyle(styles.menuText), { color: theme.error }]}>
                 {isRTL ? 'حذف' : 'Delete'}
               </Text>
             </TouchableOpacity>
@@ -336,7 +550,7 @@ export function ChatMessage({
           {isAdmin && message.editHistory && message.editHistory.length > 0 && (
             <TouchableOpacity style={styles.menuItem} onPress={handleViewHistory}>
               <History size={20} color={theme.primary} />
-              <Text style={[styles.menuText, { color: theme.primary }]}>
+              <Text style={[...asTextStyle(styles.menuText), { color: theme.primary }]}>
                 {isRTL ? 'عرض السجل' : 'View History'}
               </Text>
             </TouchableOpacity>
@@ -360,9 +574,18 @@ export function ChatMessage({
         >
           <X size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.downloadButtonFullImage}
+          onPress={() => {
+            setShowFullImage(false);
+            onDownload?.(message.attachments?.[0] || '', message.fileMetadata?.originalName || 'image.jpg');
+          }}
+        >
+          <Download size={24} color="#FFFFFF" />
+        </TouchableOpacity>
         <Image
           source={{ uri: message.attachments?.[0] }}
-          style={styles.fullImage}
+          style={asImageStyle(styles.fullImage)}
           resizeMode="contain"
         />
       </View>
@@ -374,7 +597,7 @@ export function ChatMessage({
       <TouchableOpacity
         onLongPress={handleLongPress}
         delayLongPress={500}
-        style={[styles.messageContainer, isOwnMessage && styles.ownMessage]}
+        style={[...asViewStyle(styles.messageContainer), isOwnMessage && asViewStyle(styles.ownMessage)]}
         activeOpacity={0.7}
       >
         <View
@@ -390,6 +613,41 @@ export function ChatMessage({
       </TouchableOpacity>
       {renderMessageMenu()}
       {message.type === 'IMAGE' && renderFullImageModal()}
+      
+      {/* Video Player Modal */}
+      {showVideoPlayer && (
+        <Modal
+          visible={showVideoPlayer}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closeVideoPlayer}
+        >
+          <View style={styles.videoPlayerOverlay}>
+            <View style={styles.videoPlayerContainer}>
+              <TouchableOpacity
+                style={styles.videoPlayerClose}
+                onPress={closeVideoPlayer}
+              >
+                <X size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              {message.attachments && message.attachments[0] && (
+                <Video
+                  ref={(ref) => setVideoRef(ref)}
+                  source={{ uri: message.attachments[0] }}
+                  useNativeControls
+                  style={styles.videoPlayer}
+                  shouldPlay={isPlayingVideo}
+                  onPlaybackStatusUpdate={(status) => {
+                    if (status.isLoaded && status.didJustFinish) {
+                      setIsPlayingVideo(false);
+                    }
+                  }}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
+      )}
     </>
   );
 }
@@ -418,6 +676,115 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 15,
     lineHeight: 20,
+  },
+  voiceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  voiceButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  voiceInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  voiceWaveform: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 30,
+    marginRight: 12,
+  },
+  waveformBar: {
+    width: 2,
+    marginHorizontal: 1,
+    borderRadius: 1,
+  },
+  voiceDuration: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 40,
+    textAlign: 'right',
+  },
+  videoContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  videoThumbnail: {
+    width: 200,
+    height: 150,
+    position: 'relative',
+  },
+  videoThumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  videoPlayButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoDuration: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  videoDurationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  videoPlayerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPlayerContainer: {
+    width: '90%',
+    height: '70%',
+    position: 'relative',
+  },
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  videoPlayerClose: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   messageFooter: {
     flexDirection: 'row',
@@ -486,6 +853,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 18,
+  },
+  imageDownloadButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 20,
+    padding: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   imageOverlay: {
     position: 'absolute',
@@ -580,6 +960,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  downloadButtonFullImage: {
+    position: 'absolute',
+    top: 50,
+    right: 80,
     zIndex: 10,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 20,

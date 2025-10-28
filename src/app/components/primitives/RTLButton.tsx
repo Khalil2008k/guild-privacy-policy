@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, TouchableOpacityProps, StyleSheet, View, ViewStyle } from 'react-native';
-import { useI18n } from '@/contexts/I18nProvider';
+import { useI18n } from '../../../contexts/I18nProvider';
 import RTLText from './RTLText';
 
 interface RTLButtonProps extends TouchableOpacityProps {

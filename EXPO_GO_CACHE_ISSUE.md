@@ -139,3 +139,4 @@ This creates a **standalone app** that doesn't share state with Expo Go.
 
 **Status:** ⚠️ **WAITING FOR USER TO DELETE EXPO GO AND REINSTALL**
 
+

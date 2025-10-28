@@ -19,6 +19,16 @@ interface SecureStorageInterface {
 class SecureStorage implements SecureStorageInterface {
   private encryptionKey = 'guild-secure-storage-key';
   private useSimpleEncoding = true; // Use base64 in Expo Go to avoid crypto issues
+  
+  // Keys that should be cleared on sign-out (only secure/auth-related keys)
+  private secureKeys = [
+    'auth_token',
+    'auth_token_expiry',
+    'refresh_token',
+    'user_session',
+    'biometric_token',
+    'secure_user_data',
+  ];
 
   private encrypt(value: string): string {
     try {
@@ -83,9 +93,13 @@ class SecureStorage implements SecureStorageInterface {
 
   async clear(): Promise<void> {
     try {
-      await AsyncStorage.clear();
+      // Only clear secure/auth-related keys, NOT all AsyncStorage
+      // This preserves user preferences like "Remember Me", theme settings, etc.
+      console.log('🔐 SecureStorage: Clearing only secure keys, preserving user preferences');
+      await AsyncStorage.multiRemove(this.secureKeys);
+      console.log('🔐 SecureStorage: Secure keys cleared successfully');
     } catch (error) {
-      console.error('Error clearing secure storage:', error);
+      console.error('❌ SecureStorage: Error clearing secure storage:', error);
       throw error;
     }
   }

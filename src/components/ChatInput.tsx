@@ -22,6 +22,10 @@ import {
   FileText,
   Check,
   MapPin,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -38,6 +42,14 @@ interface ChatInputProps {
   disabled?: boolean;
   editMode?: boolean;
   onCancelEdit?: () => void;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  isRecording?: boolean;
+  recordingDuration?: number;
+  isUploadingVoice?: boolean;
+  onStartVideoRecording?: () => void;
+  isRecordingVideo?: boolean;
+  isUploadingVideo?: boolean;
 }
 
 export function ChatInput({
@@ -51,6 +63,14 @@ export function ChatInput({
   disabled = false,
   editMode = false,
   onCancelEdit,
+  onStartRecording,
+  onStopRecording,
+  isRecording = false,
+  recordingDuration = 0,
+  isUploadingVoice = false,
+  onStartVideoRecording,
+  isRecordingVideo = false,
+  isUploadingVideo = false,
 }: ChatInputProps) {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
@@ -114,7 +134,7 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: [ImagePicker.MediaType.Images],
         allowsEditing: true,
         quality: 0.8,
         base64: false,
@@ -141,7 +161,7 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: [ImagePicker.MediaType.Images],
         allowsMultipleSelection: true,
         quality: 0.8,
         base64: false,
@@ -387,6 +407,75 @@ export function ChatInput({
             />
           </TouchableOpacity>
 
+                  {/* Voice Recording Button */}
+                  {!editMode && (
+                    <TouchableOpacity
+                      style={[
+                        styles.iconButton,
+                        {
+                          backgroundColor: isRecording ? theme.error : 'transparent',
+                        },
+                      ]}
+                      onPress={isRecording ? onStopRecording : onStartRecording}
+                      disabled={disabled || isUploadingVoice || isRecordingVideo}
+                    >
+                      {isRecording ? (
+                        <MicOff size={24} color="#FFFFFF" />
+                      ) : (
+                        <Mic size={24} color={disabled ? theme.textSecondary : theme.primary} />
+                      )}
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Video Recording Button */}
+                  {!editMode && (
+                    <TouchableOpacity
+                      style={[
+                        styles.iconButton,
+                        {
+                          backgroundColor: isRecordingVideo ? theme.error : 'transparent',
+                        },
+                      ]}
+                      onPress={onStartVideoRecording}
+                      disabled={disabled || isUploadingVideo || isRecording}
+                    >
+                      {isRecordingVideo ? (
+                        <VideoOff size={24} color="#FFFFFF" />
+                      ) : (
+                        <Video size={24} color={disabled ? theme.textSecondary : theme.primary} />
+                      )}
+                    </TouchableOpacity>
+                  )}
+
+          {/* Recording Duration Display */}
+          {isRecording && (
+            <View style={[styles.recordingIndicator, { backgroundColor: theme.error }]}>
+              <Text style={styles.recordingText}>
+                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+              </Text>
+            </View>
+          )}
+
+                  {/* Uploading Indicator */}
+                  {isUploadingVoice && (
+                    <View style={styles.uploadingIndicator}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                      <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
+                        {isRTL ? 'جاري الرفع...' : 'Uploading...'}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Video Uploading Indicator */}
+                  {isUploadingVideo && (
+                    <View style={styles.uploadingIndicator}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                      <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
+                        {isRTL ? 'جاري رفع الفيديو...' : 'Uploading video...'}
+                      </Text>
+                    </View>
+                  )}
+
           <TextInput
             style={[
               styles.input,
@@ -482,6 +571,30 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  recordingIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  recordingText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  uploadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  uploadingText: {
+    fontSize: 12,
+    marginLeft: 6,
   },
   menuOverlay: {
     flex: 1,

@@ -214,12 +214,12 @@ export default function UserProfileScreen() {
               {isRTL ? 'المهارات' : 'Skills'}
             </Text>
             <View style={styles.skillsContainer}>
-              {profile.skills.map((skill, index) => (
+              {(Array.isArray(profile?.skills) ? profile.skills : []).map((skill, index) => (
                 <View
-                  key={index}
+                  key={`${profile?.id || "profile"}-skill-${index}`}
                   style={[styles.skillChip, { backgroundColor: theme.primary + '20' }]}
                 >
-                  <Text style={[styles.skillText, { color: theme.primary }]}>{skill}</Text>
+                  <Text style={[styles.skillText, { color: theme.primary }]}>{String(skill)}</Text>
                 </View>
               ))}
             </View>

@@ -784,7 +784,10 @@ export default function ProfileCompletionScreen() {
       />
       
       {/* Header */}
-      <View style={[styles.header, { paddingTop: top + 16 }]}>
+      <View style={[styles.header, { 
+        paddingTop: top + 16,
+        flexDirection: isRTL ? 'row-reverse' : 'row',
+      }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
@@ -796,11 +799,17 @@ export default function ProfileCompletionScreen() {
           />
         </TouchableOpacity>
         
-        <Text style={[styles.headerTitle, { color: theme.textPrimary || '#FFFFFF' }]}>
+        <Text style={[styles.headerTitle, { 
+          color: theme.textPrimary || '#FFFFFF',
+          textAlign: isRTL ? 'right' : 'left',
+        }]}>
           {getStepTitle()}
         </Text>
         
-        <Text style={[styles.progressText, { color: theme.textSecondary || '#CCCCCC' }]}>
+        <Text style={[styles.progressText, { 
+          color: theme.textSecondary || '#CCCCCC',
+          textAlign: isRTL ? 'left' : 'right',
+        }]}>
           {Math.round(completionProgress)}%
         </Text>
       </View>

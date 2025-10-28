@@ -465,12 +465,12 @@ export default function JobDetailsScreen() {
           <View style={styles.skillsSection}>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Required Skills</Text>
             <View style={styles.skillsContainer}>
-              {job.skills.map((skill, index) => (
+              {(Array.isArray(job?.skills) ? job.skills : []).map((skill, index) => (
                 <View
-                  key={index}
+                  key={`${job?.id || "job"}-skill-${index}`}
                   style={[styles.skillTag, { backgroundColor: theme.primary + '20' }]}
                 >
-                  <Text style={[styles.skillText, { color: theme.primary }]}>{skill}</Text>
+                  <Text style={[styles.skillText, { color: theme.primary }]}>{String(skill)}</Text>
                 </View>
               ))}
             </View>

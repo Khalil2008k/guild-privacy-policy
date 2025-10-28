@@ -151,9 +151,9 @@ export default function JobDetailScreen() {
             textAlign: isRTL ? 'right' : 'left',
           }]}>{t('skills')}</Text>
           <View style={styles.skillsContainer}>
-            {job.skills.map((skill, index) => (
-              <View key={index} style={[styles.skillTag, { backgroundColor: theme.primary + '20' }]}>
-                <Text style={[styles.skillText, { color: theme.primary }]}>{skill}</Text>
+            {(Array.isArray(job?.skills) ? job.skills : []).map((skill, index) => (
+              <View key={`${job?.id || "job"}-skill-${index}`} style={[styles.skillTag, { backgroundColor: theme.primary + '20' }]}>
+                <Text style={[styles.skillText, { color: theme.primary }]}>{String(skill)}</Text>
               </View>
             ))}
           </View>
@@ -176,11 +176,23 @@ export default function JobDetailScreen() {
         </View>
 
         <View style={styles.actions}>
+          {/* Only show Apply button if user is not the job poster */}
+          {job.clientId !== user?.uid && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: theme.primary }]}
+              onPress={() => router.push(`/(modals)/apply/${id}`)}
+            >
+              <Text style={[styles.actionButtonText, { color: theme.buttonText }]}>
+                {isRTL ? 'تقديم عرض' : 'Submit Offer'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.push({ pathname: '/(modals)/job-discussion', params: { jobId: id } })}
+            style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, marginTop: job.clientId !== user?.uid ? 12 : 0 }]}
+            onPress={() => router.push({ pathname: '/(modals)/chat/[jobId]', params: { jobId: id } })}
           >
-            <Text style={[styles.actionButtonText, { color: theme.buttonText }]}>
+            <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>
               {isRTL ? 'مناقشة الوظيفة' : 'Discuss Job'}
             </Text>
           </TouchableOpacity>

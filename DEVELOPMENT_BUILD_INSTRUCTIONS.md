@@ -103,3 +103,4 @@ When you sign in, Firebase Auth looks for the user account. If it only exists in
 
 **CHOOSE AN OPTION AND LET'S FINISH THIS!** 🔥
 
+

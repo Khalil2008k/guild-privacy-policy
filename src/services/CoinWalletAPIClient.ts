@@ -1,12 +1,18 @@
-import { BackendAPI } from '@/config/backend';
+/**
+ * Coin Wallet API Client
+ * Complete API integration for coin wallet operations
+ */
+
+import { BackendAPI } from '../config/backend';
 
 export interface CoinBalances {
-  GBC: number;
-  GSC: number;
-  GGC: number;
-  GPC: number;
-  GDC: number;
-  GRC: number;
+  GBC?: number;
+  GSC?: number;
+  GGC?: number;
+  GPC?: number;
+  GDC?: number;
+  GRC?: number;
+  [key: string]: number | undefined;
 }
 
 export interface UserWallet {
@@ -31,22 +37,36 @@ export interface UserWallet {
 
 export interface CoinTransaction {
   id: string;
-  type: string;
+  type: 'credit' | 'debit';
   coins: Record<string, number>;
   qarValue: number;
   description: string;
-  timestamp: Date;
+  createdAt: string;
   status: string;
+  metadata?: any;
 }
 
-class CoinWalletAPIClient {
+class CoinWalletAPIClientClass {
+  /**
+   * Get user's coin balance
+   */
+  async getBalance(): Promise<any> {
+    try {
+      const response = await BackendAPI.get('/coins/balance');
+      return response;
+    } catch (error) {
+      console.error('Error getting balance:', error);
+      throw error;
+    }
+  }
+
   /**
    * Get user's coin wallet
    */
   async getWallet(): Promise<UserWallet> {
     try {
       const response = await BackendAPI.get('/coins/wallet');
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('Error getting wallet:', error);
       throw error;
@@ -56,15 +76,13 @@ class CoinWalletAPIClient {
   /**
    * Get transaction history
    */
-  async getTransactions(limit: number = 20): Promise<CoinTransaction[]> {
+  async getTransactions(limit: number = 50): Promise<{ transactions: CoinTransaction[] }> {
     try {
-      const response = await BackendAPI.get('/coins/transactions', {
-        params: { limit },
-      });
-      return response.data.data;
+      const response = await BackendAPI.get(`/coins/transactions?limit=${limit}`);
+      return response;
     } catch (error) {
       console.error('Error getting transactions:', error);
-      throw error;
+      return { transactions: [] };
     }
   }
 
@@ -74,7 +92,7 @@ class CoinWalletAPIClient {
   async getCoinCatalog() {
     try {
       const response = await BackendAPI.get('/coins/catalog');
-      return response.data.data;
+      return response;
     } catch (error) {
       console.error('Error getting coin catalog:', error);
       throw error;
@@ -92,7 +110,7 @@ class CoinWalletAPIClient {
   }> {
     try {
       const response = await BackendAPI.post('/coins/check-balance', { amount });
-      return response.data.data;
+      return response;
     } catch (error) {
       console.error('Error checking balance:', error);
       throw error;
@@ -100,5 +118,4 @@ class CoinWalletAPIClient {
   }
 }
 
-export const coinWalletAPIClient = new CoinWalletAPIClient();
-
+export const CoinWalletAPIClient = new CoinWalletAPIClientClass();

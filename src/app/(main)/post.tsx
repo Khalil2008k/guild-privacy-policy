@@ -14,12 +14,26 @@ export default function ExploreScreen() {
       <Text style={[styles.title, { color: theme.textPrimary }]}>Explore</Text>
 
       <View style={styles.grid}>
-        <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(modals)/job-posting')}>
+        {/* OLD SYSTEM DEPRECATED - Now using add-job.tsx */}
+        {/* <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(modals)/job-posting')}>
+          <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
+          <Text style={[styles.cardText, { color: theme.textPrimary }]}>Post Job</Text>
+        </TouchableOpacity> */}
+
+        {/* NEW SYSTEM - Modern 4-step job creation */}
+        <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(modals)/add-job')}>
           <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
           <Text style={[styles.cardText, { color: theme.textPrimary }]}>Post Job</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(modals)/leads-feed')}>
+        {/* OLD SYSTEM DEPRECATED - Now using home.tsx job browsing */}
+        {/* <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(modals)/leads-feed')}>
+          <Ionicons name="search-outline" size={24} color={theme.primary} />
+          <Text style={[styles.cardText, { color: theme.textPrimary }]}>Browse Jobs</Text>
+        </TouchableOpacity> */}
+
+        {/* NEW SYSTEM - Browse jobs in home screen */}
+        <TouchableOpacity style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]} onPress={() => router.push('/(main)/home')}>
           <Ionicons name="search-outline" size={24} color={theme.primary} />
           <Text style={[styles.cardText, { color: theme.textPrimary }]}>Browse Jobs</Text>
         </TouchableOpacity>

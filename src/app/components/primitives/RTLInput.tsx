@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, StyleSheet, View, ViewStyle, TextStyle } from 'react-native';
-import { useI18n } from '@/contexts/I18nProvider';
+import { useI18n } from '../../../contexts/I18nProvider';
 import RTLText from './RTLText';
 
 interface RTLInputProps extends TextInputProps {

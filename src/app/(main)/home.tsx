@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Animated, Dimensions, Modal, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Animated, Dimensions, Modal, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useUserProfile } from '../../contexts/UserProfileContext';
 import FilterModal from '../screens/leads-feed/FilterModal';
 import { useI18n } from '../../contexts/I18nProvider';
+import { useChat } from '../../contexts/ChatContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useMemoizedValue, useRenderCounter } from '../../utils/performance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nManager } from 'react-native';
@@ -32,11 +34,23 @@ const SearchScreen = React.memo(({ visible, onClose, searchQuery, onSearchChange
 
   if (!visible) return null;
 
-  const filteredJobs = jobs.filter((job: any) =>
-    job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.skills.some((skill: string) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredJobs = jobs.filter((job: any) => {
+    const query = searchQuery.toLowerCase();
+    const matchesTitle = job.title?.toLowerCase().includes(query);
+    const matchesCompany = job.company?.toLowerCase().includes(query);
+    const matchesSkills = job.skills?.some((skill: string) => skill.toLowerCase().includes(query));
+    
+    // Issue #6 Fix: Expanded search to include location, budget, category
+    const matchesLocation = typeof job.location === 'object' 
+      ? job.location?.address?.toLowerCase().includes(query)
+      : job.location?.toLowerCase().includes(query);
+    
+    const matchesBudget = job.budget?.toString().includes(query);
+    const matchesCategory = job.category?.toLowerCase().includes(query);
+    const matchesTimeNeeded = job.timeNeeded?.toLowerCase().includes(query);
+    
+    return matchesTitle || matchesCompany || matchesSkills || matchesLocation || matchesBudget || matchesCategory || matchesTimeNeeded;
+  });
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -79,7 +93,7 @@ const SearchScreen = React.memo(({ visible, onClose, searchQuery, onSearchChange
               style={[styles.searchResultItem, { backgroundColor: theme.surface, borderColor: theme.border }]}
               onPress={() => {
                 onClose();
-                router.push(`/(modals)/job/${job.id}`);
+                router.push(`/(modals)/job/${job.id}` as any);
               }}
               {...createListItemAccessibility(
                 `${job.title} ${isRTL ? 'في' : 'at'} ${job.company}`,
@@ -91,7 +105,17 @@ const SearchScreen = React.memo(({ visible, onClose, searchQuery, onSearchChange
               <Text style={[styles.searchResultTitle, { color: theme.textPrimary }]}>{job.title}</Text>
               <Text style={[styles.searchResultCompany, { color: theme.textSecondary }]}>{job.company}</Text>
               <Text style={[styles.searchResultSalary, { color: theme.primary }]}>
-                {typeof job.budget === 'string' ? job.budget : `${job.budget?.min || 0}-${job.budget?.max || 0} ${job.budget?.currency || 'QR'}`}
+                {typeof job.budget === 'string' 
+                  ? (() => {
+                      const numbers = job.budget.match(/\d+/g);
+                      if (numbers && numbers.length > 0) {
+                        const amount = parseInt(numbers[0]);
+                        return `${roundToProperCoinValue(amount)} QR`;
+                      }
+                      return job.budget.replace(/Coins/gi, 'QR');
+                    })()
+                  : `${roundToProperCoinValue(job.budget?.min || 0)}-${roundToProperCoinValue(job.budget?.max || 0)} QR`
+                }
               </Text>
             </TouchableOpacity>
           ))}
@@ -107,11 +131,35 @@ const SearchScreen = React.memo(({ visible, onClose, searchQuery, onSearchChange
 const { width, height } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
 
+// Utility function to round amounts to proper coin denominations (QR values)
+const roundToProperCoinValue = (amount: number): number => {
+  // Round to proper coin denominations: 5, 10, 50, 100, 200, 500 QR
+  if (amount <= 5) return 5;
+  if (amount <= 10) return 10;
+  if (amount <= 50) return Math.ceil(amount / 5) * 5; // Round to nearest 5
+  if (amount <= 100) return Math.ceil(amount / 10) * 10; // Round to nearest 10
+  if (amount <= 200) return Math.ceil(amount / 50) * 50; // Round to nearest 50
+  if (amount <= 500) return Math.ceil(amount / 100) * 100; // Round to nearest 100
+  if (amount <= 1000) return Math.ceil(amount / 200) * 200; // Round to nearest 200
+  if (amount <= 5000) return Math.ceil(amount / 500) * 500; // Round to nearest 500
+  return Math.ceil(amount / 1000) * 1000; // Round to nearest 1000
+};
+
 export default function HomeScreen() {
   const { theme } = useTheme();
   const { t, isRTL, changeLanguage, language } = useI18n();
   const { profile } = useUserProfile();
+  const { chats } = useChat();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  
+  // Calculate total unread messages
+  const totalUnread = chats.reduce((sum, chat: any) => {
+    const unreadCount = typeof chat.unreadCount === 'object' 
+      ? (chat.unreadCount[user?.uid || ''] || 0)
+      : (chat.unreadCount || 0);
+    return sum + unreadCount;
+  }, 0);
   // useRenderCounter('HomeScreen'); // Temporarily disabled
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -124,26 +172,124 @@ export default function HomeScreen() {
     sortBy: 'relevance' as 'distance' | 'budget' | 'datePosted' | 'relevance',
   });
   const scrollY = useRef(new Animated.Value(0)).current;
+  
+  // Animation refs for action buttons
+  const button1Anim = useRef(new Animated.Value(0)).current;
+  const button2Anim = useRef(new Animated.Value(0)).current;
+  
+  // Animation refs for header buttons
+  const headerButton1Anim = useRef(new Animated.Value(0)).current;
+  const headerButton2Anim = useRef(new Animated.Value(0)).current;
+  const headerButton3Anim = useRef(new Animated.Value(0)).current;
+  const headerButton4Anim = useRef(new Animated.Value(0)).current;
+  
+  // Animation refs for job cards (support up to 10 cards)
+  const jobCardAnims = useRef(
+    Array.from({ length: 10 }, () => new Animated.Value(0))
+  ).current;
 
   // Firebase jobs state
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Fetch jobs from Firebase
   useEffect(() => {
     loadJobs();
+    // Animate buttons on mount
+    animateButtons();
   }, []);
+
+  // Animation function for buttons
+  const animateButtons = () => {
+    // Reset animation values
+    button1Anim.setValue(0);
+    button2Anim.setValue(0);
+    headerButton1Anim.setValue(0);
+    headerButton2Anim.setValue(0);
+    headerButton3Anim.setValue(0);
+    headerButton4Anim.setValue(0);
+    jobCardAnims.forEach(anim => anim.setValue(0));
+    
+    // Animate header buttons one by one: 1 → 2 → 3 → 4
+    Animated.stagger(100, [ // 100ms delay between each button
+      Animated.timing(headerButton1Anim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerButton2Anim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerButton3Anim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerButton4Anim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Then animate action buttons together (same speed as header buttons)
+    Animated.parallel([
+      Animated.timing(button1Anim, {
+        toValue: 1,
+        duration: 300, // Same duration as header buttons
+        useNativeDriver: true,
+      }),
+      Animated.timing(button2Anim, {
+        toValue: 1,
+        duration: 300, // Same duration as header buttons
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Animate job cards with stagger (one by one, same speed)
+    setTimeout(() => {
+      Animated.stagger(100, 
+        jobCardAnims.map(anim => 
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    }, 100); // Small delay after buttons
+  };
+
+  const [jobError, setJobError] = useState<string | null>(null);
 
   const loadJobs = async () => {
     setLoadingJobs(true);
+    setJobError(null); // Clear previous errors
     try {
       const response = await jobService.getOpenJobs();
       setJobs(response.jobs || []);
     } catch (error) {
       console.error('Error loading jobs:', error);
+      // Show user-friendly error message
+      const errorMessage = stableLanguage === 'ar' 
+        ? 'فشل تحميل الوظائف. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.'
+        : 'Failed to load jobs. Please check your internet connection and try again.';
+      setJobError(errorMessage);
     } finally {
       setLoadingJobs(false);
     }
+  };
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadJobs();
+    // Trigger button animations on refresh
+    animateButtons();
+    setRefreshing(false);
   };
 
   // Keep language state for translations
@@ -389,37 +535,100 @@ Check console for full details.
           </View>
 
           <View style={[styles.headerRight, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleNotifications}
-              activeOpacity={0.7}
+            <Animated.View
+              style={{
+                opacity: headerButton1Anim,
+                transform: [
+                  {
+                    scale: headerButton1Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Ionicons name="notifications-outline" size={20} color={theme.primary} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleNotifications}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="notifications-outline" size={20} color={theme.primary} />
+              </TouchableOpacity>
+            </Animated.View>
 
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleChat}
-              activeOpacity={0.7}
+            <Animated.View
+              style={{
+                opacity: headerButton2Anim,
+                transform: [
+                  {
+                    scale: headerButton2Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Ionicons name="chatbubble-outline" size={20} color={theme.primary} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleChat}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chatbubble-outline" size={20} color={theme.primary} />
+                {totalUnread > 0 && (
+                  <View style={[styles.notificationDot, { backgroundColor: theme.primary }]}>
+                    {totalUnread > 9 && (
+                      <Text style={styles.notificationDotText}>9+</Text>
+                    )}
+                  </View>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
 
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={() => router.push('/(main)/search')}
-              activeOpacity={0.7}
+            <Animated.View
+              style={{
+                opacity: headerButton3Anim,
+                transform: [
+                  {
+                    scale: headerButton3Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Ionicons name="search-outline" size={20} color={theme.primary} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push('/(main)/search')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="search-outline" size={20} color={theme.primary} />
+              </TouchableOpacity>
+            </Animated.View>
 
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleSettings}
-              activeOpacity={0.7}
+            <Animated.View
+              style={{
+                opacity: headerButton4Anim,
+                transform: [
+                  {
+                    scale: headerButton4Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Ionicons name="menu-outline" size={20} color={theme.primary} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleSettings}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="menu-outline" size={20} color={theme.primary} />
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </View>
 
@@ -460,6 +669,14 @@ Check console for full details.
           { useNativeDriver: false }
         )}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
+        }
       >
         {/* Search Bar */}
         <View style={[styles.searchContainer, { marginTop: 8, alignItems: 'center' }]}>
@@ -487,23 +704,65 @@ Check console for full details.
 
         {/* Action Buttons */}
         <View style={[styles.actionsContainer, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
-            onPress={handleAddJob}
-            activeOpacity={0.7}
+          <Animated.View
+            style={{
+              flex: 1,
+              opacity: button1Anim,
+              transform: [
+                {
+                  translateY: button1Anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+                {
+                  scale: button1Anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.9, 1],
+                  }),
+                },
+              ],
+            }}
           >
-            <Ionicons name="add-circle" size={20} color={theme.primary} />
-            <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('addJob')}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
+              onPress={handleAddJob}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle" size={20} color={theme.primary} />
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('addJob')}</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
-            onPress={handleGuildMap}
-            activeOpacity={0.7}
+          <Animated.View
+            style={{
+              flex: 1,
+              opacity: button2Anim,
+              transform: [
+                {
+                  translateY: button2Anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+                {
+                  scale: button2Anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.9, 1],
+                  }),
+                },
+              ],
+            }}
           >
-            <Feather name="map" size={20} color={theme.primary} />
-            <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('guildMap')}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
+              onPress={handleGuildMap}
+              activeOpacity={0.7}
+            >
+              <Feather name="map" size={20} color={theme.primary} />
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('guildMap')}</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Test Payment Button - REMOVED FOR PRODUCTION */}
         </View>
@@ -528,31 +787,50 @@ Check console for full details.
             </View>
           ) : availableJobs.length > 0 ? (
             availableJobs.map((job: any, index: number) => (
-              <TouchableOpacity
-              key={job.id}
-              style={[
-                styles.jobCard,
-                { backgroundColor: theme.surface },
-                index === 1 && {
-                  shadowColor: theme.primary,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 16,
-                  elevation: 6,
-                  borderWidth: 1,
-                  borderColor: theme.primary + '30',
-                }
-              ]}
-              onPress={() => router.push(`/(modals)/job/${job.id}`)}
-              activeOpacity={0.7}
-            >
+              <Animated.View
+                key={job.id}
+                style={{
+                  opacity: jobCardAnims[index] || 1,
+                  transform: [
+                    {
+                      translateY: (jobCardAnims[index] || new Animated.Value(1)).interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                    },
+                    {
+                      scale: (jobCardAnims[index] || new Animated.Value(1)).interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.95, 1],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <TouchableOpacity
+                style={[
+                  styles.jobCard,
+                  { backgroundColor: theme.surface },
+                  index === 1 && {
+                    shadowColor: theme.primary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 16,
+                    elevation: 6,
+                    borderWidth: 1,
+                    borderColor: theme.primary + '30',
+                  }
+                ]}
+                onPress={() => router.push(`/(modals)/job/${job.id}`)}
+                activeOpacity={0.7}
+              >
               {/* Job Info */}
               <View style={styles.jobInfoContainer}>
                 {/* Rating in corner */}
                 <View style={styles.ratingContainer}>
                   <Ionicons name="star" size={12} color={theme.primary} />
                   <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-                    {job.rating || '4.2'}
+                    {job.rating || 'N/A'}
                   </Text>
                 </View>
 
@@ -578,13 +856,24 @@ Check console for full details.
                       fontWeight: '700',
                     }
                   ]}>
-                    {typeof job.budget === 'string' ? job.budget.replace(' QR', '') : `${job.budget?.min || 0}-${job.budget?.max || 0}`}
+                    {typeof job.budget === 'string' 
+                      ? (() => {
+                          const numbers = job.budget.match(/\d+/g);
+                          if (numbers && numbers.length > 0) {
+                            const amount = parseInt(numbers[0]);
+                            return roundToProperCoinValue(amount);
+                          }
+                          return job.budget.replace(/Coins/gi, '').trim();
+                        })()
+                      : `${roundToProperCoinValue(job.budget?.min || 0)}-${roundToProperCoinValue(job.budget?.max || 0)}`
+                    }
                   </Text>
-                  {index === 1 && (
-                    <Text style={[styles.currencyLabel, { color: theme.primary }]}>
-                      QR
-                    </Text>
-                  )}
+                  <Text style={[
+                    styles.currencyLabel, 
+                    { color: index === 1 ? theme.primary : '#000000' }
+                  ]}>
+                    QR
+                  </Text>
                 </View>
                 
                 {/* Header Row: Company + Salary */}
@@ -607,7 +896,7 @@ Check console for full details.
                         {job.company}
                       </Text>
                       <Text style={[styles.posterGID, { color: theme.textSecondary }]}>
-                        GID: {job.posterGID || '12345'}
+                        GID: {job.posterGID || 'N/A'}
                       </Text>
                     </View>
                   </View>
@@ -644,20 +933,40 @@ Check console for full details.
                 </View>
               </View>
             </TouchableOpacity>
+          </Animated.View>
           ))
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {stableLanguage === 'ar' ? 'لا توجد وظائف متاحة' : 'No available jobs'}
-              </Text>
-              <TouchableOpacity 
-                style={[styles.refreshButton, { backgroundColor: theme.primary }]}
-                onPress={loadJobs}
-              >
-                <Text style={[styles.refreshText, { color: theme.buttonText }]}>
-                  {stableLanguage === 'ar' ? 'تحديث' : 'Refresh'}
-                </Text>
-              </TouchableOpacity>
+              {jobError ? (
+                <>
+                  <Ionicons name="alert-circle-outline" size={48} color={theme.error} />
+                  <Text style={[styles.emptyText, { color: theme.textPrimary, marginTop: 16 }]}>
+                    {jobError}
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.refreshButton, { backgroundColor: theme.primary, marginTop: 16 }]}
+                    onPress={loadJobs}
+                  >
+                    <Text style={[styles.refreshText, { color: theme.buttonText }]}>
+                      {stableLanguage === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                    {stableLanguage === 'ar' ? 'لا توجد وظائف متاحة' : 'No available jobs'}
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.refreshButton, { backgroundColor: theme.primary }]}
+                    onPress={loadJobs}
+                  >
+                    <Text style={[styles.refreshText, { color: theme.buttonText }]}>
+                      {stableLanguage === 'ar' ? 'تحديث' : 'Refresh'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           )}
         </View>
@@ -702,7 +1011,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#BCFF31', // Keep neon green for header card
     borderRadius: 24,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 26, // Increased from 16 to 26 (+10px)
     marginBottom: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
@@ -748,6 +1057,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000000',
+  },
+  notificationDotText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '700',
   },
   headerBottom: {
     alignItems: 'center',

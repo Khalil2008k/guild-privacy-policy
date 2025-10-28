@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isParticipant(chatId) {
+      return request.auth != null
+        && exists(/databases/(default)/documents/chats/$(chatId))
+        && (request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants);
+    }
+
+    match /chats/{chatId}/voice/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /chats/{chatId}/video/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 50 * 1024 * 1024;
+    }
+
+    match /chats/{chatId}/video/thumbnails/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 2 * 1024 * 1024;
+    }
+
+    match /chats/{chatId}/images/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    match /chats/{chatId}/files/{fileName} {
+      allow read, write: if isParticipant(chatId) && request.resource.size < 25 * 1024 * 1024;
+    }
+  }
+}

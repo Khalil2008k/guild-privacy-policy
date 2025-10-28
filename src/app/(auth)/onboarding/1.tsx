@@ -19,7 +19,7 @@ const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen1: React.FC = () => {
   const { theme } = useTheme();
-  const { t } = useI18n();
+  const { t, isRTL } = useI18n();
   const insets = useSafeAreaInsets();
 
   // Animation values
@@ -62,8 +62,13 @@ const OnboardingScreen1: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <View style={styles.logoHeader}>
+      <View style={[styles.header, { 
+        paddingTop: insets.top + 20,
+        flexDirection: isRTL ? 'row-reverse' : 'row',
+      }]}>
+        <View style={[styles.logoHeader, {
+          flexDirection: isRTL ? 'row-reverse' : 'row',
+        }]}>
           <Shield size={24} color={theme.primary} />
           <Text style={[styles.logoText, { color: theme.primary }]}>GUILD</Text>
         </View>
