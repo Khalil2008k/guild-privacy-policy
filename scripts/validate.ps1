@@ -161,7 +161,7 @@ if ($Errors -gt 0) {
     Write-Host ""
     Write-Host "✅ All critical checks passed!" -ForegroundColor Green
     if ($Warnings -gt 0) {
-        Write-Host "⚠️  Some warnings found, but these are non-blocking." -ForegroundColor Yellow
+        Write-Host '⚠️  Some warnings found, but these are non-blocking.' -ForegroundColor Yellow
     }
     exit 0
 }
