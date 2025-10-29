@@ -66,6 +66,10 @@ export default {
       EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "654144998705",
       EXPO_PUBLIC_FIREBASE_APP_ID: "1:654144998705:web:880f16df9efe0ad4853410",
       EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-3F86RQH389",
+      // API and WebSocket URLs
+      apiUrl: "https://guild-yf7q.onrender.com/api/v1",
+      wsUrl: process.env.EXPO_PUBLIC_WS_URL || "wss://guild-yf7q.onrender.com",
+      firebaseProjectId: "guild-4f46b",
       // WebSocket URL for real-time features
       EXPO_PUBLIC_WS_URL: process.env.EXPO_PUBLIC_WS_URL || "wss://guild-yf7q.onrender.com",
     },

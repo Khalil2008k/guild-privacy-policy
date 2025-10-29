@@ -2,70 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is authenticated
-    function isAuthed() {
-      return request.auth != null;
-    }
-    
-    // Helper function to check if user is participant in chat
-    function isParticipant(chatId) {
-      return isAuthed() 
-        && exists(/databases/$(database)/documents/chats/$(chatId))
-        && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
-    }
-    
-    // Users collection - authenticated users can read any user, write their own
+    // USERS
     match /users/{userId} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Presence collection - authenticated users can read/write their own presence
-    match /presence/{userId} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && request.auth.uid == userId;
+
+    // JOBS (public read)
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-    
-    // Chats collection - participants can read/write
+
+    // CHATS
     match /chats/{chatId} {
-      allow read, write: if isParticipant(chatId);
-      
-      // Messages subcollection
+      allow read, write: if request.auth != null &&
+        request.auth.uid in resource.data.participants;
+
+      // Messages under each chat
       match /messages/{messageId} {
-        allow read, write: if isParticipant(chatId);
+        allow read, write: if request.auth != null &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
     }
-    
-    // Notifications collection - users can read/write their own notifications
-    match /notifications/{notificationId} {
-      allow read, write: if isAuthed() && request.auth.uid == resource.data.userId;
+
+    // PRESENCE SERVICE
+    match /presence/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
-    
-    // User notifications subcollection
-    match /users/{userId}/notifications/{notificationId} {
-      allow read, write: if isAuthed() && request.auth.uid == userId;
+
+    // NOTIFICATIONS
+    match /notifications/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Jobs collection - authenticated users can read, admins can write
-    match /jobs/{jobId} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && request.auth.uid == resource.data.posterId;
-    }
-    
-    // Guilds collection - authenticated users can read, owners can write
-    match /guilds/{guildId} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && request.auth.uid == resource.data.ownerId;
-    }
-    
-    // Wallets collection - users can read/write their own wallet
-    match /wallets/{userId} {
-      allow read, write: if isAuthed() && request.auth.uid == userId;
-    }
-    
-    // Default deny all other collections
-    match /{document=**} {
-      allow read, write: if false;
+
+    // SETTINGS OR OTHER CONFIG
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
