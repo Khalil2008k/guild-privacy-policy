@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { logger } from '@/utils/logger';
+import Constants from 'expo-constants';
 
 /**
  * Safe Socket Connection Service
@@ -37,8 +38,12 @@ export async function maybeConnectSocket(authToken?: string): Promise<Socket | n
       return null;
     }
 
-    // Get WebSocket URL from environment
-    const wsUrl = process.env.EXPO_PUBLIC_WS_URL || process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '').replace('/api', '');
+    // Get WebSocket URL from environment (try multiple sources)
+    const wsUrl = 
+      process.env.EXPO_PUBLIC_WS_URL || 
+      Constants.expoConfig?.extra?.EXPO_PUBLIC_WS_URL ||
+      Constants.expoConfig?.extra?.wsUrl ||
+      process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '').replace('/api', '');
     
     if (!wsUrl) {
       logger.error('[SocketService] No WebSocket URL configured');
@@ -112,7 +117,11 @@ export async function connectSocketSafely(): Promise<Socket | null> {
  */
 export function isSocketConnectionSupported(): boolean {
   // Check if WebSocket URL is configured
-  const wsUrl = process.env.EXPO_PUBLIC_WS_URL || process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '').replace('/api', '');
+  const wsUrl = 
+    process.env.EXPO_PUBLIC_WS_URL || 
+    Constants.expoConfig?.extra?.EXPO_PUBLIC_WS_URL ||
+    Constants.expoConfig?.extra?.wsUrl ||
+    process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '').replace('/api', '');
   
   if (!wsUrl) {
     logger.warn(`[SocketService] No WebSocket URL configured - socket connection unavailable`);

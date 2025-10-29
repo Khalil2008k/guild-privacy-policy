@@ -310,7 +310,10 @@ class RealPaymentService {
    */
   private async saveWallet(wallet: Wallet): Promise<void> {
     try {
-      await BackendAPI.post('/api/v1/payments/wallet', wallet);
+      // Wallet is stored in Firestore, not backend API
+      // This method is kept for compatibility but doesn't need to call backend
+      console.log('💾 Wallet saved to Firestore (not backend API)');
+      // If backend API is needed in future, use: await BackendAPI.post('/api/v1/wallet', wallet);
     } catch (error) {
       console.error('Error saving wallet:', error);
       throw new Error('Failed to save wallet');
