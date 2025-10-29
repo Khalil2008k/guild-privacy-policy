@@ -32,35 +32,55 @@ class GlobalChatNotificationServiceClass {
 
     this.unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
-        if (change.type === 'modified') {
-          const chat = change.doc.data();
-          const chatId = change.doc.id;
+        try {
+          if (change.type === 'modified') {
+            const chat = change.doc.data();
+            // Guard: Validate chat data structure
+            if (!chat || typeof chat !== 'object') {
+              console.warn('🔔 Invalid chat data, skipping:', change.doc.id);
+              return;
+            }
+            const chatId = change.doc.id;
 
-          // Check if there's a new message
-          if (chat.lastMessage) {
-            const lastMessageTime = chat.lastMessage.timestamp?.toMillis?.() || 0;
-            const previousTime = this.lastMessageTimestamps.get(chatId) || 0;
+            // Check if there's a new message
+            // Guard: Validate lastMessage structure
+            if (chat.lastMessage && typeof chat.lastMessage === 'object') {
+              const lastMessageTime = chat.lastMessage.timestamp?.toMillis?.() || 0;
+              const previousTime = this.lastMessageTimestamps.get(chatId) || 0;
 
-            // New message detected
-            if (lastMessageTime > previousTime && chat.lastMessage.senderId !== userId) {
-              console.log('🔔 New message detected in chat:', chatId);
-              
-              // Update timestamp
-              this.lastMessageTimestamps.set(chatId, lastMessageTime);
+              // New message detected
+              if (lastMessageTime > previousTime && chat.lastMessage.senderId !== userId) {
+                console.log('🔔 New message detected in chat:', chatId);
+                
+                // Update timestamp
+                this.lastMessageTimestamps.set(chatId, lastMessageTime);
 
-              // Get sender name
-              const senderName = await this.getSenderName(chat.lastMessage.senderId);
+                // Guard: Validate senderId before calling getSenderName
+                if (!chat.lastMessage.senderId || typeof chat.lastMessage.senderId !== 'string') {
+                  console.warn('🔔 Invalid senderId, skipping notification:', chatId);
+                  return;
+                }
 
-              // Send notification
-              await MessageNotificationService.sendMessageNotification(
-                chatId,
-                chat.lastMessage.senderId,
-                senderName,
-                chat.lastMessage.text || 'Sent a file',
-                userId
-              );
+                // Get sender name
+                const senderName = await this.getSenderName(chat.lastMessage.senderId);
+
+                // Send notification
+                await MessageNotificationService.sendMessageNotification(
+                  chatId,
+                  chat.lastMessage.senderId,
+                  senderName,
+                  chat.lastMessage.text || 'Sent a file',
+                  userId
+                );
+              }
             }
           }
+        } catch (error) {
+          console.error('🔔 Error processing chat change:', error, {
+            chatId: change.doc?.id,
+            changeType: change.type
+          });
+          // Continue processing other chats - don't let one error stop the service
         }
       });
     }, (error) => {

@@ -291,6 +291,9 @@ class ChatService {
     chatId: string,
     callback: (messages: Message[]) => void
   ): () => void {
+    // Maintain last good state to prevent UI clearing on errors
+    let lastGood: Message[] = [];
+    
     const unsubscribe = onSnapshot(
       query(
         collection(db, 'chats', chatId, 'messages'),
@@ -301,10 +304,13 @@ class ChatService {
           id: doc.id,
           ...doc.data()
         } as Message));
+        lastGood = messages; // Update last good state
         callback(messages);
       },
       (error) => {
         console.error('Error listening to messages:', error);
+        // Don't clear UI - maintain last good state
+        callback(lastGood);
       }
     );
 

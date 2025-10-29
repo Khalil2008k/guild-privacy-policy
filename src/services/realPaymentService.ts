@@ -77,8 +77,8 @@ class RealPaymentService {
   async getWallet(userId: string): Promise<Wallet | null> {
     try {
       const response = await BackendAPI.get(`/api/v1/payments/wallet/${userId}`);
-      if (response.data.success) {
-        return response.data.wallet;
+      if (response?.data?.success === true) {
+        return response.data.data || response.data.wallet;
       }
       
       // If no wallet exists, create one
@@ -285,15 +285,22 @@ class RealPaymentService {
    */
   async isDemoModeEnabled(): Promise<boolean> {
     try {
+      // Backend route is registered at /api/v1/payments/demo-mode
+      // BackendAPI.baseURL already includes /api, so full path is correct
+      // Verify: backend/src/routes/payments.ts mounts at /api/v1/payments
       const response = await BackendAPI.get('/api/v1/payments/demo-mode');
       
-      if (response.data.success) {
-        return response.data.demoMode;
+      if (response.data && response.data.success) {
+        return response.data.demoMode === true;
       }
       
       return false; // Default to production mode
     } catch (error) {
       console.error('Error checking demo mode:', error);
+      // Log full error for debugging
+      if (error instanceof Error) {
+        console.error('Demo mode check error details:', error.message, error.stack);
+      }
       return false;
     }
   }
