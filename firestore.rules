@@ -8,6 +8,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       // Users can read other users' profiles (for sender names, presence, etc.)
       allow read: if request.auth != null;
+      
+      // Settings subcollection (for notification preferences)
+      match /settings/{settingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // WALLETS
@@ -50,12 +60,12 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // NOTIFICATIONS
+    // NOTIFICATIONS (top-level collection)
     match /notifications/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // NOTIFICATION PREFERENCES (backend uses this)
+    // NOTIFICATION PREFERENCES (top-level, if used)
     match /notificationPreferences/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
