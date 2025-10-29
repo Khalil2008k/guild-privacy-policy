@@ -15,6 +15,7 @@ export default {
     // iOS specific configuration
     ios: {
       bundleIdentifier: "com.mazen123333.guild",
+      buildNumber: "3",
       supportsTablet: true,
       requireFullScreen: false,
       config: {
@@ -64,12 +65,15 @@ export default {
       EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
       EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "654144998705",
       EXPO_PUBLIC_FIREBASE_APP_ID: "1:654144998705:web:880f16df9efe0ad4853410",
-      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-3F86RQH389"
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-3F86RQH389",
+      // WebSocket URL for real-time features
+      EXPO_PUBLIC_WS_URL: process.env.EXPO_PUBLIC_WS_URL || "wss://guild-yf7q.onrender.com",
     },
     plugins: [
       "expo-router",
       "expo-font",
       "expo-localization",
+      "expo-audio",
       // Removed expo-dev-client to fix DevLauncher crashes
       [
         "expo-document-picker",
@@ -107,6 +111,15 @@ export default {
           defaultChannel: "guild-system"
         }
       ]
+      // Temporarily disabled Sentry for iOS build compatibility
+      // [
+      //   "@sentry/react-native/expo",
+      //   {
+      //     url: "https://sentry.io/",
+      //     project: "guild-app",
+      //     organization: "guild-team"
+      //   }
+      // ]
     ],
     experiments: {
       typedRoutes: true,

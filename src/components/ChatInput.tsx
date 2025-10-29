@@ -28,6 +28,16 @@ import {
   VideoOff,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+
+// Import MediaType separately to ensure it's available
+// Fallback to string literal if MediaType is undefined (SDK 54 compatibility)
+const getMediaType = () => {
+  if (ImagePicker.MediaType && ImagePicker.MediaType.Images) {
+    return ImagePicker.MediaType.Images;
+  }
+  // Fallback for SDK 54 if MediaType enum is not available
+  return 'images';
+};
 import * as DocumentPicker from 'expo-document-picker';
 import * as Location from 'expo-location';
 
@@ -134,7 +144,7 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: [getMediaType()],
         allowsEditing: true,
         quality: 0.8,
         base64: false,
@@ -161,7 +171,7 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: [getMediaType()],
         allowsMultipleSelection: true,
         quality: 0.8,
         base64: false,
