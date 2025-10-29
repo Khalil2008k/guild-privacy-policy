@@ -99,12 +99,24 @@ export default function ChatScreen() {
   
   // Request camera and microphone permissions on mount
   useEffect(() => {
-    if (!cameraPermission?.granted) {
-      requestCameraPermission();
-    }
-    if (!micPermission?.granted) {
-      requestMicPermission();
-    }
+    const requestPermissions = async () => {
+      if (!cameraPermission?.granted) {
+        await requestCameraPermission();
+        if (!cameraPermission?.granted) {
+          console.warn('Camera permission denied');
+          return;
+        }
+      }
+      if (!micPermission?.granted) {
+        await requestMicPermission();
+        if (!micPermission?.granted) {
+          console.warn('Microphone permission denied');
+          return;
+        }
+      }
+    };
+    
+    requestPermissions();
   }, [cameraPermission, requestCameraPermission, micPermission, requestMicPermission]);
   
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -626,9 +638,9 @@ export default function ChatScreen() {
       console.log('🎥 Starting video recording...');
       
       // Check camera permissions
-      if (!permission?.granted) {
-        await requestPermission();
-        if (!permission?.granted) {
+      if (!cameraPermission?.granted) {
+        await requestCameraPermission();
+        if (!cameraPermission?.granted) {
           CustomAlertService.showError(
             isRTL ? 'خطأ' : 'Error',
             isRTL ? 'يجب السماح بالوصول للكاميرا' : 'Camera permission required'
