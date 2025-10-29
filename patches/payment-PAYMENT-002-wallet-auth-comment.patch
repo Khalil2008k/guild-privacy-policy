@@ -1,0 +1,28 @@
+--- a/backend/src/routes/payments.ts
++++ b/backend/src/routes/payments.ts
+@@ -17,7 +17,10 @@ const router = Router();
+  */
+ 
+ /** Health-checked wallet endpoint for UI boot (no auth required) */
+-router.get("/wallet/:userId", async (req: Request, res: Response) => {
++router.get("/wallet/:userId", async (req: Request, res: Response) => {
++  // SECURITY: Validate userId matches authenticated user OR require auth
++  // Current implementation allows unauthenticated access - consider adding auth middleware
++  const { userId } = req.params;
+   const { userId } = req.params;
+   // TODO: integrate PSP later
+   return res.json({
+@@ -29,6 +32,9 @@ router.get("/wallet/:userId", async (req: Request, res: Response) => {
+       source: "placeholder"
+     }
+   });
+ });
+ 
+ /** Feature flag probe endpoint (used by UI to gate demo flows - no auth required) */
+-router.get("/demo-mode", (_req: Request, res: Response) => {
++router.get("/demo-mode", (_req: Request, res: Response) => {
++  // Note: This endpoint is intentionally public (feature flag check)
+   return res.json({ 
+     success: true, 
+     demoMode: false 
+

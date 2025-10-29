@@ -1,0 +1,25 @@
+--- a/src/services/realPaymentService.ts
++++ b/src/services/realPaymentService.ts
+@@ -286,7 +286,10 @@ class RealPaymentService {
+   async isDemoModeEnabled(): Promise<boolean> {
+     try {
+-      const response = await BackendAPI.get('/api/v1/payments/demo-mode');
++      // Backend route is registered at /api/v1/payments/demo-mode
++      // BackendAPI.baseURL already includes /api, so full path is correct
++      // Verify: backend/src/routes/payments.ts mounts at /api/v1/payments
++      const response = await BackendAPI.get('/api/v1/payments/demo-mode');
+       
+       if (response.data.success) {
+         return response.data.demoMode;
+@@ -295,6 +298,11 @@ class RealPaymentService {
+       return false; // Default to production mode
+     } catch (error) {
+       console.error('Error checking demo mode:', error);
++      // Log full error for debugging
++      if (error instanceof Error) {
++        console.error('Demo mode check error details:', error.message, error.stack);
++      }
+       return false;
+     }
+   }
+

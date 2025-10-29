@@ -1,0 +1,50 @@
+--- a/src/services/GlobalChatNotificationService.ts
++++ b/src/services/GlobalChatNotificationService.ts
+@@ -33,7 +33,19 @@ class GlobalChatNotificationServiceClass {
+     this.unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
+-      snapshot.docChanges().forEach(async (change) => {
++      snapshot.docChanges().forEach(async (change) => {
++        try {
+           if (change.type === 'modified') {
+             const chat = change.doc.data();
++            // Guard: Validate chat data structure
++            if (!chat || typeof chat !== 'object') {
++              console.warn('🔔 Invalid chat data, skipping:', change.doc.id);
++              return;
++            }
+             const chatId = change.doc.id;
+ 
+             // Check if there's a new message
+-            if (chat.lastMessage) {
++            // Guard: Validate lastMessage structure
++            if (chat.lastMessage && typeof chat.lastMessage === 'object') {
+               const lastMessageTime = chat.lastMessage.timestamp?.toMillis?.() || 0;
+               const previousTime = this.lastMessageTimestamps.get(chatId) || 0;
+@@ -51,6 +63,13 @@ class GlobalChatNotificationServiceClass {
+               // Update timestamp
+               this.lastMessageTimestamps.set(chatId, lastMessageTime);
+ 
++              // Guard: Validate senderId before calling getSenderName
++              if (!chat.lastMessage.senderId || typeof chat.lastMessage.senderId !== 'string') {
++                console.warn('🔔 Invalid senderId, skipping notification:', chatId);
++                return;
++              }
++
+               // Get sender name
+               const senderName = await this.getSenderName(chat.lastMessage.senderId);
+ 
+@@ -62,6 +81,13 @@ class GlobalChatNotificationServiceClass {
+               );
+             }
+           }
++        } catch (error) {
++          console.error('🔔 Error processing chat change:', error, {
++            chatId: change.doc?.id,
++            changeType: change.type
++          });
++          // Continue processing other chats - don't let one error stop the service
++        }
+       });
+     }, (error) => {
+       console.error('🔔 GlobalChatNotificationService error:', error);
+
