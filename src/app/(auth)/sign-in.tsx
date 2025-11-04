@@ -441,16 +441,8 @@ export default function SignInScreen() {
 
         {/* Unified Input: Email / Phone / Guild ID */}
         <View style={styles.inputContainer}>
-          {/* Options Label */}
-          <Text style={[styles.optionsLabel, { 
-            color: theme.textSecondary,
-            textAlign: isRTL ? 'right' : 'left',
-            marginBottom: 8,
-          }]}>
-            {isRTL ? 'البريد / الهاتف / GID' : 'Email / Phone / GID'}
-          </Text>
           <TextInput
-            placeholder={getInputPlaceholder(detectedType, isRTL)}
+            placeholder={identifier.trim() === '' ? (isRTL ? 'البريد / الهاتف / GID' : 'Email / Phone / GID') : getInputPlaceholder(detectedType, isRTL)}
             placeholderTextColor={theme.textSecondary}
             value={identifier}
             onChangeText={handleIdentifierChange}
