@@ -6,7 +6,7 @@
  * Purpose: Renders a single job card with all job information
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,8 @@ import { Job } from '../../../services/jobService';
 import { roundToProperCoinValue } from '../../../utils/coinUtils';
 import OptimizedImage from '../../../components/OptimizedImage';
 import { createListItemAccessibility } from '../../../utils/accessibility';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
 
 interface JobCardProps {
   job: Job;
@@ -23,9 +25,49 @@ interface JobCardProps {
   animValue: Animated.Value;
 }
 
+interface PosterProfile {
+  idNumber?: string;
+  rating?: number;
+  profileImage?: string;
+}
+
 export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   const { theme } = useTheme();
-  const { isRTL } = useI18n();
+  const { t, isRTL, language } = useI18n();
+  const [posterProfile, setPosterProfile] = useState<PosterProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Get job content in current language (Arabic if available and language is Arabic)
+  const jobTitle = (language === 'ar' && (job as any).titleAr) ? (job as any).titleAr : job.title;
+  const jobDescription = (language === 'ar' && (job as any).descriptionAr) ? (job as any).descriptionAr : job.description;
+
+  // Fetch poster profile data for GID and rating
+  useEffect(() => {
+    if (job.clientId) {
+      loadPosterProfile();
+    }
+  }, [job.clientId]);
+
+  const loadPosterProfile = async () => {
+    if (!job.clientId || loadingProfile) return;
+    
+    try {
+      setLoadingProfile(true);
+      const profileDoc = await getDoc(doc(db, 'userProfiles', job.clientId));
+      if (profileDoc.exists()) {
+        const profileData = profileDoc.data();
+        setPosterProfile({
+          idNumber: profileData.idNumber || undefined,
+          rating: profileData.rating || profileData.averageRating || undefined,
+          profileImage: profileData.profileImage || profileData.processedImage || undefined,
+        });
+      }
+    } catch (error) {
+      // Silent fail - profile data is optional
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
   const budgetDisplay = typeof job.budget === 'string' 
     ? (() => {
@@ -69,12 +111,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
         {...createListItemAccessibility(`Job: ${job.title || 'Untitled'}`, 'button')}
       >
         {/* Rating in corner */}
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={12} color={theme.primary} />
-          <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-            {job.rating || 'N/A'}
-          </Text>
-        </View>
+        {(posterProfile?.rating || job.rating) && (
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={12} color={theme.primary} />
+            <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
+              {(posterProfile?.rating || job.rating || 0).toFixed(1)}
+            </Text>
+          </View>
+        )}
 
         {/* Price tag in bottom corner */}
         <View style={[
@@ -108,53 +152,55 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           </Text>
         </View>
 
-        {/* Header Row: Company + Salary */}
+        {/* Header Row: Poster Info with Avatar and GID */}
         <View style={styles.cardHeader}>
           <View style={styles.companyInfo}>
             <View style={styles.authorAvatar}>
-              {job.posterImage ? (
+              {(job.clientAvatar || posterProfile?.profileImage) ? (
                 <OptimizedImage 
-                  source={{ uri: job.posterImage }}
+                  source={{ uri: job.clientAvatar || posterProfile?.profileImage }}
                   compression={{ maxWidth: 800, maxHeight: 600, quality: 0.85 }}
                   resizeMode="cover" 
                   style={styles.avatarImage}
                 />
               ) : (
                 <Text style={[styles.authorInitial, { color: theme.primary }]}>
-                  {job.company?.charAt(0) || 'C'}
+                  {job.clientName?.charAt(0) || 'U'}
                 </Text>
               )}
             </View>
             <View style={styles.companyDetails}>
               <Text style={[styles.jobAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
-                {job.company}
+                {job.clientName || 'Unknown User'}
               </Text>
-              <Text style={[styles.posterGID, { color: theme.textSecondary }]}>
-                GID: {job.posterGID || 'N/A'}
-              </Text>
+              {posterProfile?.idNumber && (
+                <Text style={[styles.posterGID, { color: theme.textSecondary }]}>
+                  GID: {posterProfile.idNumber}
+                </Text>
+              )}
             </View>
           </View>
         </View>
 
         {/* Job Title */}
         <Text style={[styles.jobTitle, { color: theme.textPrimary }]} numberOfLines={2}>
-          {job.title}
+          {jobTitle}
         </Text>
 
         {/* Job Description */}
-        {job.description && (
+        {jobDescription && (
           <Text style={[styles.jobDescription, { color: theme.textSecondary }]} numberOfLines={2}>
-            {job.description}
+            {jobDescription}
           </Text>
         )}
 
-        {/* Job Meta Info */}
+        {/* Job Meta Info - Location */}
         {job.location && (
           <View style={styles.jobMetaRow}>
             <View style={styles.metaItem}>
               <Ionicons name="location-outline" size={12} color={theme.textSecondary} />
               <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-                {typeof job.location === 'object' ? job.location?.address || 'Remote' : job.location}
+                {t('location')}: {typeof job.location === 'object' ? (job.location?.address || (isRTL ? 'عن بُعد' : 'Remote')) : job.location}
               </Text>
             </View>
           </View>
@@ -166,7 +212,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
             <View style={styles.metaItem}>
               <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
               <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-                {job.timeNeeded || job.duration}
+                {t('time')}: {job.timeNeeded || job.duration}
               </Text>
             </View>
           </View>
