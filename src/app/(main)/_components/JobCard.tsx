@@ -41,6 +41,34 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   const jobTitle = (language === 'ar' && (job as any).titleAr) ? (job as any).titleAr : job.title;
   const jobDescription = (language === 'ar' && (job as any).descriptionAr) ? (job as any).descriptionAr : job.description;
 
+  // Translate time units (e.g., "3 days" -> "3 أيام")
+  const translateTimeUnit = (timeStr: string): string => {
+    if (!timeStr || language !== 'ar') return timeStr;
+    
+    // Match patterns like "3 days", "2 weeks", "1 month", etc.
+    const timeMatch = timeStr.match(/(\d+)\s*(day|days|week|weeks|month|months|hour|hours|hr|hrs)/i);
+    if (!timeMatch) return timeStr;
+    
+    const number = timeMatch[1];
+    const unit = timeMatch[2].toLowerCase();
+    
+    const unitMap: Record<string, string> = {
+      'day': 'يوم',
+      'days': 'أيام',
+      'week': 'أسبوع',
+      'weeks': 'أسابيع',
+      'month': 'شهر',
+      'months': 'أشهر',
+      'hour': 'ساعة',
+      'hours': 'ساعات',
+      'hr': 'ساعة',
+      'hrs': 'ساعات',
+    };
+    
+    const arabicUnit = unitMap[unit] || unit;
+    return `${number} ${arabicUnit}`;
+  };
+
   // Fetch poster profile data for GID and rating
   useEffect(() => {
     if (job.clientId) {
@@ -110,20 +138,25 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
         activeOpacity={0.7}
         {...createListItemAccessibility(`Job: ${job.title || 'Untitled'}`, 'button')}
       >
-        {/* Rating in corner */}
-        {(posterProfile?.rating || job.rating) && (
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={12} color={theme.primary} />
-            <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-              {(posterProfile?.rating || job.rating || 0).toFixed(1)}
-            </Text>
-          </View>
-        )}
+        {/* Rating in corner - Always show */}
+        <View style={[
+          styles.ratingContainer,
+          { [isRTL ? 'left' : 'right']: 12 }
+        ]}>
+          <Ionicons name="star" size={12} color={theme.primary} />
+          <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
+            {(posterProfile?.rating || job.rating || 0).toFixed(1)}
+          </Text>
+        </View>
 
-        {/* Price tag in bottom corner */}
+        {/* Price tag in bottom corner - RTL support */}
         <View style={[
           styles.priceTagBottom,
-          { backgroundColor: theme.primary },
+          { 
+            backgroundColor: theme.primary,
+            [isRTL ? 'left' : 'right']: 12,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
           isHighlighted && {
             backgroundColor: theme.surface,
             paddingVertical: 6,
@@ -135,7 +168,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
         ]}>
           <Text style={[
             styles.currentPrice,
-            { color: '#000000' },
+            { color: '#000000', textAlign: isRTL ? 'right' : 'left' },
             isHighlighted && {
               fontSize: 13,
               color: theme.primary,
@@ -146,16 +179,22 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           </Text>
           <Text style={[
             styles.currencyLabel, 
-            { color: isHighlighted ? theme.primary : '#000000' }
+            { 
+              color: isHighlighted ? theme.primary : '#000000',
+              [isRTL ? 'marginRight' : 'marginLeft']: 4,
+            }
           ]}>
-            QR
+            {t('qr')}
           </Text>
         </View>
 
-        {/* Header Row: Poster Info with Avatar and GID */}
-        <View style={styles.cardHeader}>
-          <View style={styles.companyInfo}>
-            <View style={styles.authorAvatar}>
+        {/* Header Row: Poster Info with Avatar and GID - RTL support */}
+        <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.companyInfo, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={[
+              styles.authorAvatar,
+              { [isRTL ? 'marginLeft' : 'marginRight']: 12 }
+            ]}>
               {(job.clientAvatar || posterProfile?.profileImage) ? (
                 <OptimizedImage 
                   source={{ uri: job.clientAvatar || posterProfile?.profileImage }}
@@ -170,49 +209,94 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
               )}
             </View>
             <View style={styles.companyDetails}>
-              <Text style={[styles.jobAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
+              <Text style={[
+                styles.jobAuthor, 
+                { 
+                  color: theme.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left'
+                }
+              ]} numberOfLines={1}>
                 {job.clientName || 'Unknown User'}
               </Text>
-              {posterProfile?.idNumber && (
-                <Text style={[styles.posterGID, { color: theme.textSecondary }]}>
-                  GID: {posterProfile.idNumber}
-                </Text>
-              )}
+              {/* Always show GID, even if loading */}
+              <Text style={[
+                styles.posterGID, 
+                { 
+                  color: theme.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left'
+                }
+              ]}>
+                GID: {posterProfile?.idNumber || (job as any).posterGID || 'N/A'}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Job Title */}
-        <Text style={[styles.jobTitle, { color: theme.textPrimary }]} numberOfLines={2}>
+        {/* Job Title - RTL support */}
+        <Text style={[
+          styles.jobTitle, 
+          { 
+            color: theme.textPrimary,
+            textAlign: isRTL ? 'right' : 'left'
+          }
+        ]} numberOfLines={2}>
           {jobTitle}
         </Text>
 
-        {/* Job Description */}
+        {/* Job Description - RTL support */}
         {jobDescription && (
-          <Text style={[styles.jobDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+          <Text style={[
+            styles.jobDescription, 
+            { 
+              color: theme.textSecondary,
+              textAlign: isRTL ? 'right' : 'left'
+            }
+          ]} numberOfLines={2}>
             {jobDescription}
           </Text>
         )}
 
-        {/* Job Meta Info - Location */}
+        {/* Job Meta Info - Location - RTL support */}
         {job.location && (
-          <View style={styles.jobMetaRow}>
-            <View style={styles.metaItem}>
-              <Ionicons name="location-outline" size={12} color={theme.textSecondary} />
-              <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+          <View style={[styles.jobMetaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.metaItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Ionicons 
+                name="location-outline" 
+                size={12} 
+                color={theme.textSecondary}
+                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 4 }}
+              />
+              <Text style={[
+                styles.metaText, 
+                { 
+                  color: theme.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left'
+                }
+              ]}>
                 {t('location')}: {typeof job.location === 'object' ? (job.location?.address || (isRTL ? 'عن بُعد' : 'Remote')) : job.location}
               </Text>
             </View>
           </View>
         )}
 
-        {/* Footer: Time */}
+        {/* Footer: Time - RTL support with translation */}
         {(job.timeNeeded || job.duration) && (
-          <View style={styles.jobFooter}>
-            <View style={styles.metaItem}>
-              <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
-              <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-                {t('time')}: {job.timeNeeded || job.duration}
+          <View style={[styles.jobFooter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.metaItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Ionicons 
+                name="time-outline" 
+                size={12} 
+                color={theme.textSecondary}
+                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 4 }}
+              />
+              <Text style={[
+                styles.metaText, 
+                { 
+                  color: theme.textSecondary,
+                  textAlign: isRTL ? 'right' : 'left'
+                }
+              ]}>
+                {t('time')}: {translateTimeUnit(job.timeNeeded || job.duration || '')}
               </Text>
             </View>
           </View>
@@ -238,7 +322,6 @@ const styles = StyleSheet.create({
   ratingContainer: {
     position: 'absolute',
     top: 12,
-    right: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -246,7 +329,6 @@ const styles = StyleSheet.create({
   priceTagBottom: {
     position: 'absolute',
     bottom: 12,
-    right: 12,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -257,8 +339,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
     minWidth: 50,
-    flexDirection: 'row',
-    gap: 4,
   },
   ratingText: {
     fontSize: 11,
@@ -274,12 +354,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   cardHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
   companyInfo: {
-    flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
