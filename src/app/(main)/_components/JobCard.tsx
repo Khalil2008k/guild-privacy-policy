@@ -39,10 +39,35 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
 
   // Get job content in current language (Arabic if available and language is Arabic)
   const jobTitle = (language === 'ar' && (job as any).titleAr) ? (job as any).titleAr : job.title;
-  const jobDescription = (language === 'ar' && (job as any).descriptionAr) ? (job as any).descriptionAr : job.description;
-  const jobLocation = (language === 'ar' && (job as any).locationAr) 
-    ? (job as any).locationAr 
-    : (typeof job.location === 'object' ? job.location?.address : job.location);
+  
+  // Get description - check for Arabic field first, then fallback to English
+  let jobDescription = job.description;
+  if (language === 'ar') {
+    if ((job as any).descriptionAr) {
+      jobDescription = (job as any).descriptionAr;
+    } else if (job.description) {
+      // Keep English description if Arabic not available
+      jobDescription = job.description;
+    }
+  }
+  
+  // Get location - check for Arabic field first, handle object/string location
+  let jobLocation = '';
+  if (language === 'ar') {
+    if ((job as any).locationAr) {
+      jobLocation = (job as any).locationAr;
+    } else if (typeof job.location === 'object' && job.location?.address) {
+      jobLocation = job.location.address;
+    } else if (typeof job.location === 'string') {
+      jobLocation = job.location;
+    }
+  } else {
+    if (typeof job.location === 'object' && job.location?.address) {
+      jobLocation = job.location.address;
+    } else if (typeof job.location === 'string') {
+      jobLocation = job.location;
+    }
+  }
 
   // Translate time units (e.g., "3 days" -> "3 أيام")
   const translateTimeUnit = (timeStr: string): string => {
@@ -276,7 +301,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
                   textAlign: isRTL ? 'right' : 'left'
                 }
               ]}>
-                {t('location')}: {jobLocation || (isRTL ? 'عن بُعد' : 'Remote')}
+                {t('location')}: {jobLocation || (language === 'ar' ? 'عن بُعد' : 'Remote')}
               </Text>
             </View>
           </View>
