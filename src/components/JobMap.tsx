@@ -288,7 +288,7 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
   const mapRef = useRef<MapView>(null);
-  const [region, setRegion] = useState({
+  const [initialRegion] = useState({
     latitude: 25.2854, // Doha, Qatar default
     longitude: 51.5310,
     latitudeDelta: 0.05,
@@ -327,16 +327,7 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
     }
   }, [jobs, userLocation]);
 
-  // Ensure map region is stable after mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(region, 1000);
-      }
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // Removed region animation on mount - causes lag
 
   // Initialize marker animations
   const initializeMarkerAnimations = () => {
@@ -443,7 +434,10 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
         longitudeDelta: maxRange * padding,
       };
       
-      setRegion(newRegion);
+      // Animate to region instead of setting state
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(newRegion, 1000);
+      }
     }
   };
 
@@ -468,12 +462,14 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
       });
 
       // Center map on user location
-      setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }, 1000);
+      }
     } catch (error) {
       // COMMENT: PRIORITY 1 - Replace console.error with logger
       logger.error('Error getting current location:', error);
@@ -551,32 +547,32 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          region={region}
-          onRegionChangeComplete={setRegion}
+          initialRegion={initialRegion}
           onPress={handleMapPress}
           mapType={mapType}
           showsUserLocation={showUserLocation}
           showsMyLocationButton={false}
           showsCompass={true}
           showsScale={true}
-          showsBuildings={true}
+          showsBuildings={false}
           showsTraffic={false}
-          showsIndoors={true}
+          showsIndoors={false}
           loadingEnabled={true}
           loadingIndicatorColor={theme.primary}
           loadingBackgroundColor={theme.surface}
           moveOnMarkerPress={false}
           followsUserLocation={false}
-          showsPointsOfInterest={true}
+          showsPointsOfInterest={false}
           showsUserLocationButton={false}
           customMapStyle={getCustomMapStyle(theme.isDark)}
           scrollEnabled={true}
           zoomEnabled={true}
-          pitchEnabled={true}
+          pitchEnabled={false}
           rotateEnabled={true}
           cacheEnabled={true}
           maxZoomLevel={20}
           minZoomLevel={3}
+          liteMode={false}
         >
         {/* User Location Marker */}
         {userLocation && (
