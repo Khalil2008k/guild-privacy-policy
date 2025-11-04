@@ -3,6 +3,8 @@ import { I18nextProvider, useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 import i18n from '../i18n/index';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface I18nContextType {
   language: string;
@@ -20,8 +22,9 @@ interface I18nProviderProps {
 }
 
 export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady }) => {
-  console.log(`🚀 I18nProvider [${Platform.OS}]: Component function called`);
-  console.log(`🚀 I18nProvider [${Platform.OS}]: i18n object check:`, { 
+  // COMMENT: PRIORITY 1 - Use logger instead of console.log
+  logger.debug(`🚀 I18nProvider [${Platform.OS}]: Component function called`);
+  logger.debug(`🚀 I18nProvider [${Platform.OS}]: i18n object check:`, { 
     type: typeof i18n, 
     isInitialized: i18n?.isInitialized,
     language: i18n?.language,
@@ -33,19 +36,19 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
   const [isRTL, setIsRTL] = useState(false); // Start with default
   const [isReady, setIsReady] = useState(false);
   
-  console.log('🚀 I18nProvider render:', { language, isRTL, isReady });
+  logger.debug('🚀 I18nProvider render:', { language, isRTL, isReady });
 
   // Initialize i18n and RTL on mount - EMERGENCY FAST INIT
   useEffect(() => {
     const initialize = async () => {
       try {
-        console.log('I18nProvider: EMERGENCY FAST initialization...');
+        logger.debug('I18nProvider: EMERGENCY FAST initialization...');
         
         // EMERGENCY: Don't wait, initialize immediately
         const currentLang = i18n.language || 'en';
         const currentRTL = currentLang === 'ar';
         
-        console.log('I18nProvider: Setting initial language:', { currentLang, currentRTL });
+        logger.debug('I18nProvider: Setting initial language:', { currentLang, currentRTL });
         
         setLanguage(currentLang);
         setIsRTL(currentRTL);
@@ -55,21 +58,21 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
           const { I18nManager } = require('react-native');
           I18nManager.forceRTL(currentRTL);
           I18nManager.allowRTL(true);
-          console.log('I18nProvider: RTL initialized:', { isRTL: currentRTL });
+          logger.debug('I18nProvider: RTL initialized:', { isRTL: currentRTL });
         } catch (rtlError) {
-          console.warn('I18nProvider: RTL initialization failed:', rtlError);
+          logger.warn('I18nProvider: RTL initialization failed:', rtlError);
         }
         
         // EMERGENCY: Mark as ready immediately
         setIsReady(true);
-        console.log('I18nProvider: EMERGENCY initialization complete');
+        logger.debug('I18nProvider: EMERGENCY initialization complete');
         
         // Notify parent that provider is ready
         if (onReady) {
           onReady();
         }
       } catch (error) {
-        console.error('I18nProvider: Initialization error:', error);
+        logger.error('I18nProvider: Initialization error:', error);
         // Set defaults and mark as ready to prevent blocking
         setLanguage('en');
         setIsRTL(false);
@@ -89,14 +92,14 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
   useEffect(() => {
     const currentLang = i18n.language || 'en';
     if (currentLang !== language) {
-      console.log('Syncing language state:', currentLang);
+      logger.debug('Syncing language state:', currentLang);
       setLanguage(currentLang);
       setIsRTL(currentLang === 'ar');
     }
   }, [language]);
 
   const handleChangeLanguage = async (lang: 'en' | 'ar') => {
-    console.log('I18nProvider: Changing language to:', lang);
+    logger.debug('I18nProvider: Changing language to:', lang);
     try {
       // Change the i18n language
       await i18n.changeLanguage(lang);
@@ -106,7 +109,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
         const AsyncStorage = require('@react-native-async-storage/async-storage').default;
         await AsyncStorage.setItem('user_language', lang);
       } catch (storageError) {
-        console.warn('Failed to save language preference:', storageError);
+        logger.warn('Failed to save language preference:', storageError);
       }
       
       // Update RTL settings
@@ -116,7 +119,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
         I18nManager.forceRTL(isRTL);
         I18nManager.allowRTL(true);
       } catch (rtlError) {
-        console.warn('Failed to update RTL settings:', rtlError);
+        logger.warn('Failed to update RTL settings:', rtlError);
       }
       
       // Update state
@@ -124,9 +127,9 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
       setIsRTL(isRTL);
       setAppKey(prev => prev + 1); // Force re-render
       
-      console.log('I18nProvider: Language change completed:', { lang, isRTL });
+      logger.info('I18nProvider: Language change completed:', { lang, isRTL });
     } catch (error) {
-      console.error('I18nProvider: Language change failed:', error);
+      logger.error('I18nProvider: Language change failed:', error);
     }
   };
 
@@ -170,16 +173,16 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, onReady })
 export const useI18n = (): I18nContextType => {
   const context = useContext(I18nContext);
   if (!context) {
-    console.warn('useI18n called outside I18nProvider, using fallback values');
+    logger.warn('useI18n called outside I18nProvider, using fallback values');
     // Return fallback values to prevent crashes during initialization
     return {
       language: 'en',
       isRTL: false,
       changeLanguage: async () => {
-        console.warn('changeLanguage called but I18nProvider not available');
+        logger.warn('changeLanguage called but I18nProvider not available');
       },
       t: (key: string) => {
-        console.warn(`Translation requested for "${key}" but I18nProvider not available`);
+        logger.warn(`Translation requested for "${key}" but I18nProvider not available`);
         return key; // Return the key as fallback
       },
       appKey: 0,

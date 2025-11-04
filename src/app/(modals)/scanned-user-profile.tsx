@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  Image,
 } from 'react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { User, Shield, QrCode, Share2, MessageSquare, UserPlus, ArrowLeft } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +28,7 @@ interface ScannedUserData {
   guild: string;
   gid: string;
   userId: string;
+  profileImage?: string;
   timestamp: number;
 }
 
@@ -74,8 +77,9 @@ export default function ScannedUserProfileScreen() {
     if (scannedUser) {
       // Navigate to chat screen with the scanned user
       router.push({
-        pathname: '/chat',
+        pathname: '/(modals)/chat/[jobId]',
         params: {
+          jobId: `user-${scannedUser.userId}`,
           userId: scannedUser.userId,
           userName: scannedUser.name,
           userGuild: scannedUser.guild
@@ -89,13 +93,14 @@ export default function ScannedUserProfileScreen() {
     if (scannedUser) {
       // Navigate to contacts screen or add directly
       router.push({
-        pathname: '/contacts',
+        pathname: '/(modals)/contacts',
         params: {
           action: 'add',
           userId: scannedUser.userId,
           userName: scannedUser.name,
           userGuild: scannedUser.guild,
-          userGid: scannedUser.gid
+          userGid: scannedUser.gid,
+          profileImage: scannedUser.profileImage || ''
         }
       });
     }
@@ -106,7 +111,7 @@ export default function ScannedUserProfileScreen() {
     if (scannedUser) {
       // Navigate to full profile view
       router.push({
-        pathname: '/user-profile',
+        pathname: '/(modals)/user-profile',
         params: {
           userId: scannedUser.userId,
           userName: scannedUser.name,
@@ -229,9 +234,24 @@ export default function ScannedUserProfileScreen() {
           style={styles.userCard}
         >
           <View style={styles.userAvatarContainer}>
-            <View style={styles.userAvatar}>
-              <MaterialIcons name="person" size={40} color="#000000" />
-            </View>
+            {scannedUser.profileImage && 
+             scannedUser.profileImage !== 'No image' && 
+             scannedUser.profileImage.trim() !== '' && 
+             (scannedUser.profileImage.startsWith('http://') || 
+              scannedUser.profileImage.startsWith('https://') || 
+              scannedUser.profileImage.startsWith('file://')) ? (
+              <Image 
+                source={{ uri: scannedUser.profileImage }} 
+                style={styles.userAvatarImage}
+                onError={(error) => {
+                  console.log('Image load error:', error);
+                }}
+              />
+            ) : (
+              <View style={styles.userAvatar}>
+                <MaterialIcons name="person" size={40} color="#000000" />
+              </View>
+            )}
             <View style={styles.verificationBadge}>
               <MaterialIcons name="verified" size={16} color="#000000" />
             </View>
@@ -444,6 +464,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  userAvatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   verificationBadge: {
     position: 'absolute',

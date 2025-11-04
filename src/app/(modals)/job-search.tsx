@@ -14,6 +14,7 @@ import { useI18n } from '../../contexts/I18nProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Search, Filter, X, MapPin, DollarSign, Clock, Shield, Zap } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const FONT_FAMILY = 'Signika Negative SC';

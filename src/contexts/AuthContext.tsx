@@ -10,10 +10,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  updateProfile,
-  PhoneAuthProvider,
-  signInWithCredential,
-  RecaptchaVerifier
+  updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { config } from '../config/environment';
@@ -25,6 +22,10 @@ import { authTokenService } from '../services/authTokenService';
 import GlobalChatNotificationService from '../services/GlobalChatNotificationService';
 import PresenceService from '../services/PresenceService';
 import MessageNotificationService from '../services/MessageNotificationService';
+import { firebaseSMSService } from '../services/firebaseSMSService';
+import { logEnvironmentInfo } from '../utils/environmentDetection';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -58,6 +59,7 @@ interface AuthProviderProps {
 export default function AuthProvider({ children, onReady }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   useEffect(() => {
     // Handle null auth (when Firebase is bypassed on Android)
@@ -70,16 +72,25 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth as any, async (user) => {
-      console.log('🔥 AUTH STATE CHANGED:', { 
+      const unsubscribe = onAuthStateChanged(auth as any, async (user) => {
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔥 AUTH STATE CHANGED:', {
         hasUser: !!user, 
         userId: user?.uid, 
         email: user?.email,
-        loading 
+        loading,
+        isInitializing
       });
+      
+      // Prevent duplicate initialization
+      if (user && isInitializing) {
+        logger.debug('🔥 AUTH: Already initializing, skipping duplicate event');
+        return;
+      }
       
       // Check for 72-hour inactivity auto-logout
       if (user) {
+        setIsInitializing(true);
         try {
           const lastActivityStr = await AsyncStorage.getItem('lastActivityTime');
           const now = Date.now();
@@ -89,11 +100,23 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
             const hoursSinceActivity = (now - lastActivity) / (1000 * 60 * 60);
             
             if (hoursSinceActivity >= 72) {
-              console.log('🔒 AUTO-LOGOUT: 72 hours of inactivity detected');
+              logger.warn('🔒 AUTO-LOGOUT: 72 hours of inactivity detected');
+              
+              // COMMENT: Show user-friendly notification before logout
+              // Per Deep Root System Audit - Fix for missing 72-hour logout notification
+              try {
+                const { showAutoLogoutNotification } = await import('@/utils/autoLogoutNotification');
+                await showAutoLogoutNotification();
+              } catch (notificationError) {
+                // Fallback: If notification fails, proceed with logout anyway
+                logger.warn('Failed to show auto-logout notification:', notificationError);
+              }
+              
               await firebaseSignOut(auth as any);
               await AsyncStorage.removeItem('lastActivityTime');
               setUser(null);
               setLoading(false);
+              setIsInitializing(false);
               if (onReady) onReady();
               return;
             }
@@ -101,13 +124,14 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
           
           // Update last activity time
           await AsyncStorage.setItem('lastActivityTime', now.toString());
-          console.log('✅ Last activity time updated:', new Date(now).toISOString());
+          logger.debug('✅ Last activity time updated:', new Date(now).toISOString());
         } catch (error) {
-          console.error('❌ Error checking activity time:', error);
+          logger.error('❌ Error checking activity time:', error);
         }
       } else {
         // User signed out, clear activity time
         await AsyncStorage.removeItem('lastActivityTime');
+        setIsInitializing(false);
       }
       
       setUser(user);
@@ -115,7 +139,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       
       // Handle notification token and secure storage when user signs in/out
       if (user) {
-        console.log('🔥 AUTH: User signed in, calling onUserSignIn');
+        logger.debug('🔥 AUTH: User signed in, calling onUserSignIn');
         
         // Start global chat notification listener
         GlobalChatNotificationService.startListening(user.uid);
@@ -123,75 +147,78 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
         // Connect user to presence service
         try {
           await PresenceService.connectUser(user.uid);
-          console.log('🔥 AUTH: User connected to presence service');
+          logger.debug('🔥 AUTH: User connected to presence service');
         } catch (error) {
-          console.error('🔥 AUTH: Failed to connect to presence service:', error);
+          logger.error('🔥 AUTH: Failed to connect to presence service:', error);
         }
         
         // Register device for push notifications
         try {
           await MessageNotificationService.registerDeviceToken(user.uid);
-          console.log('🔥 AUTH: Device token registered for push notifications');
+          logger.debug('🔥 AUTH: Device token registered for push notifications');
         } catch (error) {
-          console.error('🔥 AUTH: Failed to register device token:', error);
+          logger.error('🔥 AUTH: Failed to register device token:', error);
         }
         
         // Store auth token securely
         try {
           const token = await user.getIdToken();
           await secureStorage.setItem('auth_token', token);
-          console.log('🔥 AUTH: Stored auth token securely');
+          logger.debug('🔥 AUTH: Stored auth token securely');
         } catch (tokenError) {
-          console.warn('🔥 AUTH: Failed to store auth token:', tokenError);
+          logger.warn('🔥 AUTH: Failed to store auth token:', tokenError);
         }
         
         // Initialize Firebase structures for user (wallet, profile, etc.) - SAFE VERSION
         try {
           const initializedUserId = await initializeUserSafely();
           if (initializedUserId) {
-            console.log('🔥 AUTH: User bootstrap completed successfully');
+            logger.info('🔥 AUTH: User bootstrap completed successfully');
+            logger.debug('🔥 AUTH: Bootstrap finished for user:', initializedUserId);
             
             // Register push token after user bootstrap
             try {
               const pushToken = await registerPushTokenSafely(user.uid);
               if (pushToken) {
-                console.log('🔥 AUTH: Push token registered successfully');
+                logger.debug('🔥 AUTH: Push token registered successfully');
               } else {
-                console.log('🔥 AUTH: Push token registration skipped (not supported/failed)');
+                logger.debug('🔥 AUTH: Push token registration skipped (not supported/failed)');
               }
             } catch (pushError) {
-              console.warn('🔥 AUTH: Push token registration warning:', pushError);
+              logger.warn('🔥 AUTH: Push token registration warning:', pushError);
               // Don't block auth flow, just log the warning
             }
           } else {
-            console.log('🔥 AUTH: User bootstrap skipped (offline/permission issues)');
+            logger.debug('🔥 AUTH: User bootstrap skipped (offline/permission issues)');
           }
         } catch (initError) {
-          console.warn('🔥 AUTH: User bootstrap warning:', initError);
+          logger.warn('🔥 AUTH: User bootstrap warning:', initError);
           // Don't block auth flow, just log the warning
         }
+       
+        setIsInitializing(false);
         
         // User signed in - initialize notifications
         try {
           if (notificationService && typeof notificationService.initialize === 'function') {
             await notificationService.initialize();
           } else {
-            console.warn('⚠️ notificationService.initialize is not available');
+            logger.warn('⚠️ notificationService.initialize is not available');
           }
         } catch (error) {
-          console.error('❌ Error initializing notifications:', error);
+          logger.error('❌ Error initializing notifications:', error);
         }
       } else {
-        console.log('🔥 AUTH: User signed out, calling onUserSignOut');
+        logger.debug('🔥 AUTH: User signed out, calling onUserSignOut');
         // User signed out - clear notification token
         try {
           if (notificationService && typeof notificationService.onUserSignOut === 'function') {
             await notificationService.onUserSignOut();
           } else {
-            console.warn('⚠️ notificationService.onUserSignOut is not available');
+            logger.warn('⚠️ notificationService.onUserSignOut is not available');
           }
         } catch (error) {
-          console.error('❌ Error calling onUserSignOut:', error);
+          logger.error('❌ Error calling onUserSignOut:', error);
         }
       }
       
@@ -209,11 +236,11 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       if (nextAppState === 'active' && user) {
         const now = Date.now();
         await AsyncStorage.setItem('lastActivityTime', now.toString());
-        console.log('✅ Activity updated on app resume:', new Date(now).toISOString());
+        logger.debug('✅ Activity updated on app resume:', new Date(now).toISOString());
       } else if (nextAppState === 'background' || nextAppState === 'inactive') {
         // Clean up typing indicators when app goes to background
         PresenceService.forceStopAllTyping();
-        console.log('🧹 Cleaned up typing indicators on app background');
+        logger.debug('🧹 Cleaned up typing indicators on app background');
       }
     });
 
@@ -265,9 +292,9 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       testUser.delete = async () => {};
 
       setUser(testUser);
-      console.log('✅ Test user created successfully');
+      logger.info('✅ Test user created successfully');
     } catch (error) {
-      console.error('❌ Error creating test user:', error);
+      logger.error('❌ Error creating test user:', error);
       throw error;
     }
   };
@@ -284,28 +311,28 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
-    console.log('🔥 SIGNUP: Starting signUpWithEmail', { email, displayName });
+    logger.debug('🔥 SIGNUP: Starting signUpWithEmail', { email, displayName });
     if (!auth) {
-      console.log('🔥 SIGNUP: No auth object available');
+      logger.warn('🔥 SIGNUP: No auth object available');
       return;
     }
     try {
-      console.log('🔥 SIGNUP: Creating user with Firebase Auth');
+      logger.debug('🔥 SIGNUP: Creating user with Firebase Auth');
       
       // Firebase Auth automatically handles email uniqueness
       // If email exists, createUserWithEmailAndPassword will throw 'auth/email-already-in-use'
       const result = await createUserWithEmailAndPassword(auth as any, email, password);
-      console.log('🔥 SIGNUP: User created successfully', { uid: result.user.uid });
+      logger.info('🔥 SIGNUP: User created successfully', { uid: result.user.uid });
       
       // Update display name if provided
       if (displayName && result.user) {
-        console.log('🔥 SIGNUP: Updating display name');
+        logger.debug('🔥 SIGNUP: Updating display name');
         await updateProfile(result.user, { displayName });
       }
 
       // Create user document in Firestore
       if (result.user) {
-        console.log('🔥 SIGNUP: Creating user document in Firestore');
+        logger.debug('🔥 SIGNUP: Creating user document in Firestore');
         await setDoc(doc(db, 'users', result.user.uid), {
           email: result.user.email,
           displayName: displayName || '',
@@ -323,10 +350,10 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
           updatedAt: serverTimestamp(),
         });
 
-        console.log('✅ User document created in Firestore:', result.user.uid);
+        logger.info('✅ User document created in Firestore:', result.user.uid);
 
         // Create wallet document for new user
-        console.log('🔥 SIGNUP: Creating wallet document in Firestore');
+        logger.debug('🔥 SIGNUP: Creating wallet document in Firestore');
         await setDoc(doc(db, 'wallets', result.user.uid), {
           userId: result.user.uid,
           balance: 0,
@@ -339,27 +366,27 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
           updatedAt: serverTimestamp(),
         });
 
-        console.log('✅ Wallet document created in Firestore:', result.user.uid);
+        logger.info('✅ Wallet document created in Firestore:', result.user.uid);
 
         // Create welcome chat with admin
-        console.log('🔥 SIGNUP: Creating welcome chat with admin');
+        logger.debug('🔥 SIGNUP: Creating welcome chat with admin');
         try {
           const AdminChatService = (await import('../services/AdminChatService')).default;
           await AdminChatService.createWelcomeChat(
             result.user.uid,
             displayName || result.user.email?.split('@')[0] || 'User'
           );
-          console.log('✅ Welcome chat created successfully');
+          logger.info('✅ Welcome chat created successfully');
         } catch (chatError) {
-          console.error('⚠️ Failed to create welcome chat (non-critical):', chatError);
+          logger.warn('⚠️ Failed to create welcome chat (non-critical):', chatError);
           // Don't throw - chat creation failure shouldn't block signup
         }
       }
       
-      console.log('🔥 SIGNUP: signUpWithEmail completed successfully');
+      logger.info('🔥 SIGNUP: signUpWithEmail completed successfully');
     } catch (error) {
-      console.error('🔥 SIGNUP ERROR:', error);
-      console.error('🔥 SIGNUP ERROR DETAILS:', {
+      logger.error('🔥 SIGNUP ERROR:', error);
+      logger.error('🔥 SIGNUP ERROR DETAILS:', {
         name: error?.name,
         message: error?.message,
         code: error?.code,
@@ -369,7 +396,7 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       // If Firebase user was created but Firestore failed, we should still consider it a success
       // The user can complete their profile later
       if (error?.code && error.code.includes('firestore')) {
-        console.log('🔥 SIGNUP: Firebase Auth succeeded but Firestore failed - continuing anyway');
+        logger.warn('🔥 SIGNUP: Firebase Auth succeeded but Firestore failed - continuing anyway');
         return; // Don't throw error for Firestore issues
       }
       
@@ -382,7 +409,8 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       return;
     }
     try {
-      console.log('🔥 AUTH: Starting signOut process');
+      logger.debug('🔥 AUTH: Starting signOut process');
+      setIsInitializing(true);
       
       // Stop global chat notification listener
       GlobalChatNotificationService.stopListening();
@@ -393,9 +421,9 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       // Disconnect from presence service
       try {
         await PresenceService.disconnectUser();
-        console.log('🔥 AUTH: User disconnected from presence service');
+        logger.debug('🔥 AUTH: User disconnected from presence service');
       } catch (error) {
-        console.error('🔥 AUTH: Failed to disconnect from presence service:', error);
+        logger.error('🔥 AUTH: Failed to disconnect from presence service:', error);
       }
       
       // Clear user state immediately
@@ -406,11 +434,11 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
       try {
         // Clear auth tokens first
         await authTokenService.clearToken();
-        console.log('🔥 AUTH: Cleared auth tokens');
+        logger.debug('🔥 AUTH: Cleared auth tokens');
         
         // Clear secure storage (tokens, sensitive data)
         await secureStorage.clear();
-        console.log('🔥 AUTH: Cleared secure storage');
+        logger.debug('🔥 AUTH: Cleared secure storage');
         
         // Clear regular storage (non-sensitive data)
         await AsyncStorage.multiRemove([
@@ -419,22 +447,28 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
           'cachedUserData',
           'appSettings'
         ]);
-        console.log('🔥 AUTH: Cleared regular cached data');
+        logger.debug('🔥 AUTH: Cleared regular cached data');
       } catch (storageError) {
-        console.warn('🔥 AUTH: Error clearing storage:', storageError);
+        logger.warn('🔥 AUTH: Error clearing storage:', storageError);
       }
+      
+      // Clean up Firebase SMS service
+      firebaseSMSService.cleanup();
       
       // Sign out from Firebase
       await firebaseSignOut(auth as any);
-      console.log('🔥 AUTH: Firebase signOut completed');
+      logger.info('🔥 AUTH: Firebase signOut completed');
       
       // Force navigation to auth screen
       const { router } = await import('expo-router');
       router.replace('/(auth)/splash');
-      console.log('🔥 AUTH: Navigation to splash completed');
+      logger.debug('🔥 AUTH: Navigation to splash completed');
+     
+      setIsInitializing(false);
       
     } catch (error) {
-      console.error('🔥 AUTH: SignOut error:', error);
+      logger.error('🔥 AUTH: SignOut error:', error);
+      setIsInitializing(false);
       throw error;
     }
   };
@@ -445,106 +479,33 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
     }
     
     try {
-      console.log(`📱 Attempting to send SMS to: ${phoneNumber}`);
+      logger.debug(`📱 Attempting to send SMS to: ${phoneNumber}`);
       
-      // Check if we're in React Native environment
-      const isReactNative = typeof window === 'undefined' || !window.document;
+      // Log environment info for debugging
+      logEnvironmentInfo();
       
-      if (isReactNative) {
-        // React Native implementation
-        console.log('📱 React Native environment detected');
-        
-        try {
-          // Use @react-native-firebase/auth for real SMS delivery
-          const rnFirebaseAuth = require('@react-native-firebase/auth').default;
-          console.log('📱 Using React Native Firebase for REAL SMS delivery');
-          console.log('📱 Sending SMS to:', phoneNumber);
-          
-          const confirmation = await rnFirebaseAuth().signInWithPhoneNumber(phoneNumber);
-          console.log('✅ Real SMS sent via Firebase! Check your phone.');
-          
-          // Store phone number for later
-          await AsyncStorage.setItem('pending_phone_verification', phoneNumber);
-          
-          return confirmation.verificationId;
-        } catch (firebaseError: any) {
-          console.log('📱 React Native Firebase error:', firebaseError.message);
-          console.log('📱 Falling back to Backend SMS API');
-          
-          // Use our backend SMS API
-          try {
-            console.log('📱 Calling backend SMS API...');
-            const response = await fetch(`${config.apiUrl}/v1/auth/sms/send-verification-code`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                phoneNumber: phoneNumber,
-                userId: user?.uid || `temp_user_${Date.now()}`
-              })
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-              console.log('✅ SMS sent via backend API');
-              
-              // Store phone number for verification
-              await AsyncStorage.setItem('pending_phone_verification', phoneNumber);
-              
-              // Handle demo mode
-              if (result.demoMode && result.demoCode) {
-                console.log('🧪 DEMO MODE: Use code:', result.demoCode);
-                // Store demo code for easy access
-                global.demoVerificationCode = result.demoCode;
-              }
-              
-              return `backend_verification_${Date.now()}`;
-            } else {
-              console.log('❌ Backend SMS API failed:', result.error);
-              throw new Error(result.error || 'Backend SMS failed');
-            }
-          } catch (backendError) {
-            console.log('📱 Backend SMS API not available, using simulation');
-            console.error('Backend error:', backendError);
-            // Final fallback to simulation
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            return `rn_verification_${Date.now()}`;
-          }
-        }
+      // Use the new Firebase SMS service
+      const result = await firebaseSMSService.sendVerificationCode(phoneNumber);
+      
+      logger.info(`✅ SMS sent successfully via ${result.method}`);
+      logger.debug(`📱 Verification ID: ${result.verificationId.substring(0, 20)}...`);
+      
+      return result.verificationId;
+    } catch (error: any) {
+      logger.error('📱 Phone verification error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many SMS requests. Please try again later.');
+      } else if (error.code === 'auth/quota-exceeded') {
+        throw new Error('SMS quota exceeded. Please try again later.');
+      } else if (error.code === 'auth/invalid-phone-number') {
+        throw new Error('Invalid phone number format.');
+      } else if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your connection and try again.');
       } else {
-        // Web implementation with reCAPTCHA
-        console.log('📱 Web environment detected');
-        
-        try {
-          const provider = new PhoneAuthProvider(auth as any);
-          const { RecaptchaVerifier } = await import('firebase/auth');
-          
-          // Create reCAPTCHA verifier
-          const recaptchaVerifier = new RecaptchaVerifier(auth as any, 'recaptcha-container', {
-            size: 'invisible',
-            callback: () => {
-              console.log('📱 reCAPTCHA solved');
-            },
-            'expired-callback': () => {
-              console.log('📱 reCAPTCHA expired');
-            }
-          });
-          
-          console.log('📱 Sending SMS via Firebase Web SDK');
-          const verificationId = await provider.verifyPhoneNumber(phoneNumber, recaptchaVerifier);
-          console.log('📱 SMS sent successfully, verification ID:', verificationId);
-          
-          return verificationId;
-        } catch (webError) {
-          console.error('📱 Web SMS error:', webError);
-          throw new Error(`SMS sending failed: ${webError.message}`);
-        }
+        throw new Error(error.message || 'Failed to send SMS. Please try again.');
       }
-    } catch (error) {
-      console.error('Phone verification error:', error);
-      throw error;
     }
   };
 
@@ -554,109 +515,25 @@ export default function AuthProvider({ children, onReady }: AuthProviderProps) {
     }
     
     try {
-      console.log(`📱 Verifying code with ID ${verificationId}`);
+      logger.debug(`📱 Verifying code with ID ${verificationId.substring(0, 20)}...`);
       
-      // Handle backend verification
-      if (verificationId.startsWith('backend_verification_')) {
-        console.log('📱 Using backend SMS verification');
-        
-        try {
-          // Get the stored phone number
-          const storedPhoneNumber = await AsyncStorage.getItem('pending_phone_verification');
-          console.log('📱 Stored phone number for verification:', storedPhoneNumber);
-          
-          if (!storedPhoneNumber) {
-            throw new Error('Phone number not found for verification');
-          }
-          
-          const requestBody = {
-            phoneNumber: storedPhoneNumber,
-            code: code
-          };
-          console.log('📱 Sending verification request:', requestBody);
-          console.log('📱 API URL:', `${config.apiUrl}/auth/sms/verify-phone-code`);
-          
-          const response = await fetch(`${config.apiUrl}/auth/sms/verify-phone-code`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-          });
-          
-          console.log('📱 Response status:', response.status);
-          console.log('📱 Response ok:', response.ok);
-          
-          const result = await response.json();
-          console.log('📱 Response body:', result);
-          
-          if (response.ok && result.success) {
-            console.log('✅ Backend SMS verification successful!');
-            
-            // Clean up stored phone number
-            await AsyncStorage.removeItem('pending_phone_verification');
-            
-            // Store verification success in AsyncStorage for the app to handle
-            await AsyncStorage.setItem('phone_verification_success', JSON.stringify({
-              phoneNumber: result.phoneNumber,
-              verifiedAt: new Date().toISOString(),
-              success: true
-            }));
-            
-            console.log('📱 Verification process completed successfully - phone verified!');
-            console.log('📱 Phone verification stored for app to handle sign-in flow');
-            return;
-          } else {
-            console.log('❌ Backend SMS verification failed:', result.error || result.message);
-            throw new Error(result.error || result.message || 'Verification failed');
-          }
-        } catch (backendError) {
-          console.error('Backend verification error:', backendError);
-          console.error('Error details:', {
-            name: backendError.name,
-            message: backendError.message,
-            stack: backendError.stack
-          });
-          throw new Error(`Backend verification failed: ${backendError.message}`);
-        }
+      // Use the new Firebase SMS service
+      await firebaseSMSService.verifyCode(verificationId, code);
+      
+      logger.info('✅ Phone verification successful!');
+    } catch (error: any) {
+      logger.error('📱 Phone code verification error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/invalid-verification-code') {
+        throw new Error('Invalid verification code. Please check and try again.');
+      } else if (error.code === 'auth/code-expired') {
+        throw new Error('Verification code has expired. Please request a new one.');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed attempts. Please try again later.');
+      } else {
+        throw new Error(error.message || 'Verification failed. Please try again.');
       }
-      
-      // ✅ SECURITY FIX: Only allow simulation in development with proper validation
-      if (verificationId.startsWith('rn_verification_')) {
-        // Only allow simulation in development environment
-        if (__DEV__ && process.env.NODE_ENV === 'development') {
-          console.log('📱 DEV SIMULATION: React Native verification');
-          
-          // Simulate verification delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // ✅ SECURITY: Validate code format and use specific test codes
-          if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-            throw new Error('Invalid verification code format');
-          }
-          
-          // ✅ SECURITY: Only accept specific test codes in development
-          const validTestCodes = ['123456', '000000', '999999'];
-          if (!validTestCodes.includes(code)) {
-            throw new Error('Invalid verification code');
-          }
-          
-          console.log('📱 DEV SIMULATION: Phone verification successful');
-          return;
-        } else {
-          // ✅ SECURITY: Block simulation in production
-          throw new Error('Phone verification simulation not allowed in production');
-        }
-      }
-      
-      // Real Firebase verification
-      const credential = PhoneAuthProvider.credential(verificationId, code);
-      await signInWithCredential(auth as any, credential);
-      
-      console.log('📱 REAL VERIFICATION: Phone verification successful!');
-    } catch (error) {
-      console.error('Phone code verification error:', error);
-      throw error;
     }
   };
 

@@ -95,3 +95,12 @@ Animated.sequence([
 
 **The animation creates an engaging typing effect that draws attention to the tagline!** ⌨️✨
 
+
+
+
+
+
+
+
+
+

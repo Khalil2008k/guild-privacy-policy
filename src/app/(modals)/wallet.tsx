@@ -24,6 +24,8 @@ import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Shield, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag, Coins, Wallet as WalletIcon } from 'lucide-react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -120,7 +122,8 @@ export default function WalletScreen() {
         setTransactions([]);
       }
     } catch (error) {
-      console.error('Error loading transaction history:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading transaction history:', error);
     } finally {
       setLoading(false);
     }
@@ -134,7 +137,8 @@ export default function WalletScreen() {
       await refreshWallet();
       await loadTransactionHistory();
     } catch (error) {
-      console.error('Error refreshing wallet:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error refreshing wallet:', error);
     } finally {
       setRefreshing(false);
     }

@@ -1,10 +1,17 @@
 /**
  * Chat Context - Real-time chat state management
- * Integrates Socket.IO with Firebase for production-grade messaging
+ * COMMENT: PRODUCTION HARDENING - Task 3.1 & 3.2 - Socket.IO removed, using Firestore onSnapshot only
+ * This context is deprecated - active chat screens use chatService directly with Firestore
+ * 
+ * DEPRECATED: This context uses Socket.IO which is no longer used in production.
+ * Active chat screens use chatService.listenToMessages() which uses Firestore onSnapshot.
+ * 
+ * @deprecated Use chatService directly instead of this context
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { socketService } from '../services/socketService';
+// COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed - commented out
+// import { socketService } from '../services/socketService';
 import { chatService } from '../services/chatService';
 import { useAuth } from './AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -98,19 +105,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const typingTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const messageQueue = useRef<Message[]>([]);
 
-  // Initialize socket connection and chat listener
+  // COMMENT: PRODUCTION HARDENING - Task 3.1 & 3.2 - Socket.IO removed, using Firestore onSnapshot only
+  // Initialize chat listener (using Firestore onSnapshot, not Socket.IO)
   useEffect(() => {
     let chatUnsubscribe: (() => void) | undefined;
     
     if (user) {
-      initializeSocket();
+      // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
+      // initializeSocket();
       loadChats().then((unsubscribe) => {
         chatUnsubscribe = unsubscribe;
       });
     }
     
     return () => {
-      socketService.disconnect();
+      // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
+      // socketService.disconnect();
       if (chatUnsubscribe) {
         chatUnsubscribe();
       }
@@ -119,7 +129,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Initialize socket connection and listeners
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed - this function is deprecated
+   * @deprecated Use Firestore onSnapshot via chatService.listenToMessages() instead
    */
+  /*
   const initializeSocket = async () => {
     await socketService.connect();
     
@@ -148,6 +161,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUnreadCount(count);
     });
   };
+  */
 
   /**
    * Load user's chats with real-time listener
@@ -168,7 +182,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Return cleanup function
       return unsubscribe;
     } catch (error) {
-      console.error('Error loading chats:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      const { logger } = await import('../utils/logger');
+      logger.error('Error loading chats:', error);
     }
   };
 
@@ -303,8 +319,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /**
    * Handle chat error
    */
-  const handleChatError = (error: any) => {
-    console.error('Chat error:', error);
+  const handleChatError = async (error: any) => {
+    // COMMENT: PRIORITY 1 - Replace console.error with logger
+    const { logger } = await import('../utils/logger');
+    logger.error('Chat error:', error);
     CustomAlertService.showError('Chat Error', error.error || 'An error occurred');
   };
 
@@ -349,8 +367,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       [chatId]: [...(prev[chatId] || []), tempMessage]
     }));
 
-    // Send via socket
-    socketService.sendMessage(chatId, { text, type, attachments });
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using Firestore directly
+    // Send via chatService (uses Firestore, not Socket.IO)
+    await chatService.sendMessage(chatId, text, user.uid, type, attachments);
 
     // Auto-update status after 3 seconds if no response
     setTimeout(() => {
@@ -370,9 +389,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Mark messages as read
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using Firestore directly
    */
   const markAsRead = async (chatId: string) => {
-    socketService.markMessagesAsRead(chatId);
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
+    // socketService.markMessagesAsRead(chatId);
+    if (user) {
+      await chatService.markMessagesAsRead(chatId, [], user.uid);
+    }
     
     // Update local state
     setChats(prev => prev.map(chat => 
@@ -392,7 +416,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setChats(prev => [...prev, chat]);
       return chat;
     } catch (error) {
-      console.error('Error creating direct chat:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      const { logger } = await import('../utils/logger');
+      logger.error('Error creating direct chat:', error);
       throw error;
     }
   };
@@ -406,24 +432,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setChats(prev => [...prev, chat]);
       return chat;
     } catch (error) {
-      console.error('Error creating job chat:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      const { logger } = await import('../utils/logger');
+      logger.error('Error creating job chat:', error);
       throw error;
     }
   };
 
   /**
    * Join chat room
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using Firestore directly
    */
   const joinChat = (chatId: string) => {
-    socketService.joinChat(chatId);
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
+    // socketService.joinChat(chatId);
     setCurrentChat(chats.find(c => c.id === chatId) || null);
   };
 
   /**
    * Leave chat room
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
    */
   const leaveChat = (chatId: string) => {
-    socketService.leaveChat(chatId);
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed
+    // socketService.leaveChat(chatId);
     if (currentChat?.id === chatId) {
       setCurrentChat(null);
     }
@@ -431,9 +463,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Start typing indicator
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using PresenceService (Firestore) instead
    */
   const startTyping = (chatId: string) => {
-    socketService.startTyping(chatId);
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using PresenceService (Firestore) instead
+    // socketService.startTyping(chatId);
+    // Use PresenceService which uses Firestore instead
+    if (user) {
+      import('../services/PresenceService').then(({ default: PresenceService }) => {
+        PresenceService.startTyping(chatId);
+      });
+    }
     
     // Clear existing timeout
     if (typingTimeouts.current[chatId]) {
@@ -448,9 +488,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Stop typing indicator
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using PresenceService (Firestore) instead
    */
   const stopTyping = (chatId: string) => {
-    socketService.stopTyping(chatId);
+    // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using PresenceService (Firestore) instead
+    // socketService.stopTyping(chatId);
+    // Use PresenceService which uses Firestore instead
+    if (user) {
+      import('../services/PresenceService').then(({ default: PresenceService }) => {
+        PresenceService.stopTyping(chatId);
+      });
+    }
     
     if (typingTimeouts.current[chatId]) {
       clearTimeout(typingTimeouts.current[chatId]);
@@ -473,7 +521,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         [chatId]: [...olderMessages, ...currentMessages]
       }));
     } catch (error) {
-      console.error('Error loading more messages:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      const { logger } = await import('../utils/logger');
+      logger.error('Error loading more messages:', error);
     }
   };
 
@@ -506,27 +556,36 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Process queued messages
+   * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using Firestore directly
    */
-  const processMessageQueue = () => {
+  const processMessageQueue = async () => {
     while (messageQueue.current.length > 0) {
       const message = messageQueue.current.shift()!;
-      socketService.sendMessage(message.chatId, {
-        text: message.text,
-        type: message.type,
-        attachments: message.attachments
-      });
+      // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed, using chatService (Firestore) instead
+      // socketService.sendMessage(message.chatId, {
+      //   text: message.text,
+      //   type: message.type,
+      //   attachments: message.attachments
+      // });
+      if (user) {
+        await chatService.sendMessage(message.chatId, message.text, user.uid, message.type, message.attachments);
+      }
     }
   };
 
   /**
    * Show notification for new message
    */
-  const showNotification = (message: Message) => {
+  const showNotification = async (message: Message) => {
     // This would integrate with push notifications
-    console.log('New message notification:', message);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    const { logger } = await import('../utils/logger');
+    logger.debug('New message notification:', message);
   };
 
+  // COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed - Voice call methods deprecated
   // Voice call methods
+  /*
   const initiateCall = (chatId: string, recipientId: string) => {
     socketService.initiateCall(chatId, recipientId);
   };
@@ -541,6 +600,32 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const endCall = (roomId: string) => {
     socketService.endCall(roomId);
+  };
+  */
+  
+  // Placeholder implementations to maintain interface
+  const initiateCall = async (chatId: string, recipientId: string) => {
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    const { logger } = await import('../utils/logger');
+    logger.warn('Voice calls not implemented - Socket.IO removed');
+  };
+
+  const acceptCall = async (roomId: string) => {
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    const { logger } = await import('../utils/logger');
+    logger.warn('Voice calls not implemented - Socket.IO removed');
+  };
+
+  const rejectCall = async (roomId: string) => {
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    const { logger } = await import('../utils/logger');
+    logger.warn('Voice calls not implemented - Socket.IO removed');
+  };
+
+  const endCall = async (roomId: string) => {
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    const { logger } = await import('../utils/logger');
+    logger.warn('Voice calls not implemented - Socket.IO removed');
   };
 
   const value: ChatContextValue = {

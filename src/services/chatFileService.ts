@@ -1,6 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from '../config/firebase';
+import { logger } from '../utils/logger'; // COMMENT: FINAL STABILIZATION - Task 7 - Replace console.log with logger
 import * as Crypto from 'expo-crypto';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -32,8 +33,28 @@ export class ChatFileService {
       const blob = await response.blob();
       return blob;
     } catch (error) {
-      console.error('❌ Error converting file to blob:', error);
+      logger.error('❌ Error converting file to blob:', error);
       throw new Error('Failed to convert file to blob');
+    }
+  }
+
+  /**
+   * Upload chat background image
+   */
+  async uploadChatBackground(chatId: string, imageUri: string): Promise<string> {
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      const filename = `chat-backgrounds/${chatId}/${Date.now()}.jpg`;
+      const storageRef = ref(storage, filename);
+      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+      
+      const url = await getDownloadURL(storageRef);
+      return url;
+    } catch (error) {
+      logger.error('Error uploading chat background:', error);
+      throw error;
     }
   }
 
@@ -87,7 +108,7 @@ export class ChatFileService {
 
       return { url, metadata };
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       throw error;
     }
   }
@@ -148,7 +169,7 @@ export class ChatFileService {
 
       return messageRef.id;
     } catch (error) {
-      console.error('Error sending file message:', error);
+      logger.error('Error sending file message:', error);
       throw error;
     }
   }
@@ -173,7 +194,7 @@ export class ChatFileService {
     duration: number
   ): Promise<{ url: string; duration: number }> {
     try {
-      console.log('🎤 Uploading voice message:', { chatId, messageId, duration });
+      logger.debug('🎤 Uploading voice message:', { chatId, messageId, duration });
 
       // Fetch audio data
       const resp = await fetch(audioUri);
@@ -184,10 +205,10 @@ export class ChatFileService {
       await uploadBytes(fileRef, blob, { contentType: 'audio/mp4' });
       const url = await getDownloadURL(fileRef);
 
-      console.log('✅ Voice message uploaded successfully');
+      logger.info('✅ Voice message uploaded successfully');
       return { url, duration };
     } catch (error) {
-      console.error('❌ Error uploading voice message:', error);
+      logger.error('❌ Error uploading voice message:', error);
       throw error;
     }
   }
@@ -199,10 +220,10 @@ export class ChatFileService {
     try {
       if (audioUri.startsWith('file://')) {
         await FileSystem.deleteAsync(audioUri, { idempotent: true });
-        console.log('🧹 Cleaned up temp audio file');
+        logger.debug('🧹 Cleaned up temp audio file');
       }
     } catch (error) {
-      console.warn('⚠️ Failed to cleanup temp audio file:', error);
+      logger.warn('⚠️ Failed to cleanup temp audio file:', error);
     }
   }
 
@@ -216,7 +237,7 @@ export class ChatFileService {
     durationSec?: number
   ): Promise<{ url: string; thumbnailUrl: string; duration?: number }> {
     try {
-      console.log('🎥 Uploading video message:', { chatId, messageId, duration: durationSec });
+      logger.debug('🎥 Uploading video message:', { chatId, messageId, duration: durationSec });
 
       // 1) Fetch video data and convert to blob
       const resp = await fetch(videoUri);
@@ -237,38 +258,144 @@ export class ChatFileService {
       await uploadBytes(thumbRef, thumbBlob, { contentType: 'image/jpeg' });
       const thumbnailUrl = await getDownloadURL(thumbRef);
 
-      console.log('✅ Video message uploaded successfully:', { url, thumbnailUrl });
+      logger.info('✅ Video message uploaded successfully:', { url, thumbnailUrl });
       return { url, thumbnailUrl, duration: durationSec };
     } catch (error) {
-      console.error('❌ Error uploading video message:', error);
+      logger.error('❌ Error uploading video message:', error);
       throw error;
     }
   }
 
   /**
    * Upload image message to Firebase Storage with proper contentType
+   * COMMENT: PRODUCTION HARDENING - Task 4.9 - Compress images before upload
    */
   async uploadImageMessage(
     chatId: string,
     imageUri: string,
     messageId: string
   ): Promise<{ url: string }> {
+    logger.debug('🔴 [chatFileService] uploadImageMessage START', { chatId, messageId, imageUri, uriType: typeof imageUri, uriLength: imageUri?.length });
     try {
-      console.log('📸 Uploading image message:', { chatId, messageId });
+      logger.debug('🔴 [chatFileService] uploadImageMessage try block entered', { chatId, messageId });
 
-      // Fetch image data and convert to blob
-      const resp = await fetch(imageUri);
-      const blob = await resp.blob();
+      // COMMENT: PRODUCTION HARDENING - Task 4.9 - Compress image before upload
+      logger.debug('🔴 [chatFileService] Starting image compression...', { imageUri });
+      let finalImageUri = imageUri;
+      try {
+        logger.debug('🔴 [chatFileService] Importing ImageCompressionService...');
+        const { ImageCompressionService } = await import('./ImageCompressionService');
+        logger.debug('🔴 [chatFileService] ImageCompressionService imported, calling smartCompress...');
+        const compressionResult = await ImageCompressionService.smartCompress(imageUri);
+        finalImageUri = compressionResult.uri;
+        logger.debug(`🔴 [chatFileService] Image compressed: ${ImageCompressionService.formatBytes(compressionResult.originalSize)} → ${ImageCompressionService.formatBytes(compressionResult.size)} (${compressionResult.compressionRatio.toFixed(1)}% reduction)`);
+      } catch (compressionError) {
+        logger.warn('⚠️ [chatFileService] Image compression failed, using original:', compressionError);
+        // Continue with original image if compression fails
+      }
+      logger.debug('🔴 [chatFileService] Compression step complete', { finalImageUri });
+
+      // Convert image URI to blob - handle local file URIs properly for React Native
+      logger.debug('🔴 [chatFileService] Converting URI to blob...', { finalImageUri });
+      let blob: Blob;
+      try {
+        // First try using fetch (works for most URIs including local files on iOS)
+        // For Android, fetch may fail with local file:// URIs
+        logger.debug('🔴 [chatFileService] Attempting fetch...', { finalImageUri });
+        const resp = await fetch(finalImageUri);
+        logger.debug('🔴 [chatFileService] Fetch response received', { ok: resp.ok, status: resp.status, statusText: resp.statusText });
+        if (!resp.ok) {
+          throw new Error(`Fetch failed with status ${resp.status}`);
+        }
+        logger.debug('🔴 [chatFileService] Converting response to blob...');
+        blob = await resp.blob();
+        logger.debug('🔴 [chatFileService] Successfully read image using fetch', { blobSize: blob.size, blobType: blob.type });
+      } catch (fetchError) {
+        logger.warn('⚠️ [chatFileService] Fetch failed, trying FileSystem fallback:', fetchError);
+        // Fallback: Use FileSystem to read as base64, then convert to blob
+        logger.debug('🔴 [chatFileService] Entering FileSystem fallback...');
+        try {
+          // Check if file exists first
+          logger.debug('🔴 [chatFileService] Checking if file exists...', { finalImageUri });
+          const fileInfo = await FileSystem.getInfoAsync(finalImageUri);
+          logger.debug('🔴 [chatFileService] File info retrieved', { exists: fileInfo?.exists, isDirectory: fileInfo?.isDirectory });
+          if (!fileInfo || !fileInfo.exists) {
+            throw new Error(`File does not exist: ${finalImageUri}`);
+          }
+          
+          logger.debug('🔴 [chatFileService] Reading file as base64...');
+          // Read file as base64 - handle both legacy and new FileSystem APIs
+          let base64Data: string;
+          try {
+            logger.debug('🔴 [chatFileService] Calling readAsStringAsync...');
+            base64Data = await FileSystem.readAsStringAsync(finalImageUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            logger.debug('🔴 [chatFileService] readAsStringAsync completed', { dataLength: base64Data?.length });
+          } catch (readError) {
+            // If readAsStringAsync fails, try alternative approach
+            logger.warn('⚠️ [chatFileService] readAsStringAsync failed:', readError);
+            // Alternative: Try reading as binary and converting
+            throw new Error(`Failed to read file: ${readError instanceof Error ? readError.message : 'Unknown error'}`);
+          }
+          
+          if (!base64Data || base64Data.length === 0) {
+            throw new Error('File read returned empty data');
+          }
+          
+          logger.debug(`🔴 [chatFileService] Base64 data length: ${base64Data.length} characters`);
+          
+          // Convert base64 to blob - handle large files safely
+          logger.debug('🔴 [chatFileService] Converting base64 to blob...');
+          try {
+            const byteCharacters = atob(base64Data);
+            logger.debug('🔴 [chatFileService] Base64 decoded', { byteCharactersLength: byteCharacters.length });
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            blob = new Blob([byteArray], { type: 'image/jpeg' });
+            
+            logger.debug(`🔴 [chatFileService] Successfully converted base64 to blob (${byteArray.length} bytes)`);
+          } catch (conversionError) {
+            logger.error('❌ [chatFileService] Failed to convert base64 to blob:', conversionError);
+            throw new Error(`Failed to convert file to blob: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
+          }
+        } catch (fileSystemError) {
+          logger.error('❌ [chatFileService] Both fetch and FileSystem failed:', fileSystemError);
+          // Provide user-friendly error message
+          const errorMessage = fileSystemError instanceof Error 
+            ? fileSystemError.message 
+            : 'Unknown error reading image file';
+          throw new Error(`Failed to read image file. Please try taking the photo again or selecting from gallery. Error: ${errorMessage}`);
+        }
+      }
+      logger.debug('🔴 [chatFileService] Blob conversion complete', { blobSize: blob?.size, blobType: blob?.type });
 
       // Upload image with explicit contentType
+      logger.debug('🔴 [chatFileService] Uploading blob to Firebase Storage...', { chatId, messageId });
       const fileRef = ref(storage, `chats/${chatId}/images/${messageId}.jpg`);
+      logger.debug('🔴 [chatFileService] Storage reference created', { path: `chats/${chatId}/images/${messageId}.jpg` });
+      
+      logger.debug('🔴 [chatFileService] Calling uploadBytes...');
       await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+      logger.debug('🔴 [chatFileService] uploadBytes completed');
+      
+      logger.debug('🔴 [chatFileService] Getting download URL...');
       const url = await getDownloadURL(fileRef);
+      logger.debug('🔴 [chatFileService] Download URL retrieved', { url });
 
-      console.log('✅ Image message uploaded successfully:', { url });
+      logger.info('✅ [chatFileService] Image message uploaded successfully:', { url });
       return { url };
     } catch (error) {
-      console.error('❌ Error uploading image message:', error);
+      logger.error('❌ [chatFileService] Error uploading image message:', error);
+      logger.error('❌ [chatFileService] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorType: typeof error,
+        error
+      });
       throw error;
     }
   }
@@ -284,7 +411,7 @@ export class ChatFileService {
     fileExtension: string
   ): Promise<{ url: string }> {
     try {
-      console.log('📄 Uploading file message:', { chatId, messageId, mimeType });
+      logger.debug('📄 Uploading file message:', { chatId, messageId, mimeType });
 
       // Fetch file data and convert to blob
       const resp = await fetch(fileUri);
@@ -295,10 +422,10 @@ export class ChatFileService {
       await uploadBytes(fileRef, blob, { contentType: mimeType });
       const url = await getDownloadURL(fileRef);
 
-      console.log('✅ File message uploaded successfully:', { url });
+      logger.info('✅ File message uploaded successfully:', { url });
       return { url };
     } catch (error) {
-      console.error('❌ Error uploading file message:', error);
+      logger.error('❌ Error uploading file message:', error);
       throw error;
     }
   }
@@ -310,10 +437,10 @@ export class ChatFileService {
     try {
       if (videoUri.startsWith('file://')) {
         await FileSystem.deleteAsync(videoUri, { idempotent: true });
-        console.log('🧹 Cleaned up temp video file');
+        logger.debug('🧹 Cleaned up temp video file');
       }
     } catch (error) {
-      console.warn('⚠️ Failed to cleanup temp video file:', error);
+      logger.warn('⚠️ Failed to cleanup temp video file:', error);
     }
   }
 }

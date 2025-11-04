@@ -10,6 +10,8 @@ import { Send, FileText, Coins, Clock, Check, ArrowLeft, Heart, Briefcase, User 
 import * as Haptics from 'expo-haptics';
 import { BackendAPI } from '@/config/backend';
 import { useI18n } from '@/contexts/I18nProvider';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -67,7 +69,8 @@ export default function ApplyScreen() {
     setIsSubmitting(true);
     
     try {
-      console.log('📤 Submitting offer:', {
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('📤 Submitting offer:', {
         jobId,
         budget: price,
         timeline: timeline.trim(),
@@ -82,7 +85,8 @@ export default function ApplyScreen() {
         coverLetter: coverLetter.trim()
       });
 
-      console.log('✅ Offer submitted successfully:', response);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ Offer submitted successfully:', response);
 
       if (response.success) {
         // Success feedback
@@ -105,7 +109,8 @@ export default function ApplyScreen() {
         throw new Error(response.error || 'Failed to submit offer');
       }
     } catch (error: any) {
-      console.error('Error submitting offer:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error submitting offer:', error);
       
       // User-friendly error messages
       let errorMessage = isRTL 

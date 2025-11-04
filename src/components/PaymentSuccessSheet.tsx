@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, memo } from 'react';
 import {
   Modal,
   View,
@@ -29,7 +29,11 @@ interface PaymentSuccessSheetProps {
   isSuccess?: boolean;
 }
 
-export const PaymentSuccessSheet: React.FC<PaymentSuccessSheetProps> = ({
+/**
+ * Payment Success Sheet Component
+ * COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized with React.memo and useCallback
+ */
+export const PaymentSuccessSheet = memo<PaymentSuccessSheetProps>(({
   visible,
   onDismiss,
   transactionData,
@@ -41,22 +45,36 @@ export const PaymentSuccessSheet: React.FC<PaymentSuccessSheetProps> = ({
   
   const iconColor = isSuccess ? theme.primary : theme.error;
 
+  // COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized handler with useCallback
+  const handleDismiss = useCallback(() => {
+    onDismiss();
+  }, [onDismiss]);
+
+  // COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized animation with useCallback
+  const animateShow = useCallback(() => {
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+  }, [slideAnim]);
+
+  const animateHide = useCallback(() => {
+    Animated.timing(slideAnim, {
+      toValue: height,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [slideAnim, height]);
+
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
+      animateShow();
     } else {
-      Animated.timing(slideAnim, {
-        toValue: height,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      animateHide();
     }
-  }, [visible]);
+  }, [visible, animateShow, animateHide]);
 
   const defaultData = {
     title: isRTL ? 'تحويل إلى بطاقة **** 2345' : 'Transfer to card **** 2345',
@@ -74,13 +92,13 @@ export const PaymentSuccessSheet: React.FC<PaymentSuccessSheetProps> = ({
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={onDismiss}
+      onRequestClose={handleDismiss}
     >
       <View style={styles.modalOverlay}>
         <TouchableOpacity 
           style={StyleSheet.absoluteFill} 
           activeOpacity={1} 
-          onPress={onDismiss}
+          onPress={handleDismiss}
         />
 
         <Animated.View 
@@ -153,7 +171,7 @@ export const PaymentSuccessSheet: React.FC<PaymentSuccessSheetProps> = ({
           {/* Done Button */}
           <TouchableOpacity
             style={[styles.doneButton, { backgroundColor: theme.primary }]}
-            onPress={onDismiss}
+            onPress={handleDismiss}
             activeOpacity={0.8}
           >
             <Text style={styles.doneButtonText}>
@@ -164,7 +182,9 @@ export const PaymentSuccessSheet: React.FC<PaymentSuccessSheetProps> = ({
       </View>
     </Modal>
   );
-};
+});
+
+PaymentSuccessSheet.displayName = 'PaymentSuccessSheet';
 
 const styles = StyleSheet.create({
   modalOverlay: {

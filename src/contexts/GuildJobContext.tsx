@@ -11,6 +11,8 @@ import {
   ContractStatus,
   GuildJobStatus 
 } from '../utils/guildJobSystem';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface GuildJobContextType {
   // Guild Jobs
@@ -193,7 +195,8 @@ export function GuildJobProvider({ children, currentGuildId = 'test_guild', curr
       }
 
     } catch (error) {
-      console.error('Failed to load guild job data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to load guild job data:', error);
     } finally {
       setLoading(false);
     }
@@ -210,7 +213,8 @@ export function GuildJobProvider({ children, currentGuildId = 'test_guild', curr
         AsyncStorage.setItem(STORAGE_KEYS.VAULT_TRANSACTIONS, JSON.stringify(vaultTransactions)),
       ]);
     } catch (error) {
-      console.error('Failed to save guild job data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to save guild job data:', error);
     }
   };
 

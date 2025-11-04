@@ -12,6 +12,7 @@ import {
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { Stack, useRouter } from 'expo-router';
 import { QrCode, Share2, Download, User, Shield } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useUserProfile } from '../../contexts/UserProfileContext';
@@ -22,6 +23,9 @@ import { config } from '../../config/environment';
 import * as Haptics from 'expo-haptics';
 import QRCode from 'react-native-qrcode-svg';
 import { useGuild } from '../../contexts/GuildContext';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
+import * as Crypto from 'expo-crypto';
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -57,6 +61,7 @@ export default function MyQRCodeScreen() {
     guild: userGuildStatus.isSolo ? 'SOLO' : (userGuildStatus.guild?.displayText || 'GUILD'),
     gid: profile.idNumber || '12356555',
     userId: profile.uid || 'user123',
+    profileImage: profile.profileImage || profile.processedImage || null,
     timestamp: Date.now()
   });
 
@@ -95,27 +100,48 @@ export default function MyQRCodeScreen() {
           const result = await response.json();
           setGuildId(result.gid);
           setQrCodeData(result.qrCodeData);
-          console.log('✅ Guild ID generated via backend:', result.gid);
+          logger.debug('✅ Guild ID generated via backend:', result.gid);
           return;
         } else {
-          console.log('❌ Backend Guild ID generation failed, using fallback');
+          logger.debug('❌ Backend Guild ID generation failed, using fallback');
         }
       } catch (backendError) {
-        console.log('❌ Backend not available for Guild ID, using secure fallback');
+        logger.debug('❌ Backend not available for Guild ID, using secure fallback');
       }
       
       // Secure fallback: Generate cryptographically secure Guild ID
       const userId = profile.uid || profile.email?.replace('@', '') || 'user123';
       const year = new Date().getFullYear();
       
-      // Generate cryptographically secure sequence
+      // Generate cryptographically secure sequence using expo-crypto
       const timestamp = Date.now().toString();
-      const randomBytes = new Uint8Array(8);
-      crypto.getRandomValues(randomBytes);
+      const randomBytes = await Crypto.getRandomBytesAsync(8);
       const randomHex = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
       const secureSequence = (timestamp + randomHex).slice(-8).toUpperCase();
       
       const secureGuildId = `GLD-QA-${year}-${secureSequence}`;
+      
+      // Helper function for base64 encoding (btoa polyfill for React Native)
+      const base64Encode = (str: string): string => {
+        if (typeof btoa !== 'undefined') {
+          return btoa(str);
+        }
+        // Polyfill for React Native
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+        let result = '';
+        let i = 0;
+        str = unescape(encodeURIComponent(str));
+        while (i < str.length) {
+          const a = str.charCodeAt(i++);
+          const b = i < str.length ? str.charCodeAt(i++) : 0;
+          const c = i < str.length ? str.charCodeAt(i++) : 0;
+          const bitmap = (a << 16) | (b << 8) | c;
+          result += chars.charAt((bitmap >> 18) & 63) + chars.charAt((bitmap >> 12) & 63) +
+            (b ? chars.charAt((bitmap >> 6) & 63) : '=') +
+            (c ? chars.charAt(bitmap & 63) : '=');
+        }
+        return result;
+      };
       
       // Create QR code data with user information
       const qrData = {
@@ -126,14 +152,14 @@ export default function MyQRCodeScreen() {
         specialties: profile.skills?.slice(0, 3) || [],
         timestamp: Date.now(),
         type: 'GUILD_MEMBER_VERIFICATION',
-        securityHash: btoa(secureGuildId + timestamp) // Add security hash
+        securityHash: base64Encode(secureGuildId + timestamp) // Add security hash
       };
       
       setGuildId(secureGuildId);
       setQrCodeData(JSON.stringify(qrData));
       
     } catch (error) {
-      console.error('Error generating Guild ID:', error);
+      logger.error('Error generating Guild ID:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في إنشاء معرف GUILD' : 'Failed to generate GUILD ID'
@@ -224,7 +250,7 @@ export default function MyQRCodeScreen() {
         {/* Header Info - Sticky to top */}
         <View style={[styles.headerSection, { backgroundColor: theme.surface }]}>
           <View style={styles.headerContent}>
-            <MaterialIcons name="qr-code" size={32} color={theme.primary} />
+            <QrCode size={32} color={theme.primary} />
             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
               {isRTL ? 'رمز GUILD QR الخاص بي' : 'My GUILD QR Code'}
             </Text>

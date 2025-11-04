@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { ArrowLeft, Shield, Lock, Unlock, Check, X, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';

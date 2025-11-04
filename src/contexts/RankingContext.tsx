@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RankingSystem, UserStats, RankLevel, RankBenefits } from '../utils/rankingSystem';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface RankingContextType {
   // Current user stats and rank
@@ -80,7 +82,8 @@ export function RankingProvider({ children }: RankingProviderProps) {
       //   await saveUserStats(defaultStats);
       // }
     } catch (error) {
-      console.error('Failed to load user ranking stats:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to load user ranking stats:', error);
       // Fallback to default stats
       const defaultStats = createDefaultStats();
       setUserStats(defaultStats);
@@ -93,7 +96,8 @@ export function RankingProvider({ children }: RankingProviderProps) {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     } catch (error) {
-      console.error('Failed to save user ranking stats:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to save user ranking stats:', error);
     }
   };
 
@@ -178,7 +182,8 @@ export function RankingProvider({ children }: RankingProviderProps) {
       onTimeDeliveryRate: Math.min(100, userStats.onTimeDeliveryRate + 1), // Assume on-time delivery
     });
     
-    console.log(`✅ Task completed! Earned ${earnings} QAR, Rating: ${rating}/5`);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`✅ Task completed! Earned ${earnings} QAR, Rating: ${rating}/5`);
   };
 
   const updateSkillLevel = async (newSkillLevel: number) => {

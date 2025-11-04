@@ -121,3 +121,12 @@ export async function initializeUserSafely(): Promise<string | null> {
     throw error;
   }
 }
+
+
+
+
+
+
+
+
+

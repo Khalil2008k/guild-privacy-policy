@@ -57,3 +57,12 @@ echo "   https://console.firebase.google.com/project/guild-4f46b/storage/rules"
 echo ""
 
 
+
+
+
+
+
+
+
+
+

@@ -119,3 +119,12 @@ Failed to register device token: Missing or insufficient permissions
 
 **Next:** Test video/image/file uploads - they should work now!
 
+
+
+
+
+
+
+
+
+

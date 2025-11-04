@@ -1,6 +1,8 @@
 // Accessibility utilities for React Native components
 
 import { AccessibilityRole, AccessibilityState, AccessibilityValue } from 'react-native';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from './logger';
 
 /**
  * Accessibility roles for different UI elements
@@ -333,7 +335,8 @@ export const announceForAccessibility = (message: string) => {
   // This would use AccessibilityInfo.announceForAccessibility in React Native
   // For now, we'll log it for development
   if (__DEV__) {
-    console.log(`[Accessibility Announcement]: ${message}`);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`[Accessibility Announcement]: ${message}`);
   }
   
   // In a real implementation:
@@ -364,7 +367,8 @@ export const setAccessibilityFocus = (ref: any) => {
   if (ref && ref.current) {
     // This would use AccessibilityInfo.setAccessibilityFocus in React Native
     if (__DEV__) {
-      console.log('[Accessibility]: Setting focus on element');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('[Accessibility]: Setting focus on element');
     }
     
     // In a real implementation:
@@ -425,7 +429,8 @@ export const validateAccessibility = (props: any) => {
   }
   
   if (__DEV__ && warnings.length > 0) {
-    console.warn('[Accessibility Warnings]:', warnings);
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    logger.warn('[Accessibility Warnings]:', warnings);
   }
   
   return warnings;

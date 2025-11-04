@@ -27,6 +27,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { ArrowLeft, ArrowRight, ShoppingCart, Coins as CoinsIcon } from 'lucide-react-native';
 import { CoinWalletAPIClient } from '../../services/CoinWalletAPIClient';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -77,7 +79,8 @@ export default function CoinWalletScreen() {
       setBalance(balanceData);
       setTransactions(txData.transactions || []);
     } catch (error) {
-      console.error('Error loading wallet:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading wallet:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

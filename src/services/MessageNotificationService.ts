@@ -10,15 +10,28 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { BackendAPI } from '../config/backend';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Check if running in Expo Go
+// Expo Go doesn't support push notifications in SDK 53+
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
+// Configure notifications (skip in Expo Go)
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} else {
+  // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip notification handler in Expo Go
+  if (__DEV__) {
+    logger.debug('⚠️ [Notifications] Running in Expo Go - push notifications disabled');
+  }
+}
 
 class MessageNotificationServiceClass {
   private notificationListener: any = null;
@@ -28,31 +41,51 @@ class MessageNotificationServiceClass {
    * Initialize notification listeners
    */
   async initialize() {
-    // Request permissions
-    await this.requestPermissions();
-
-    // Listen for notifications
-    this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('📬 Notification received:', notification);
-    });
-
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('📬 Notification tapped:', response);
-      // Handle navigation based on notification data
-      const data = response.notification.request.content.data;
-      if (data.chatId) {
-        // Navigate to chat (you can use router here)
-        console.log('Navigate to chat:', data.chatId);
+    // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip initialization in Expo Go
+    if (isExpoGo) {
+      if (__DEV__) {
+        logger.debug('⚠️ [Notifications] Skipping initialization in Expo Go');
       }
-    });
+      return;
+    }
+
+    try {
+      // Request permissions
+      await this.requestPermissions();
+
+      // Listen for notifications
+      this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
+        logger.debug('📬 Notification received:', notification);
+      });
+
+      this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+        logger.debug('📬 Notification tapped:', response);
+        // Handle navigation based on notification data
+        const data = response.notification.request.content.data;
+        if (data.chatId) {
+          // Navigate to chat (you can use router here)
+          logger.debug('Navigate to chat:', data.chatId);
+        }
+      });
+    } catch (error) {
+      logger.warn('⚠️ [Notifications] Failed to initialize:', error);
+    }
   }
 
   /**
    * Register device token for push notifications
    */
   async registerDeviceToken(userId: string): Promise<void> {
+    // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip registration in Expo Go
+    if (isExpoGo) {
+      if (__DEV__) {
+        logger.debug('⚠️ [Notifications] Skipping device token registration in Expo Go');
+      }
+      return;
+    }
+
     try {
-      console.log('📱 Registering device token for user:', userId);
+      logger.debug('📱 Registering device token for user:', userId);
       
       // Get EAS projectId from config
       const projectId =
@@ -66,7 +99,7 @@ class MessageNotificationServiceClass {
       // Get Expo push token
       const token = await Notifications.getExpoPushTokenAsync({ projectId });
       
-      console.log('📱 Expo push token:', token.data);
+      logger.debug('📱 Expo push token:', token.data);
       
       // Generate device ID (use device ID or create unique identifier)
       const deviceId = Device.osInternalBuildId || 'unknown-device';
@@ -82,7 +115,7 @@ class MessageNotificationServiceClass {
         }
       }, { merge: true });
       
-      console.log('✅ Device token registered successfully');
+      logger.info('✅ Device token registered successfully');
       
       // Also store in backend for FCM
       try {
@@ -92,13 +125,13 @@ class MessageNotificationServiceClass {
           deviceId,
           platform: Platform.OS
         });
-        console.log('✅ Token registered with backend');
+        logger.info('✅ Token registered with backend');
       } catch (backendError) {
-        console.warn('⚠️ Failed to register token with backend:', backendError);
+        logger.warn('⚠️ Failed to register token with backend:', backendError);
       }
       
     } catch (error) {
-      console.error('❌ Failed to register device token:', error);
+      logger.error('❌ Failed to register device token:', error);
       throw error;
     }
   }
@@ -107,8 +140,16 @@ class MessageNotificationServiceClass {
    * Request notification permissions
    */
   async requestPermissions(): Promise<boolean> {
+    // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip in Expo Go
+    if (isExpoGo) {
+      if (__DEV__) {
+        logger.debug('⚠️ [Notifications] Skipping permission request in Expo Go');
+      }
+      return false;
+    }
+
     if (!Device.isDevice) {
-      console.log('Must use physical device for push notifications');
+      logger.warn('Must use physical device for push notifications');
       return false;
     }
 
@@ -121,7 +162,7 @@ class MessageNotificationServiceClass {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Failed to get push notification permissions');
+      logger.warn('Failed to get push notification permissions');
       return false;
     }
 
@@ -159,9 +200,9 @@ class MessageNotificationServiceClass {
         trigger: null, // Show immediately
       });
 
-      console.log('✅ Notification sent for message from:', senderName);
+      logger.info('✅ Notification sent for message from:', senderName);
     } catch (error) {
-      console.error('Error sending notification:', error);
+      logger.error('Error sending notification:', error);
     }
   }
 
@@ -170,7 +211,7 @@ class MessageNotificationServiceClass {
    */
   async triggerBackendNotification(chatId: string, senderId: string, messageText: string): Promise<void> {
     try {
-      console.log('📤 Triggering backend notification for chat:', chatId);
+      logger.debug('📤 Triggering backend notification for chat:', chatId);
       
       await BackendAPI.post('/notifications/send-message-notification', {
         chatId,
@@ -179,9 +220,9 @@ class MessageNotificationServiceClass {
         timestamp: new Date().toISOString()
       });
       
-      console.log('✅ Backend notification triggered successfully');
+      logger.info('✅ Backend notification triggered successfully');
     } catch (error) {
-      console.error('❌ Failed to trigger backend notification:', error);
+      logger.error('❌ Failed to trigger backend notification:', error);
       // Don't throw - this shouldn't break message sending
     }
   }
@@ -198,7 +239,7 @@ class MessageNotificationServiceClass {
       }
       return 'Someone';
     } catch (error) {
-      console.error('Error getting sender name:', error);
+      logger.error('Error getting sender name:', error);
       return 'Someone';
     }
   }

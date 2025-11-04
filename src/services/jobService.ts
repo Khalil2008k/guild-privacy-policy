@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db, auth } from '../config/firebase';
+import { logger } from '../utils/logger'; // COMMENT: FINAL STABILIZATION - Task 7 - Replace console.log with logger
 // import * as Notifications from 'expo-notifications'; // Removed due to Expo Go SDK 53 limitations
 
 export interface Job {
@@ -115,7 +116,7 @@ class JobService {
   // Create a new job (draft)
   async createJob(jobData: Omit<Job, 'id' | 'status' | 'offers' | 'createdAt' | 'updatedAt'>): Promise<{ job: Job }> {
     try {
-      console.log('🔥 JOB SERVICE: Creating job with data:', jobData);
+      logger.debug('🔥 JOB SERVICE: Creating job with data:', jobData);
       
       // Validate required fields
       if (!jobData.title || jobData.title.trim() === '') {
@@ -130,11 +131,11 @@ class JobService {
       const currentUser = auth.currentUser;
       
       if (!currentUser) {
-        console.error('🔥 JOB SERVICE: No authenticated user found');
+        logger.error('🔥 JOB SERVICE: No authenticated user found');
         throw new Error('User must be authenticated to create jobs');
       }
       
-      console.log('🔥 JOB SERVICE: User authenticated:', { uid: currentUser.uid, email: currentUser.email });
+      logger.debug('🔥 JOB SERVICE: User authenticated:', { uid: currentUser.uid, email: currentUser.email });
       
       // Try Cloud Function first, fallback to direct Firestore
       try {
@@ -142,7 +143,7 @@ class JobService {
         const result = await createJobFunction(jobData);
         
         if (result.data && result.data.success) {
-          console.log('🔥 JOB SERVICE: Job created via Cloud Function:', result.data.jobId);
+          logger.info('🔥 JOB SERVICE: Job created via Cloud Function:', result.data.jobId);
           const job: Job = {
             id: result.data.jobId,
             ...jobData,
@@ -157,7 +158,7 @@ class JobService {
           throw new Error('Cloud function failed');
         }
       } catch (cloudFunctionError) {
-        console.warn('🔥 JOB SERVICE: Cloud Function failed, using direct Firestore:', cloudFunctionError);
+        logger.warn('🔥 JOB SERVICE: Cloud Function failed, using direct Firestore:', cloudFunctionError);
         
         // Fallback to direct Firestore creation
         const job: Omit<Job, 'id'> = {
@@ -170,11 +171,11 @@ class JobService {
         };
         
         const docRef = await addDoc(this.jobsCollection, job);
-        console.log('🔥 JOB SERVICE: Job created via direct Firestore:', docRef.id);
+        logger.info('🔥 JOB SERVICE: Job created via direct Firestore:', docRef.id);
         return { job: { id: docRef.id, ...job } as Job };
       }
     } catch (error) {
-      console.error('🔥 JOB SERVICE: Error creating job:', error);
+      logger.error('🔥 JOB SERVICE: Error creating job:', error);
       throw error;
     }
   }
@@ -200,7 +201,7 @@ class JobService {
       // Notify the job poster
       await this.sendNotification(jobData.clientId, 'Job Submitted', 'Your job has been submitted for review. It will be visible to freelancers once approved by our team.');
     } catch (error) {
-      console.error('Error posting job:', error);
+      logger.error('Error posting job:', error);
       throw new Error('Failed to post job');
     }
   }
@@ -233,7 +234,7 @@ class JobService {
       
       return docRef.id;
     } catch (error) {
-      console.error('Error submitting offer:', error);
+      logger.error('Error submitting offer:', error);
       throw new Error('Failed to submit offer');
     }
   }
@@ -301,7 +302,7 @@ class JobService {
 
       return escrowRef.id;
     } catch (error) {
-      console.error('Error accepting offer:', error);
+      logger.error('Error accepting offer:', error);
       throw new Error('Failed to accept offer');
     }
   }
@@ -326,7 +327,7 @@ class JobService {
       // Notify the client
       await this.sendNotification(jobData.clientId, 'Work Started', 'The freelancer has started working on your job.');
     } catch (error) {
-      console.error('Error starting work:', error);
+      logger.error('Error starting work:', error);
       throw new Error('Failed to start work');
     }
   }
@@ -351,7 +352,7 @@ class JobService {
       // Notify the client
       await this.sendNotification(jobData.clientId, 'Work Submitted', 'The freelancer has submitted the completed work for your review.');
     } catch (error) {
-      console.error('Error submitting work:', error);
+      logger.error('Error submitting work:', error);
       throw new Error('Failed to submit work');
     }
   }
@@ -391,7 +392,7 @@ class JobService {
         await this.sendNotification(jobData.freelancerId, 'Work Approved', 'The work has been approved and payment has been released.');
       }
     } catch (error) {
-      console.error('Error approving work:', error);
+      logger.error('Error approving work:', error);
       throw new Error('Failed to approve work');
     }
   }
@@ -423,7 +424,7 @@ class JobService {
         }
       }
     } catch (error) {
-      console.error('Error disputing work:', error);
+      logger.error('Error disputing work:', error);
       throw new Error('Failed to dispute work');
     }
   }
@@ -450,7 +451,7 @@ class JobService {
         }
       }
     } catch (error) {
-      console.error('Error auto-releasing escrow:', error);
+      logger.error('Error auto-releasing escrow:', error);
     }
   }
 
@@ -470,7 +471,7 @@ class JobService {
         throw new Error('Failed to get jobs from Cloud Function');
       }
     } catch (error) {
-      console.error('Error getting jobs by status:', error);
+      logger.error('Error getting jobs by status:', error);
       // Fallback to direct Firestore query if Cloud Function fails
       try {
         let q = query(this.jobsCollection, where('status', '==', status), orderBy('createdAt', 'desc'));
@@ -482,16 +483,29 @@ class JobService {
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
       } catch (fallbackError) {
-        console.error('Fallback query also failed:', fallbackError);
+        logger.error('Fallback query also failed:', fallbackError);
         throw new Error('Failed to get jobs');
       }
     }
   }
 
   // Get open jobs for freelancers (only admin-approved jobs)
+  // COMMENT: PRODUCTION HARDENING - Task 5.3 - Performance benchmarking added
   async getOpenJobs(location?: { latitude: number; longitude: number }, category?: string): Promise<{ jobs: Job[] }> {
+    // COMMENT: FINAL STABILIZATION - Check if user is authenticated before fetching jobs
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      logger.warn('🔥 JOB SERVICE: No authenticated user, returning empty jobs list');
+      return { jobs: [] };
+    }
+    
+    // COMMENT: PRODUCTION HARDENING - Task 5.3 - Benchmark getOpenJobs operation
+    const { performanceBenchmark } = await import('../utils/performanceBenchmark');
+    return performanceBenchmark.measureAsync(
+      'job:getOpenJobs',
+      async () => {
     try {
-      console.log('🔥 JOB SERVICE: Getting open jobs...');
+      logger.debug('🔥 JOB SERVICE: Getting open jobs...');
 
       // For development, get ALL jobs regardless of admin status to show content
       // In production, only show admin-approved jobs
@@ -508,11 +522,11 @@ class JobService {
       const querySnapshot = await getDocs(q);
       let jobs = querySnapshot.docs.map(doc => {
         const data = doc.data() as Job;
-        console.log('🔥 JOB SERVICE: Found job:', { id: doc.id, title: data.title, adminStatus: data.adminStatus });
+        logger.debug('🔥 JOB SERVICE: Found job:', { id: doc.id, title: data.title, adminStatus: data.adminStatus });
         return { id: doc.id, ...data } as Job;
       });
 
-      console.log('🔥 JOB SERVICE: Total jobs found:', jobs.length);
+      logger.debug('🔥 JOB SERVICE: Total jobs found:', jobs.length);
 
       // Filter by location if provided
       if (location) {
@@ -535,12 +549,15 @@ class JobService {
         return bTime - aTime; // Newest first
       });
 
-      console.log('🔥 JOB SERVICE: Returning jobs:', jobs.length);
+      logger.debug('🔥 JOB SERVICE: Returning jobs:', jobs.length);
       return { jobs };
     } catch (error) {
-      console.error('Error getting open jobs:', error);
+      logger.error('Error getting open jobs:', error);
       throw new Error('Failed to get open jobs');
     }
+      },
+      { hasLocation: !!location, hasCategory: !!category }
+    );
   }
 
   // Get job details
@@ -555,7 +572,7 @@ class JobService {
 
       return { id: jobDoc.id, ...jobDoc.data() } as Job;
     } catch (error) {
-      console.error('Error getting job by ID:', error);
+      logger.error('Error getting job by ID:', error);
       throw new Error('Failed to get job details');
     }
   }
@@ -567,7 +584,7 @@ class JobService {
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Offer));
     } catch (error) {
-      console.error('Error getting offers for job:', error);
+      logger.error('Error getting offers for job:', error);
       throw new Error('Failed to get offers');
     }
   }
@@ -607,7 +624,7 @@ class JobService {
         cancellationFee: cancellationFee
       };
     } catch (error) {
-      console.error('Error cancelling job:', error);
+      logger.error('Error cancelling job:', error);
       throw new Error('Failed to cancel job');
     }
   }
@@ -646,9 +663,9 @@ class JobService {
         priority: 'high',
         category: 'jobs'
       });
-      console.log('✅ Notification sent:', { userId, title, body });
+      logger.debug('✅ Notification sent:', { userId, title, body });
     } catch (error) {
-      console.error('Error sending notification:', error);
+      logger.error('Error sending notification:', error);
       // Don't throw - notification failure shouldn't block the operation
     }
   }
@@ -662,7 +679,7 @@ class JobService {
         updatedAt: new Date(),
       });
     } catch (error) {
-      console.error('Error incrementing offers count:', error);
+      logger.error('Error incrementing offers count:', error);
       throw new Error('Failed to increment offers count');
     }
   }
@@ -676,7 +693,7 @@ class JobService {
         updatedAt: new Date(),
       });
     } catch (error) {
-      console.error('Error updating job status:', error);
+      logger.error('Error updating job status:', error);
       throw new Error('Failed to update job status');
     }
   }
@@ -705,7 +722,7 @@ class JobService {
         averageRating: 4.8, // This would come from a ratings collection
       };
     } catch (error) {
-      console.error('Error getting job stats:', error);
+      logger.error('Error getting job stats:', error);
       throw new Error('Failed to get job statistics');
     }
   }
@@ -723,7 +740,7 @@ class JobService {
       const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
       return { jobs };
     } catch (error) {
-      console.error('Error getting jobs by category:', error);
+      logger.error('Error getting jobs by category:', error);
       throw new Error('Failed to get jobs by category');
     }
   }
@@ -757,7 +774,7 @@ class JobService {
       
       return { jobs: nearbyJobs };
     } catch (error) {
-      console.error('Error getting nearby jobs:', error);
+      logger.error('Error getting nearby jobs:', error);
       throw new Error('Failed to get nearby jobs');
     }
   }
@@ -794,7 +811,7 @@ class JobService {
       
       return { jobs };
     } catch (error) {
-      console.error('Error searching jobs:', error);
+      logger.error('Error searching jobs:', error);
       throw new Error('Failed to search jobs');
     }
   }
@@ -825,7 +842,7 @@ class JobService {
       
       return { jobs };
     } catch (error) {
-      console.error('Error getting jobs by budget:', error);
+      logger.error('Error getting jobs by budget:', error);
       throw new Error('Failed to get jobs by budget');
     }
   }
@@ -870,7 +887,7 @@ class JobService {
         await this.sendNotification(job.clientId, 'Job Accepted', 'Your job has been accepted by a freelancer.');
         notificationSent = true;
       } catch (error) {
-        console.error('Failed to send notification:', error);
+        logger.error('Failed to send notification:', error);
       }
       
       return { 
@@ -879,7 +896,7 @@ class JobService {
         notificationSent
       };
     } catch (error) {
-      console.error('Error accepting job:', error);
+      logger.error('Error accepting job:', error);
       throw error;
     }
   }
@@ -915,7 +932,7 @@ class JobService {
         transactionId
       };
     } catch (error) {
-      console.error('Error completing job:', error);
+      logger.error('Error completing job:', error);
       throw error;
     }
   }
@@ -940,7 +957,7 @@ class JobService {
       
       return { autoReleased: false };
     } catch (error) {
-      console.error('Error checking auto-release:', error);
+      logger.error('Error checking auto-release:', error);
       throw error;
     }
   }
@@ -965,7 +982,7 @@ class JobService {
       
       return { dispute };
     } catch (error) {
-      console.error('Error creating dispute:', error);
+      logger.error('Error creating dispute:', error);
       throw error;
     }
   }
@@ -998,7 +1015,7 @@ class JobService {
       // In real implementation, this would create a review in Firestore
       return { review };
     } catch (error) {
-      console.error('Error rating worker:', error);
+      logger.error('Error rating worker:', error);
       throw error;
     }
   }
@@ -1018,7 +1035,7 @@ class JobService {
       // In real implementation, this would create a review in Firestore
       return { review };
     } catch (error) {
-      console.error('Error rating poster:', error);
+      logger.error('Error rating poster:', error);
       throw error;
     }
   }
@@ -1055,7 +1072,7 @@ class JobService {
       
       return { expiredJobs: expiredJobs.map(job => ({ ...job, status: 'expired' })) };
     } catch (error) {
-      console.error('Error checking expired jobs:', error);
+      logger.error('Error checking expired jobs:', error);
       throw error;
     }
   }
@@ -1080,7 +1097,7 @@ class JobService {
       
       return { refunded: true, refundAmount };
     } catch (error) {
-      console.error('Error expiring job:', error);
+      logger.error('Error expiring job:', error);
       throw error;
     }
   }
@@ -1093,7 +1110,7 @@ class JobService {
       const response = await this.getOpenJobs();
       return response.jobs || [];
     } catch (error) {
-      console.error('Error getting jobs:', error);
+      logger.error('Error getting jobs:', error);
       return [];
     }
   }

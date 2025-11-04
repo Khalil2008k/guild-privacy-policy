@@ -33,6 +33,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { BackendAPI } from '../../config/backend';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -126,7 +128,8 @@ export default function DemoModeController() {
         setSettings(response.data.settings);
       }
     } catch (error) {
-      console.error('Error loading demo mode settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading demo mode settings:', error);
       CustomAlertService.showError('Error', 'Failed to load settings');
     } finally {
       setLoading(false);
@@ -144,7 +147,8 @@ export default function DemoModeController() {
         throw new Error(response.data.message || 'Failed to save settings');
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving settings:', error);
       CustomAlertService.showError('Error', 'Failed to save settings');
     } finally {
       setSaving(false);

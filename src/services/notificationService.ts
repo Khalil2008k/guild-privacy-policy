@@ -194,7 +194,8 @@ class NotificationService {
     
     // Emit event for app components to handle
     // You can use EventEmitter or Context for this
-    console.log('📱 Notification received:', {
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('📱 Notification received:', {
       title: notification.request.content.title,
       body: notification.request.content.body,
       data,

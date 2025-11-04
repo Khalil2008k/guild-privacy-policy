@@ -32,6 +32,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomAlert } from '../../components/CustomAlert';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -100,7 +102,8 @@ export default function SettingsScreen() {
           setSettings(prev => ({ ...prev, ...savedSettings }));
         }
       } catch (error) {
-        console.error('Error loading settings:', error);
+        // COMMENT: PRIORITY 1 - Replace console.error with logger
+        logger.error('Error loading settings:', error);
       }
       setIsLoading(false);
     })();
@@ -111,7 +114,8 @@ export default function SettingsScreen() {
       const next = { ...prev, ...partial };
       // Save to AsyncStorage asynchronously without blocking
       AsyncStorage.setItem('userSettings', JSON.stringify(next)).catch(error => {
-        console.error('Error saving settings:', error);
+        // COMMENT: PRIORITY 1 - Replace console.error with logger
+        logger.error('Error saving settings:', error);
       });
       return next;
     });
@@ -126,14 +130,18 @@ export default function SettingsScreen() {
   };
 
   const handleLanguageChange = async (newLanguage: 'en' | 'ar') => {
-    console.log('Language change requested:', newLanguage);
-    console.log('Current language:', language);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('Language change requested:', newLanguage);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('Current language:', language);
     try {
       await changeLanguage(newLanguage);
       saveSettings({ language: newLanguage });
-      console.log('Language change completed');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('Language change completed');
     } catch (error) {
-      console.error('Language change failed:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Language change failed:', error);
     }
   };
 
@@ -171,15 +179,18 @@ export default function SettingsScreen() {
   const handleLogoutConfirm = async () => {
     try {
       setShowLogoutAlert(false);
-      console.log('🔥 SETTINGS: Starting logout process...');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔥 SETTINGS: Starting logout process...');
       
       // Actually call signOut from AuthContext
       await signOut();
       
-      console.log('🔥 SETTINGS: Sign out completed, navigating to splash');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔥 SETTINGS: Sign out completed, navigating to splash');
       router.replace('/(auth)/splash');
     } catch (error) {
-      console.error('🔥 SETTINGS: Logout error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔥 SETTINGS: Logout error:', error);
       // Force navigation even if sign-out fails
       router.replace('/(auth)/splash');
     }

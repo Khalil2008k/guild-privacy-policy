@@ -20,6 +20,8 @@ import CoinEscrowService from '../../services/CoinEscrowService';
 import { CheckCircle, Clock, DollarSign, AlertTriangle, Coins, Shield, ArrowLeft, ArrowRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -48,7 +50,8 @@ export default function JobCompletionScreen() {
         setJob(jobData);
       }
     } catch (error) {
-      console.error('Error loading job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job:', error);
       CustomAlertService.showError(t('error'), 'Failed to load job details');
     } finally {
       setLoading(false);
@@ -114,7 +117,8 @@ export default function JobCompletionScreen() {
 
               router.push('/(main)/jobs');
             } catch (error: any) {
-              console.error('Error completing job:', error);
+              // COMMENT: PRIORITY 1 - Replace console.error with logger
+              logger.error('Error completing job:', error);
               CustomAlertService.showError(
                 t('error'),
                 error.message || (isRTL ? 'فشل في إكمال الوظيفة' : 'Failed to complete job')

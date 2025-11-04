@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Shield, MapPin, Clock, DollarSign } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { CustomAlertService } from '@/services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -463,7 +465,8 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
         longitudeDelta: 0.0421,
       });
     } catch (error) {
-      console.error('Error getting current location:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting current location:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل الحصول على الموقع الحالي' : 'Failed to get current location'

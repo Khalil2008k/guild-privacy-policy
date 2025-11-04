@@ -25,7 +25,10 @@ export default {
         NSCameraUsageDescription: "GUILD needs camera access to scan QR codes and upload photos.",
         NSPhotoLibraryUsageDescription: "GUILD needs photo library access to upload images.",
         NSLocationWhenInUseUsageDescription: "GUILD uses your location to show nearby jobs and guilds.",
-        NSMicrophoneUsageDescription: "GUILD needs microphone access for video calls."
+        NSMicrophoneUsageDescription: "GUILD needs microphone access for video calls.",
+        // COMMENT: Apple App Tracking Transparency (ATT) - Required for iOS 14.5+
+        // This permission must be requested before using IDFA (Identifier for Advertisers)
+        NSUserTrackingUsageDescription: "GUILD uses tracking to improve your experience and show relevant jobs. You can disable this in Settings."
       }
     },
     // Android specific configuration  
@@ -45,6 +48,7 @@ export default {
         "FOREGROUND_SERVICE"
       ]
     },
+    // COMMENT: PRODUCTION HARDENING - Task 5.6 - Hermes engine enabled for better performance and smaller bundle size
     jsEngine: "hermes",
     assetBundlePatterns: [
       "**/*"
@@ -129,9 +133,14 @@ export default {
       typedRoutes: true,
       reactCompiler: true
     },
-    developmentClient: {
-      silentLaunch: true
-    },
+    // COMMENT: PRODUCTION HARDENING - Task 5.4 - Development client only enabled in development
+    // developmentClient is automatically disabled in production builds by EAS
+    // This config only applies when building with developmentClient enabled
+    ...(process.env.NODE_ENV !== 'production' && {
+      developmentClient: {
+        silentLaunch: true
+      }
+    }),
     // Minimize native splash screen visibility
     androidStatusBar: {
       backgroundColor: "#000000",

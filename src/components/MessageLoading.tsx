@@ -44,7 +44,7 @@ export function MessageLoading() {
       {
         translateY: animatedValue.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -8],
+          outputRange: [0, -5],
         }),
       },
     ],
@@ -82,18 +82,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
     alignSelf: 'flex-start',
     marginLeft: 12,
     marginVertical: 4,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 2.5,
   },
 });
 

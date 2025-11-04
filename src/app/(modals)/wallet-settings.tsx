@@ -18,6 +18,8 @@ import { useI18n } from '../../contexts/I18nProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Shield, Bell, Lock, Eye, Download, Trash2 } from 'lucide-react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 
@@ -57,7 +59,8 @@ export default function WalletSettingsScreen() {
         setShowBalance(settings.showBalance ?? true);
       }
     } catch (error) {
-      console.error('Error loading wallet settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading wallet settings:', error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +78,8 @@ export default function WalletSettingsScreen() {
       };
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch (error) {
-      console.error('Error saving wallet settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving wallet settings:', error);
       CustomAlertService.showError('Error', 'Failed to save settings');
     } finally {
       setSaving(false);

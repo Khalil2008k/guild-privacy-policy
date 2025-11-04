@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { jobService, Job } from '@/services/jobService';
 import { Briefcase, Plus, UserCheck, Users, History } from 'lucide-react-native';
 import JobCard from '@/components/JobCard';
+import { logger } from '@/utils/logger'; // COMMENT: FINAL STABILIZATION - Task 7 - Replace console.log with logger
 
 type UserRole = 'poster' | 'doer';
 type TabType = 'browse' | 'my-jobs' | 'my-offers' | 'active' | 'history';
@@ -92,7 +93,7 @@ export default function JobsIndex() {
               setLoading(false);
             },
             (error) => {
-              console.error('Error in real-time listener:', error);
+              logger.error('Error in real-time listener:', error);
               setLoading(false);
               // Fallback to regular fetch
               loadJobs();
@@ -103,7 +104,7 @@ export default function JobsIndex() {
           await loadJobs();
         }
       } catch (error) {
-        console.error('Error setting up listener:', error);
+        logger.error('Error setting up listener:', error);
         setLoading(false);
         // Fallback to regular fetch
         await loadJobs();
@@ -123,19 +124,29 @@ export default function JobsIndex() {
   const loadJobs = async () => {
     setLoading(true);
     try {
+      // COMMENT: FINAL STABILIZATION - Skip loading jobs if user is not authenticated
+      if (!user) {
+        logger.debug('🔥 JOBS: User not authenticated, skipping job load');
+        setLoading(false);
+        setJobs([]);
+        return;
+      }
+      
       let fetchedJobs: Job[] = [];
 
       switch (activeTab) {
         case 'browse':
-          fetchedJobs = await jobService.getOpenJobs();
+          // COMMENT: FINAL STABILIZATION - getOpenJobs() returns { jobs: Job[] }, not Job[]
+          const response = await jobService.getOpenJobs();
+          fetchedJobs = response.jobs || [];
           break;
 
         case 'my-jobs':
           if (user?.uid) {
-            fetchedJobs = await jobService.getJobsByStatus('draft', user.uid);
-            const openJobs = await jobService.getJobsByStatus('open', user.uid);
-            const offeredJobs = await jobService.getJobsByStatus('offered', user.uid);
-            fetchedJobs = [...fetchedJobs, ...openJobs, ...offeredJobs];
+            const draftJobs = await jobService.getJobsByStatus('draft', user.uid) || [];
+            const openJobs = await jobService.getJobsByStatus('open', user.uid) || [];
+            const offeredJobs = await jobService.getJobsByStatus('offered', user.uid) || [];
+            fetchedJobs = [...draftJobs, ...openJobs, ...offeredJobs];
           }
           break;
 
@@ -146,20 +157,26 @@ export default function JobsIndex() {
 
         case 'active':
           if (user?.uid) {
-            const acceptedJobs = await jobService.getJobsByStatus('accepted', user.uid);
-            const inProgressJobs = await jobService.getJobsByStatus('in-progress', user.uid);
-            const submittedJobs = await jobService.getJobsByStatus('submitted', user.uid);
+            const acceptedJobs = await jobService.getJobsByStatus('accepted', user.uid) || [];
+            const inProgressJobs = await jobService.getJobsByStatus('in-progress', user.uid) || [];
+            const submittedJobs = await jobService.getJobsByStatus('submitted', user.uid) || [];
             fetchedJobs = [...acceptedJobs, ...inProgressJobs, ...submittedJobs];
           }
           break;
 
         case 'history':
           if (user?.uid) {
-            const completedJobs = await jobService.getJobsByStatus('completed', user.uid);
-            const cancelledJobs = await jobService.getJobsByStatus('cancelled', user.uid);
+            const completedJobs = await jobService.getJobsByStatus('completed', user.uid) || [];
+            const cancelledJobs = await jobService.getJobsByStatus('cancelled', user.uid) || [];
             fetchedJobs = [...completedJobs, ...cancelledJobs];
           }
           break;
+      }
+
+      // COMMENT: FINAL STABILIZATION - Ensure fetchedJobs is always an array
+      if (!Array.isArray(fetchedJobs)) {
+        logger.warn('🔥 JOBS: fetchedJobs is not an array, defaulting to empty array');
+        fetchedJobs = [];
       }
 
       // Deduplicate jobs by ID (remove duplicates)
@@ -169,7 +186,7 @@ export default function JobsIndex() {
 
       setJobs(uniqueJobs);
     } catch (error) {
-      console.error('Error loading jobs:', error);
+      logger.error('Error loading jobs:', error);
     } finally {
       setLoading(false);
     }

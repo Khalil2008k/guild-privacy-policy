@@ -1,6 +1,8 @@
 /**
  * Color utility functions for dynamic text colors and better visibility
  */
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from './logger';
 
 /**
  * Convert hex color to RGB values
@@ -181,12 +183,14 @@ export const testColorLogic = () => {
     '#0000FF', // Blue (should return white text)
   ];
   
-  console.log('🧪 Color Logic Test Results:');
+  // COMMENT: PRIORITY 1 - Replace console.log with logger
+  logger.debug('🧪 Color Logic Test Results:');
   testColors.forEach(color => {
     const textColor = getContrastTextColor(color);
     const rgb = hexToRgb(color);
     const luminance = rgb ? getLuminance(rgb.r, rgb.g, rgb.b) : 0;
     
-    console.log(`${color} (luminance: ${luminance.toFixed(3)}) → ${textColor}`);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`${color} (luminance: ${luminance.toFixed(3)}) → ${textColor}`);
   });
 };

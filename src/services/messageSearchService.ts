@@ -1,6 +1,8 @@
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Message } from './chatService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface SearchResult {
   message: Message;
@@ -81,7 +83,7 @@ export class MessageSearchService {
 
       return results;
     } catch (error) {
-      console.error('Error searching messages:', error);
+      logger.error('Error searching messages:', error);
       throw error;
     }
   }
@@ -114,7 +116,7 @@ export class MessageSearchService {
 
       return resultsByChat;
     } catch (error) {
-      console.error('Error searching all chats:', error);
+      logger.error('Error searching all chats:', error);
       throw error;
     }
   }
@@ -128,7 +130,7 @@ export class MessageSearchService {
       // For now, return empty array
       return [];
     } catch (error) {
-      console.error('Error getting search suggestions:', error);
+      logger.error('Error getting search suggestions:', error);
       return [];
     }
   }
@@ -141,7 +143,7 @@ export class MessageSearchService {
       // Save to user's search history
       // Implementation would add to a searchHistory subcollection
     } catch (error) {
-      console.error('Error saving search history:', error);
+      logger.error('Error saving search history:', error);
     }
   }
 

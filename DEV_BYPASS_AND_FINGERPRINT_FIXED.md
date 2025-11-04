@@ -106,3 +106,12 @@ const handleFingerprintSetup = async () => {
 
 **Both dev bypass and fingerprint authentication are now working properly!** 🚀✨
 
+
+
+
+
+
+
+
+
+

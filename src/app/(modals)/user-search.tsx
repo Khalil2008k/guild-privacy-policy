@@ -39,6 +39,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useChat } from '../../contexts/ChatContext';
 import UserSearchService, { UserSearchResult } from '../../services/UserSearchService';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 export default function UserSearchScreen() {
   const { theme } = useTheme();
@@ -80,7 +82,8 @@ export default function UserSearchScreen() {
       setRecentContacts(recent);
       setSuggestedUsers(suggested);
     } catch (error) {
-      console.error('Error loading initial data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading initial data:', error);
     }
   };
 
@@ -96,7 +99,8 @@ export default function UserSearchScreen() {
       const results = await UserSearchService.universalSearch(searchQuery.trim());
       setSearchResults(results);
     } catch (error) {
-      console.error('Error searching users:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error searching users:', error);
       CustomAlertService.showError(
         t('error'),
         isRTL ? 'فشل البحث عن المستخدمين' : 'Failed to search users'
@@ -117,7 +121,8 @@ export default function UserSearchScreen() {
       router.back();
       router.push(`/(modals)/direct-chat/${chat.id}` as any);
     } catch (error) {
-      console.error('Error creating chat:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error creating chat:', error);
       CustomAlertService.showError(
         t('error'),
         isRTL ? 'فشل إنشاء المحادثة' : 'Failed to create chat'
@@ -511,5 +516,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
 });
+
+
+
+
+
+
 
 

@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { ArrowLeft, AlertTriangle, FileText, Upload, CheckCircle, XCircle, Scale, Shield } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BackendAPI } from '../../config/backend';

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import {
+  View,
   Text,
   Image,
-  StyleSheet, 
-  FlatList, 
+  ImageBackground,
+  StyleSheet,
+  FlatList,
   Platform,
   ActivityIndicator,
   Keyboard,
@@ -32,28 +33,54 @@ import { disputeLoggingService } from '@/services/disputeLoggingService';
 import MessageNotificationService from '@/services/MessageNotificationService';
 import PresenceService, { clearTyping, isTypingFresh } from '@/services/PresenceService';
 import ChatStorageProvider from '@/services/ChatStorageProvider';
+import MessageQueueService from '@/services/MessageQueueService';
+import { messageSchedulerService } from '@/services/messageSchedulerService';
+import { disappearingMessageService } from '@/services/disappearingMessageService';
+import { DisappearingMessageSettings, DisappearingMessageDuration } from '@/components/DisappearingMessageSettings';
+import { ChatThemeSelector } from '@/components/ChatThemeSelector';
+import { chatThemeService } from '@/services/chatThemeService';
+import { ChatExportModal } from '@/components/ChatExportModal';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { MessageLoading } from '@/components/MessageLoading';
-import { EditHistoryModal } from '@/components/EditHistoryModal';
+import { EnhancedTypingIndicator } from '@/components/EnhancedTypingIndicator';
+import { AdvancedVoiceRecorder } from '@/components/AdvancedVoiceRecorder';
+// COMMENT: PRODUCTION HARDENING - Task 4.7 - Lazy load EditHistoryModal (only shown when editing message)
+const EditHistoryModal = lazy(() => import('@/components/EditHistoryModal').then(m => ({ default: m.EditHistoryModal })));
+import ErrorBoundary from '@/components/ErrorBoundary'; // COMMENT: PRODUCTION HARDENING - Task 4.5 - Add error boundary for chat screen
+import { logger } from '@/utils/logger';
+// COMMENT: PRODUCTION HARDENING - Task 4.10 - Import responsive utilities
+import { useResponsive, getMaxContentWidth } from '@/utils/responsive';
+// COMMENT: PRIORITY 1 - File Modularization - Extract components (underscore prefix prevents Expo Router from treating as routes)
+import { ChatHeader } from './_components/ChatHeader';
+import { ChatOptionsModal } from './_components/ChatOptionsModal';
+import { ChatMuteModal } from './_components/ChatMuteModal';
+import { ChatSearchModal } from './_components/ChatSearchModal';
+import { ForwardMessageModal } from './_components/ForwardMessageModal';
+// COMMENT: PRIORITY 1 - File Modularization - Import extracted hooks (underscore prefix prevents Expo Router from treating as routes)
+import { useChatOptions } from './_hooks/useChatOptions';
+import { useMediaHandlers } from './_hooks/useMediaHandlers';
+import { useChatActions } from './_hooks/useChatActions';
 import { 
-  ArrowLeft, 
-  MoreVertical, 
-  User, 
-  BellOff, 
-  Ban, 
-  Flag, 
-  Trash2,
   Search,
   Mic,
   MicOff,
   Video,
   VideoOff,
+  CheckSquare,
+  X,
+  Copy,
+  Trash2,
+  Forward,
+  Pin,
+  Star,
 } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+// Camera imports removed - using ImagePicker for better UX
 import { Video as ExpoVideo } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function ChatScreen() {
   const { theme } = useTheme();
@@ -62,6 +89,8 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { jobId } = useLocalSearchParams();
   const chatId = jobId as string;
+  // COMMENT: PRODUCTION HARDENING - Task 4.10 - Get responsive dimensions
+  const { isTablet, isLargeDevice, width } = useResponsive();
 
   // State
   const [messages, setMessages] = useState<any[]>([]);
@@ -76,48 +105,39 @@ export default function ChatScreen() {
   const [chatInfo, setChatInfo] = useState<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
   const [presenceMap, setPresenceMap] = useState<Record<string, {state: 'online'|'offline', lastSeen: number}>>({});
+  const [disappearingDuration, setDisappearingDuration] = useState<DisappearingMessageDuration>(chatInfo?.disappearingMessageDuration || 0);
+  const [showDisappearingSettings, setShowDisappearingSettings] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [chatTheme, setChatTheme] = useState<any>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   
-  // Voice recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
+  // Voice recording - Only advanced recorder
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   
-  // Video recording state
-  const [isRecordingVideo, setIsRecordingVideo] = useState(false);
+  // Video recording - ImagePicker (no camera modal needed)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
-  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
-  const cameraRef = useRef<CameraView | null>(null);
   
-  // Camera permissions hook
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  // Camera/mic permissions - Not needed with ImagePicker/AdvancedVoiceRecorder, but kept for compatibility
+  const cameraPermission = null;
+  const requestCameraPermission = async () => ({} as any);
+  const micPermission = null;
+  const requestMicPermission = async () => ({} as any);
   
-  // Microphone permissions hook
-  const [micPermission, requestMicPermission] = useMicrophonePermissions();
+  // Recording state - Not used with ImagePicker/AdvancedVoiceRecorder, but kept for compatibility
+  const setIsRecording = () => {};
+  const setRecordingDuration = () => {};
+  const setMediaRecorder = () => {};
+  const setAudioChunks = () => {};
+  const setIsRecordingVideo = () => {};
+  const setShowCameraModal = () => {};
+  const setRecordingStartTime = () => {};
+  const recordingDuration = 0;
+  const mediaRecorder = null;
+  const isRecordingVideo = false;
+  const recordingStartTime = null;
   
-  // Request camera and microphone permissions on mount
-  useEffect(() => {
-    const requestPermissions = async () => {
-      if (!cameraPermission?.granted) {
-        await requestCameraPermission();
-        if (!cameraPermission?.granted) {
-          console.warn('Camera permission denied');
-          return;
-        }
-      }
-      if (!micPermission?.granted) {
-        await requestMicPermission();
-        if (!micPermission?.granted) {
-          console.warn('Microphone permission denied');
-          return;
-        }
-      }
-    };
-    
-    requestPermissions();
-  }, [cameraPermission, requestCameraPermission, micPermission, requestMicPermission]);
+  // Advanced voice recorder state
+  const [showAdvancedVoiceRecorder, setShowAdvancedVoiceRecorder] = useState(false);
   
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showMuteOptions, setShowMuteOptions] = useState(false);
@@ -125,80 +145,132 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [messageToForward, setMessageToForward] = useState<any | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastReadMarkTime, setLastReadMarkTime] = useState(0);
+  
+  // Selection mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  
+  // COMMENT: PRODUCTION HARDENING - Task 3.6 - Pagination state
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [allMessages, setAllMessages] = useState<any[]>([]); // All loaded messages (with pagination)
+  const INITIAL_MESSAGE_LIMIT = 50; // Initial message limit for pagination
   
   // Refs
   const flatListRef = useRef<FlatList>(null);
   const scrollViewRef = useRef<any>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const typingDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  // Camera ref removed - using ImagePicker instead, but kept for compatibility with useMediaHandlers
+  const cameraRef = useRef<any>(null);
 
-  // Load chat info and other user details
+  // COMMENT: PRODUCTION HARDENING - Task 5.1 - Load chat info and other user details with cleanup
   useEffect(() => {
     if (!chatId || !user) return;
 
-    const loadChatInfo = () => {
-      try {
-        // Mark chat as read when user opens it
-        chatService.markChatAsRead(chatId, user.uid);
-        
-        // Listen to chat details
-        const unsubscribe = chatService.listenToChat(chatId, (chat) => {
-          if (chat) {
-            setChatInfo(chat);
-            
-            // Subscribe to presence for all participants
-            const participantIds = chat.participants.filter((id: string) => id !== user.uid);
-            if (participantIds.length > 0) {
-              const unsubscribePresence = PresenceService.subscribeUsersPresence(
-                participantIds,
-                (presence) => {
-                  setPresenceMap(presence);
-                }
-              );
-              
-              // Store unsubscribe function for cleanup
-              return () => {
-                unsubscribePresence();
-              };
-            }
-            
-            // Get other user ID
-            const otherUserId = chat.participants.find((id: string) => id !== user.uid);
-            if (otherUserId) {
-              // Get other user's name from participantNames
-              const otherUserName = chat.participantNames?.[otherUserId] || 'User';
-              setOtherUser({
-                id: otherUserId,
-                name: otherUserName,
-                // In a real app, you'd fetch the profile picture from users collection
-                avatar: null,
-              });
-            }
-          }
-        });
+    let unsubscribeChat: (() => void) | null = null;
+    let unsubscribePresence: (() => void) | null = null;
+    let isMounted = true; // Cleanup flag to prevent state updates on unmounted component
 
-        return unsubscribe;
-      } catch (error) {
-        console.error('Error loading chat info:', error);
-        return () => {};
+    try {
+      // Mark chat as read when user opens it
+      chatService.markChatAsRead(chatId, user.uid);
+      
+      // Listen to chat details
+      unsubscribeChat = chatService.listenToChat(chatId, (chat) => {
+        if (!isMounted) return; // Early return if component unmounted
+        
+        if (chat) {
+          setChatInfo(chat);
+          
+          // Subscribe to presence for all participants
+          const participantIds = chat.participants.filter((id: string) => id !== user.uid);
+          if (participantIds.length > 0) {
+            // Cleanup previous presence subscription if exists
+            if (unsubscribePresence) {
+              unsubscribePresence();
+            }
+            
+            unsubscribePresence = PresenceService.subscribeUsersPresence(
+              participantIds,
+              (presence) => {
+                if (!isMounted) return; // Early return if component unmounted
+                setPresenceMap(presence);
+              }
+            );
+          }
+          
+          // Get other user ID
+          const otherUserId = chat.participants.find((id: string) => id !== user.uid);
+          if (otherUserId) {
+            // Get other user's name from participantNames
+            const otherUserName = chat.participantNames?.[otherUserId] || 'User';
+            setOtherUser({
+              id: otherUserId,
+              name: otherUserName,
+              // In a real app, you'd fetch the profile picture from users collection
+              avatar: null,
+            });
+          }
+          
+          // Update disappearing message duration from chat info
+          if (chat.disappearingMessageDuration !== undefined) {
+            setDisappearingDuration(chat.disappearingMessageDuration as DisappearingMessageDuration || 0);
+          }
+          
+          // Load chat theme
+          if (chat.theme) {
+            setChatTheme(chat.theme);
+          } else {
+            // Load from service if not in chat data
+            chatThemeService.getChatTheme(chatId).then((theme) => {
+              if (theme) {
+                setChatTheme(theme);
+              }
+            }).catch((error) => {
+              logger.error('Error loading chat theme:', error);
+            });
+          }
+        }
+      });
+    } catch (error) {
+      // COMMENT: FINAL STABILIZATION - Task 7 - Use logger instead of console.error
+      logger.error('Error loading chat info:', error);
+    }
+
+    // Cleanup: Unsubscribe from chat and presence listeners
+    return () => {
+      isMounted = false; // Prevent state updates
+      if (unsubscribeChat) {
+        unsubscribeChat();
+      }
+      if (unsubscribePresence) {
+        unsubscribePresence();
       }
     };
-
-    loadChatInfo();
   }, [chatId, user]);
 
+  // COMMENT: PRODUCTION HARDENING - Task 3.6 - Load messages with pagination support
   // Load messages
   useEffect(() => {
     if (!chatId || !user) return;
 
     setLoading(true);
+    setHasMoreMessages(true);
+    setAllMessages([]); // Reset on chat change
     let previousMessageCount = 0;
     
+    // COMMENT: PRODUCTION HARDENING - Task 3.6 - Use initial limit for pagination
     const unsubscribe = chatService.listenToMessages(chatId, async (newMessages) => {
+      // Log for debugging
+      logger.debug(`📨 Received ${newMessages.length} messages from Firestore listener for chat ${chatId}`);
+      
       // Check if there are new messages
       if (newMessages.length > previousMessageCount && previousMessageCount > 0) {
         const latestMessage = newMessages[newMessages.length - 1];
@@ -217,14 +289,195 @@ export default function ChatScreen() {
       }
       
       previousMessageCount = newMessages.length;
-      setMessages(newMessages);
+      
+      // COMMENT: PRODUCTION HARDENING - Task 3.6 - Merge new messages with existing paginated messages
+      // Firestore listener sends ALL messages (up to limit), not just new ones
+      if (allMessages.length === 0) {
+        // Initial load - use messages from listener
+        logger.debug(`📥 Initial load: Setting ${newMessages.length} messages`);
+        setMessages(newMessages);
+        setAllMessages(newMessages);
+      } else {
+        // Real-time update - merge Firestore messages (latest N) with paginated older messages
+        // Firestore messages are the source of truth for the latest messages
+        const firestoreMessageIds = new Set(newMessages.map(m => m.id));
+        
+        // Keep paginated older messages that are not in Firestore latest batch
+        // Also remove optimistic messages (tempId) that have been replaced by real messages
+        const paginatedOlderMessages = allMessages.filter(m => {
+          // Remove optimistic messages (tempId) if real message exists
+          if (m.tempId) {
+            logger.debug(`🔍 Checking optimistic message for replacement:`, { 
+              tempId: m.tempId, 
+              messageId: m.id, 
+              type: m.type, 
+              senderId: m.senderId,
+              createdAt: m.createdAt,
+              createdAtType: typeof m.createdAt
+            });
+            
+            // Check if real message exists in Firestore
+            // Match by: sender, type, and time within 10 seconds (increased window for async operations)
+            // For media messages (empty text), also match by type
+            // For text messages, match by text content
+            const realMessage = newMessages.find(fm => {
+              const fmTime = fm.createdAt?.toMillis?.() 
+                ? fm.createdAt.toMillis() 
+                : typeof fm.createdAt === 'number' 
+                ? fm.createdAt 
+                : fm.createdAt instanceof Date 
+                ? fm.createdAt.getTime()
+                : new Date(fm.createdAt).getTime();
+              
+              const mTime = m.createdAt?.toMillis?.() 
+                ? m.createdAt.toMillis() 
+                : typeof m.createdAt === 'number' 
+                ? m.createdAt 
+                : m.createdAt instanceof Date 
+                ? m.createdAt.getTime()
+                : m.createdAt 
+                ? new Date(m.createdAt).getTime() 
+                : 0;
+              
+              const timeDiff = Math.abs(fmTime - mTime);
+              const timeMatch = timeDiff < 10000; // Increased to 10 seconds for async operations
+              const senderMatch = fm.senderId === m.senderId;
+              const typeMatch = fm.type === m.type;
+              
+              logger.debug(`🔍 Matching check:`, {
+                fmId: fm.id,
+                fmType: fm.type,
+                fmSenderId: fm.senderId,
+                fmTime,
+                mTempId: m.tempId,
+                mType: m.type,
+                mSenderId: m.senderId,
+                mTime,
+                timeDiff,
+                timeMatch,
+                senderMatch,
+                typeMatch
+              });
+              
+              // For text messages, match by text
+              if (m.type === 'TEXT' || !m.type) {
+                const textMatch = fm.text === m.text;
+                const matched = senderMatch && textMatch && timeMatch;
+                if (matched) {
+                  logger.debug(`✅ Matched optimistic text message:`, { tempId: m.tempId, realId: fm.id });
+                }
+                return matched;
+              }
+              
+              // For media messages (voice, image, video, file), match by type and time
+              // Media messages have empty text, so we can't match by text
+              const matched = senderMatch && typeMatch && timeMatch;
+              if (matched) {
+                logger.debug(`✅ Matched optimistic media message:`, { tempId: m.tempId, realId: fm.id, type: m.type });
+              }
+              return matched;
+            });
+            if (realMessage) {
+              logger.debug(`🔄 Replacing optimistic message with real message:`, { 
+                tempId: m.tempId, 
+                oldId: m.id, 
+                newId: realMessage.id,
+                type: m.type
+              });
+              return false; // Remove optimistic message, real one will be added
+            } else {
+              logger.debug(`⚠️ No match found for optimistic message:`, { 
+                tempId: m.tempId, 
+                type: m.type,
+                senderId: m.senderId,
+                availableIds: newMessages.map(fm => ({ id: fm.id, type: fm.type, senderId: fm.senderId }))
+              });
+            }
+          }
+          // Keep paginated older messages that are not in Firestore batch
+          return !firestoreMessageIds.has(m.id);
+        });
+        
+        // Always use Firestore messages as source of truth (they contain latest data)
+        // Create a map to deduplicate by ID (Firestore messages take priority)
+        logger.debug(`🔀 Merging messages: ${paginatedOlderMessages.length} older + ${newMessages.length} Firestore`);
+        logger.debug(`🔀 Firestore message IDs: ${Array.from(firestoreMessageIds).join(', ')}`);
+        logger.debug(`🔀 Older message IDs: ${paginatedOlderMessages.map(m => m.id).join(', ')}`);
+        
+        const messageMap = new Map<string, any>();
+        
+        // Add paginated older messages first
+        paginatedOlderMessages.forEach(m => {
+          // Only add if not already in Firestore messages (they'll override)
+          if (!firestoreMessageIds.has(m.id)) {
+            logger.debug(`🔀 Adding older message to map: ${m.id} (not in Firestore)`);
+            messageMap.set(m.id, m);
+          } else {
+            logger.debug(`🔀 Skipping older message (Firestore has it): ${m.id}`);
+          }
+        });
+        
+        // Add/update with Firestore messages (they override existing ones with same ID)
+        newMessages.forEach(m => {
+          logger.debug(`🔀 Adding Firestore message to map: ${m.id} (type: ${m.type})`);
+          messageMap.set(m.id, m); // Firestore messages are always latest
+        });
+        
+        logger.debug(`🔀 Message map size before sort: ${messageMap.size}`);
+        logger.debug(`🔀 Message map IDs: ${Array.from(messageMap.keys()).join(', ')}`);
+        
+        // Convert map to array and sort by timestamp
+        const combinedMessages = Array.from(messageMap.values()).sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 
+                        (typeof a.createdAt === 'number' ? a.createdAt : 
+                         (a.createdAt ? new Date(a.createdAt).getTime() : 0)) || 0;
+          const bTime = b.createdAt?.toMillis?.() || 
+                        (typeof b.createdAt === 'number' ? b.createdAt : 
+                         (b.createdAt ? new Date(b.createdAt).getTime() : 0)) || 0;
+          return aTime - bTime;
+        });
+        
+        logger.debug(`📦 Merged messages: ${paginatedOlderMessages.length} older + ${newMessages.length} Firestore = ${combinedMessages.length} total (deduplicated)`);
+        logger.debug(`📨 Message IDs in combined (sorted): ${combinedMessages.map(m => `${m.id}(${m.type || 'TEXT'})`).join(', ')}`);
+        
+        // Check all image messages in the combined list
+        const imageMessages = combinedMessages.filter(m => m.type === 'image' || m.type === 'IMAGE');
+        const newImageMessages = newMessages.filter(m => m.type === 'image' || m.type === 'IMAGE');
+        logger.debug(`🖼️ Image messages check:`, {
+          totalInCombined: imageMessages.length,
+          totalInFirestore: newImageMessages.length,
+          combinedImageIds: imageMessages.map(m => m.id),
+          firestoreImageIds: newImageMessages.map(m => m.id),
+          imageMessagesDetails: imageMessages.map(m => ({
+            id: m.id,
+            type: m.type,
+            hasAttachments: !!m.attachments?.length,
+            attachments: m.attachments,
+            createdAt: m.createdAt,
+            createdAtType: typeof m.createdAt,
+            createdAtValue: m.createdAt?.toMillis?.() || (typeof m.createdAt === 'number' ? m.createdAt : (m.createdAt instanceof Date ? m.createdAt.getTime() : 'unknown'))
+          }))
+        });
+        
+        setAllMessages(combinedMessages);
+        setMessages(combinedMessages);
+      }
+      
       setLoading(false);
       
-      // Scroll to bottom on new messages
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    });
+      // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear existing timeout and store new one for scroll
+      // Scroll to bottom on new messages (only if not loading more)
+      if (!isLoadingMore) {
+        // Clear any existing scroll timeout
+        if (keyboardScrollTimeoutRef.current) {
+          clearTimeout(keyboardScrollTimeoutRef.current);
+        }
+        keyboardScrollTimeoutRef.current = setTimeout(() => {
+          keyboardScrollTimeoutRef.current = null;
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    }, INITIAL_MESSAGE_LIMIT); // COMMENT: PRODUCTION HARDENING - Task 3.6 - Pass initial limit
 
     return () => unsubscribe();
   }, [chatId, user]);
@@ -270,14 +523,52 @@ export default function ChatScreen() {
     };
   }, [chatId, user]);
 
-  // Keyboard listeners
+  // COMMENT: PRODUCTION HARDENING - Task 5.1 - Timeout ref for keyboard scroll cleanup
+  const keyboardScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use chat actions hook - moved before keyboard listeners so handleKeyboardHide is available
+  const {
+    handleSendMessage,
+    handleEditMessage,
+    handleCancelEdit,
+    handleDeleteMessage,
+    handleViewHistory,
+    handleTyping,
+    handleKeyboardHide: handleKeyboardHideFromHook,
+    handleRetryMessage,
+  } = useChatActions({
+    chatId,
+    userId: user?.uid || null,
+    jobId,
+    messages,
+    setMessages,
+    allMessages,
+    setAllMessages,
+    otherUser,
+    isRTL,
+    inputText,
+    setInputText,
+    editingMessageId,
+    setEditingMessageId,
+    editingText,
+    setEditingText,
+  });
+
+  // Keyboard listeners - now after hook so handleKeyboardHideFromHook is available
   useEffect(() => {
+    if (!handleKeyboardHideFromHook) return; // Guard against undefined function
+    
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
+        // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear existing timeout and store new one
+        if (keyboardScrollTimeoutRef.current) {
+          clearTimeout(keyboardScrollTimeoutRef.current);
+        }
         // Scroll to bottom when keyboard appears
-        setTimeout(() => {
+        keyboardScrollTimeoutRef.current = setTimeout(() => {
+          keyboardScrollTimeoutRef.current = null;
           scrollViewRef.current?.scrollToEnd({ animated: true });
         }, 100);
       }
@@ -287,15 +578,21 @@ export default function ChatScreen() {
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
         setKeyboardHeight(0);
-        handleKeyboardHide(); // Stop typing when keyboard hides
+        handleKeyboardHideFromHook(); // Stop typing when keyboard hides
+        // ChatInput component now handles keyboard visibility and recalculates padding automatically
       }
     );
 
     return () => {
       keyboardWillShow.remove();
       keyboardWillHide.remove();
+      // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear keyboard scroll timeout
+      if (keyboardScrollTimeoutRef.current) {
+        clearTimeout(keyboardScrollTimeoutRef.current);
+        keyboardScrollTimeoutRef.current = null;
+      }
     };
-  }, [chatId]);
+  }, [chatId, handleKeyboardHideFromHook]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -324,7 +621,7 @@ export default function ChatScreen() {
       const markLatestAsRead = async () => {
         const latestMessage = messages[messages.length - 1];
         if (latestMessage && latestMessage.senderId !== user.uid) {
-          console.log('📖 Focus: Marking latest message as read');
+          logger.debug('📖 Focus: Marking latest message as read');
           await chatService.markAsRead(chatId, [latestMessage.id], user.uid);
         }
       };
@@ -341,844 +638,137 @@ export default function ChatScreen() {
     if (!chatId || !user || !visibleMessageIds.length) return;
     
     setLastReadMarkTime(now);
-    console.log('📖 Scroll: Marking visible messages as read', visibleMessageIds.length);
-    await chatService.markAsRead(chatId, visibleMessageIds, user.uid);
+    logger.debug('📖 Scroll: Marking visible messages as read', visibleMessageIds.length);
+        // COMMENT: PRODUCTION HARDENING - Task 3.4 - Mark messages as read with updated method signature
+        await chatService.markAsRead(chatId, visibleMessageIds, user.uid);
   }, [chatId, user, lastReadMarkTime]);
 
-  // Handle typing with debounce
-  const handleTyping = () => {
-    if (!chatId) return;
-
-    // Clear existing debounce timeout
-    if (typingDebounceRef.current) {
-      clearTimeout(typingDebounceRef.current);
-    }
-
-    // Start typing after 300ms debounce
-    typingDebounceRef.current = setTimeout(() => {
-      PresenceService.startTyping(chatId);
-    }, 300);
-
-    // Clear existing inactivity timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Stop typing after 2 seconds of inactivity (reduced from 3)
-    typingTimeoutRef.current = setTimeout(() => {
-      PresenceService.stopTyping(chatId);
-    }, 2000);
-  };
-
-  // Handle keyboard hide - stop typing immediately
-  const handleKeyboardHide = () => {
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    if (typingDebounceRef.current) {
-      clearTimeout(typingDebounceRef.current);
-    }
-    PresenceService.stopTyping(chatId);
-  };
+  // COMMENT: PRIORITY 1 - File Modularization - Typing and keyboard handlers now provided by useChatActions hook
+  // handleTyping and handleKeyboardHide are now from useChatActions hook
   
-  // Send message
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || !user) return;
+  // COMMENT: PRIORITY 1 - File Modularization - Message handlers now provided by useChatActions hook
+  // handleSendMessage is now from useChatActions hook
+  
+  // COMMENT: PRIORITY 1 - File Modularization - All handlers now provided by hooks
+  // Duplicate handler definitions removed - using useChatActions, useMediaHandlers hooks
+  
+  // COMMENT: PRIORITY 1 - File Modularization - All duplicate handlers removed (now from hooks above)
+  // Media handlers: startRecording, stopRecording, uploadVoiceMessage, startVideoRecording, 
+  // recordVideo, stopVideoRecording, uploadVideoMessage, handleSendImage, handleSendFile, handleSendLocation
+  // Message handlers: handleEditMessage, handleCancelEdit, handleDeleteMessage, handleViewHistory
+  // All provided by useMediaHandlers and useChatActions hooks above
 
-    const messageText = inputText.trim();
-    setInputText('');
-
-    // Stop typing immediately when sending message
-    handleKeyboardHide();
-
-    try {
-      if (editingMessageId) {
-        // Edit existing message
-        const originalMessage = messages.find(m => m.id === editingMessageId);
-        await chatService.editMessage(chatId, editingMessageId, messageText);
-        
-        // Log edit for dispute resolution
-        if (originalMessage?.content) {
-          await disputeLoggingService.logEdit(
-            editingMessageId,
-            user.uid,
-            originalMessage.content,
-            messageText,
-            'User edited message'
-          );
-        }
-        
-        setEditingMessageId(null);
-        setEditingText('');
-      } else {
-        // Send new message
-        const messageId = await chatService.sendMessage(chatId, messageText, user.uid);
-        
-        // Trigger backend push notification
-        try {
-          await MessageNotificationService.triggerBackendNotification(chatId, user.uid, messageText);
-        } catch (notificationError) {
-          console.warn('Failed to trigger backend notification:', notificationError);
-        }
-        
-        // Log message for dispute resolution
-        if (messageId && otherUser) {
-          await disputeLoggingService.logMessage(
-            messageId,
-            chatId,
-            user.uid,
-            [otherUser.uid],
-            messageText,
-            [],
-            { jobId }
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الرسالة' : 'Failed to send message'
-      );
-    }
-  };
-
-  // Voice recording functions using Web Audio API
-  const startRecording = async () => {
-    try {
-      console.log('🎤 Starting recording...');
-      
-      // Check if MediaRecorder is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        CustomAlertService.showError(
-          isRTL ? 'خطأ' : 'Error',
-          isRTL ? 'تسجيل الصوت غير مدعوم في هذا المتصفح' : 'Audio recording not supported in this browser'
-        );
-        return;
-      }
-
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Create MediaRecorder
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-      
-      const chunks: Blob[] = [];
-      
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-      
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        if (recordingDuration > 0) {
-          await uploadVoiceMessage(audioUrl, recordingDuration);
-        }
-        
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
-      
-      setMediaRecorder(recorder);
-      setAudioChunks(chunks);
-      setIsRecording(true);
-      setRecordingDuration(0);
-
-      // Start recording
-      recorder.start(1000); // Collect data every second
-
-      // Start duration timer
-      const timer = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-
-      // Store timer reference for cleanup
-      (recorder as any).timer = timer;
-      
-    } catch (error) {
-      console.error('❌ Failed to start recording:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل بدء التسجيل' : 'Failed to start recording'
-      );
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!mediaRecorder) return;
-
-    try {
-      console.log('🎤 Stopping recording...');
-      setIsRecording(false);
-      
-      // Clear timer
-      if ((mediaRecorder as any).timer) {
-        clearInterval((mediaRecorder as any).timer);
-      }
-
-      // Stop recording
-      mediaRecorder.stop();
-      
-      setMediaRecorder(null);
-      setAudioChunks([]);
-      
-    } catch (error) {
-      console.error('❌ Failed to stop recording:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إيقاف التسجيل' : 'Failed to stop recording'
-      );
-    }
-  };
-
-  const uploadVoiceMessage = async (audioUri: string, duration: number) => {
-    if (!user) return;
-
-    try {
-      setIsUploadingVoice(true);
-      console.log('🎤 Uploading voice message...');
-
-      // Upload to Firebase Storage
-      const { url } = await chatFileService.uploadVoiceMessage(
-        chatId,
-        audioUri,
-        user.uid,
-        duration
-      );
-
-      // Create voice message with proper data
-      const messageData = {
-        chatId,
-        senderId: user.uid,
-        text: '', // Empty text for voice messages
-        type: 'voice' as const,
-        attachments: [url],
-        duration: duration,
-        status: 'sent' as const,
-        readBy: [user.uid],
-        fileMetadata: {
-          originalName: `voice_${Date.now()}.m4a`,
-          size: 0, // Size not available from uploadVoiceMessage
-          type: 'audio/mp4',
-        },
-      };
-
-      // Use ChatStorageProvider to send the voice message
-      const messageId = await ChatStorageProvider.sendMessage(chatId, messageData);
-
-      // Update chat metadata
-      try {
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../../../config/firebase');
-        
-        await updateDoc(doc(db, 'chats', chatId), {
-          lastMessage: {
-            text: isRTL ? 'رسالة صوتية' : 'Voice message',
-            senderId: user.uid,
-            timestamp: serverTimestamp(),
-          },
-          updatedAt: serverTimestamp(),
-        });
-      } catch (updateError) {
-        console.warn('Failed to update chat metadata:', updateError);
-      }
-
-      // Trigger backend notification
-      try {
-        await MessageNotificationService.triggerBackendNotification(
-          chatId, 
-          user.uid, 
-          isRTL ? 'رسالة صوتية' : 'Voice message'
-        );
-      } catch (notificationError) {
-        console.warn('Failed to trigger backend notification:', notificationError);
-      }
-
-      // Log for dispute resolution
-      if (messageId && otherUser) {
-        await disputeLoggingService.logMessage(
-          messageId,
-          chatId,
-          user.uid,
-          [otherUser.uid],
-          isRTL ? 'رسالة صوتية' : 'Voice message',
-          [],
-          { jobId }
-        );
-      }
-
-      // Clean up temp file
-      await chatFileService.cleanupTempAudioFile(audioUri);
-      
-      console.log('✅ Voice message sent successfully');
-      
-    } catch (error) {
-      console.error('❌ Failed to upload voice message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الرسالة الصوتية' : 'Failed to send voice message'
-      );
-      
-      // Clean up temp file on error
-      await chatFileService.cleanupTempAudioFile(audioUri);
-    } finally {
-      setIsUploadingVoice(false);
-    }
-  };
-
-  // Video recording functions
-  const startVideoRecording = async () => {
-    try {
-      console.log('🎥 Starting video recording...');
-      
-      // Check camera permissions
-      if (!cameraPermission?.granted) {
-        await requestCameraPermission();
-        if (!cameraPermission?.granted) {
-          CustomAlertService.showError(
-            isRTL ? 'خطأ' : 'Error',
-            isRTL ? 'يجب السماح بالوصول للكاميرا' : 'Camera permission required'
-          );
-          return;
-        }
-      }
-
-      // Check microphone permissions
-      if (!micPermission?.granted) {
-        await requestMicPermission();
-        if (!micPermission?.granted) {
-          CustomAlertService.showError(
-            isRTL ? 'خطأ' : 'Error',
-            isRTL ? 'يجب السماح بالوصول للميكروفون' : 'Microphone permission required'
-          );
-          return;
-        }
-      }
-
-      setShowCameraModal(true);
-      
-    } catch (error) {
-      console.error('❌ Failed to start video recording:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل بدء تسجيل الفيديو' : 'Failed to start video recording'
-      );
-    }
-  };
-
-  const recordVideo = async () => {
-    if (!cameraRef.current) {
-      console.error('❌ Camera ref is null');
+  // COMMENT: PRODUCTION HARDENING - Task 3.6 - Load more messages (pagination)
+  const handleLoadMore = React.useCallback(async () => {
+    if (!chatId || !user || isLoadingMore || !hasMoreMessages || messages.length === 0) {
       return;
     }
 
-    try {
-      if (!isRecordingVideo) {
-        // Check if camera is ready
-        if (!cameraRef.current) {
-          console.error('❌ Camera is not ready');
-          return;
-        }
-        
-        // Start recording
-        setIsRecordingVideo(true);
-        setRecordingStartTime(Date.now());
-        console.log('🎥 Starting video recording...');
-        
-        // Add a small delay to ensure camera is fully ready
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Start recording - this will continue until stopped
-        try {
-          const recordingPromise = cameraRef.current.recordAsync({
-            maxDuration: 60, // 1 minute max
-          });
-          
-          console.log('🎥 Recording promise created, waiting for completion...');
-          
-          recordingPromise.then(async (video) => {
-            console.log('🎥 Recording promise resolved with video:', video);
-            if (video && video.uri) {
-              console.log('🎥 Video recording completed:', video.uri);
-              // Get video duration from file info since it's not returned by recordAsync
-              const fileInfo = await FileSystem.getInfoAsync(video.uri);
-              const duration = 0; // We'll need to get this from the video file itself
-              await uploadVideoMessage(video.uri, duration);
-            }
-            
-            // Reset state after recording completes
-            setIsRecordingVideo(false);
-            setRecordingStartTime(null);
-            setShowCameraModal(false);
-          }).catch((error) => {
-            console.error('❌ Recording promise rejected:', error);
-            setIsRecordingVideo(false);
-            setRecordingStartTime(null);
-            setShowCameraModal(false);
-          });
-          
-          console.log('🎥 Recording started successfully');
-        } catch (startError) {
-          console.error('❌ Failed to start recording:', startError);
-          setIsRecordingVideo(false);
-          setRecordingStartTime(null);
-          setShowCameraModal(false);
-        }
-      } else {
-        // Check minimum recording time (2 seconds)
-        const currentTime = Date.now();
-        const recordingDuration = recordingStartTime ? currentTime - recordingStartTime : 0;
-        const minRecordingTime = 2000; // 2 seconds minimum
-        
-        console.log(`🎥 Recording duration check: ${recordingDuration}ms (min: ${minRecordingTime}ms)`);
-        console.log(`🎥 Recording start time: ${recordingStartTime}, current time: ${currentTime}`);
-        
-        if (recordingDuration < minRecordingTime) {
-          console.log(`🎥 Recording too short (${recordingDuration}ms), waiting for minimum time...`);
-          CustomAlertService.showError(
-            isRTL ? 'خطأ' : 'Error',
-            isRTL ? 'يجب تسجيل فيديو لمدة ثانيتين على الأقل' : 'Please record for at least 2 seconds'
-          );
-          return;
-        }
-        
-        // Stop recording
-        console.log('🎥 Stopping video recording...');
-        cameraRef.current.stopRecording();
-      }
-      
-    } catch (error) {
-      console.error('❌ Failed to record video:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل تسجيل الفيديو' : 'Failed to record video'
-      );
-      setIsRecordingVideo(false);
-      setRecordingStartTime(null);
-      setShowCameraModal(false);
-    }
-  };
-
-  const stopVideoRecording = async () => {
-    if (!cameraRef.current) return;
+    setIsLoadingMore(true);
 
     try {
-      // Check minimum recording time (2 seconds)
-      const currentTime = Date.now();
-      const recordingDuration = recordingStartTime ? currentTime - recordingStartTime : 0;
-      const minRecordingTime = 2000; // 2 seconds minimum
-      
-      console.log(`🎥 StopVideoRecording - Duration check: ${recordingDuration}ms (min: ${minRecordingTime}ms)`);
-      console.log(`🎥 StopVideoRecording - Start time: ${recordingStartTime}, current time: ${currentTime}`);
-      
-      if (recordingDuration < minRecordingTime) {
-        console.log(`🎥 StopVideoRecording - Recording too short (${recordingDuration}ms), waiting for minimum time...`);
-        CustomAlertService.showError(
-          isRTL ? 'خطأ' : 'Error',
-          isRTL ? 'يجب تسجيل فيديو لمدة ثانيتين على الأقل' : 'Please record for at least 2 seconds'
-        );
+      // Get the oldest message timestamp
+      const oldestMessage = messages[0];
+      if (!oldestMessage || !oldestMessage.createdAt) {
+        setHasMoreMessages(false);
+        setIsLoadingMore(false);
         return;
       }
-      
-      console.log('🎥 StopVideoRecording - Stopping video recording...');
-      cameraRef.current.stopRecording();
-      setIsRecordingVideo(false);
-      setRecordingStartTime(null);
-      setShowCameraModal(false);
+
+      // Convert to Firestore Timestamp if needed
+      const { Timestamp } = await import('firebase/firestore');
+      const lastTimestamp = oldestMessage.createdAt?.toMillis 
+        ? oldestMessage.createdAt 
+        : typeof oldestMessage.createdAt === 'number'
+        ? Timestamp.fromMillis(oldestMessage.createdAt)
+        : null;
+
+      if (!lastTimestamp) {
+        setHasMoreMessages(false);
+        setIsLoadingMore(false);
+        return;
+      }
+
+      // Load more messages
+      const result = await chatService.loadMoreMessages(chatId, lastTimestamp, INITIAL_MESSAGE_LIMIT);
+
+      if (result.messages.length > 0) {
+        // Prepend older messages to the list
+        const updatedMessages = [...result.messages, ...messages];
+        setAllMessages(updatedMessages);
+        setMessages(updatedMessages);
+
+        // Maintain scroll position (approximate)
+        setTimeout(() => {
+          const scrollOffset = scrollViewRef.current?.contentOffset?.y || 0;
+          const estimatedHeightPerMessage = 60; // Approximate message height
+          const newMessagesHeight = result.messages.length * estimatedHeightPerMessage;
+          
+          if (scrollViewRef.current && scrollOffset > 0) {
+            scrollViewRef.current.scrollTo({
+              y: scrollOffset + newMessagesHeight,
+              animated: false,
+            });
+          }
+        }, 100);
+      }
+
+      setHasMoreMessages(result.hasMore);
     } catch (error) {
-      console.error('❌ Failed to stop video recording:', error);
-    }
-  };
-
-  const uploadVideoMessage = async (videoUri: string, duration: number) => {
-    if (!user) return;
-
-    try {
-      setIsUploadingVideo(true);
-      console.log('🎥 Uploading video message...');
-
-      const { url, thumbnailUrl } = await chatFileService.uploadVideoMessage(
-        chatId,
-        videoUri,
-        user.uid,
-        duration
-      );
-
-      // Create video message with proper data
-      const messageData = {
-        chatId,
-        senderId: user.uid,
-        text: '', // Empty text for video messages
-        type: 'video' as const,
-        attachments: [url],
-        thumbnailUrl: thumbnailUrl,
-        duration: duration,
-        status: 'sent' as const,
-        readBy: [user.uid],
-        fileMetadata: {
-          originalName: `video_${Date.now()}.mp4`,
-          size: 0, // Size not available from uploadVideoMessage
-          type: 'video/mp4',
-        },
-      };
-
-      // Use ChatStorageProvider to send the video message
-      const messageId = await ChatStorageProvider.sendMessage(chatId, messageData);
-
-      // Update chat metadata
-      try {
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../../../config/firebase');
-        
-        await updateDoc(doc(db, 'chats', chatId), {
-          lastMessage: {
-            text: isRTL ? 'رسالة فيديو' : 'Video message',
-            senderId: user.uid,
-            timestamp: serverTimestamp(),
-          },
-          updatedAt: serverTimestamp(),
-        });
-      } catch (updateError) {
-        console.warn('Failed to update chat metadata:', updateError);
-      }
-
-      try {
-        await MessageNotificationService.triggerBackendNotification(
-          chatId,
-          user.uid,
-          isRTL ? 'رسالة فيديو' : 'Video message'
-        );
-      } catch (notificationError) {
-        console.warn('Failed to trigger backend notification:', notificationError);
-      }
-
-      if (messageId && otherUser) {
-        await disputeLoggingService.logMessage(
-          messageId,
-          chatId,
-          user.uid,
-          [otherUser.uid],
-          isRTL ? 'رسالة فيديو' : 'Video message',
-          [],
-          { jobId }
-        );
-      }
-
-      await chatFileService.cleanupTempVideoFile(videoUri);
-
-      console.log('✅ Video message sent successfully');
-
-    } catch (error) {
-      console.error('❌ Failed to upload video message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الرسالة الفيديو' : 'Failed to send video message'
-      );
-
-      await chatFileService.cleanupTempVideoFile(videoUri);
+      logger.error('Error loading more messages:', error);
+      setHasMoreMessages(false);
     } finally {
-      setIsUploadingVideo(false);
+      setIsLoadingMore(false);
     }
-  };
+  }, [chatId, user, isLoadingMore, hasMoreMessages, messages, allMessages]);
 
-  // Send image
-  const handleSendImage = async (uri: string) => {
-    if (!user) return;
+  // Schedule message handler
+  const handleScheduleMessage = useCallback(async (scheduledDate: Date, messageText: string) => {
+    if (!user?.uid || !chatId || !messageText.trim()) return;
 
     try {
-      console.log('📸 Uploading image message...');
-
-      // Upload image first
-      const { url } = await chatFileService.uploadImageMessage(
-        chatId,
-        uri,
-        user.uid
-      );
-
-      // Create image message with proper data
-      const messageData = {
-        chatId,
-        senderId: user.uid,
-        text: '', // Empty text for image messages
-        type: 'image' as const,
-        attachments: [url],
-        status: 'sent' as const,
-        readBy: [user.uid],
-        fileMetadata: {
-          originalName: `image_${Date.now()}.jpg`,
-          size: 0, // Size not available from uploadImageMessage
-          type: 'image/jpeg',
-        },
-      };
-
-      // Use ChatStorageProvider to send the image message
-      const messageId = await ChatStorageProvider.sendMessage(chatId, messageData);
-
-      // Update chat metadata
-      try {
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../../../config/firebase');
-        
-        await updateDoc(doc(db, 'chats', chatId), {
-          lastMessage: {
-            text: isRTL ? 'رسالة صورة' : 'Image message',
-            senderId: user.uid,
-            timestamp: serverTimestamp(),
-          },
-          updatedAt: serverTimestamp(),
-        });
-      } catch (updateError) {
-        console.warn('Failed to update chat metadata:', updateError);
-      }
-
-      try {
-        await MessageNotificationService.triggerBackendNotification(
-          chatId,
-          user.uid,
-          isRTL ? 'رسالة صورة' : 'Image message'
-        );
-      } catch (notificationError) {
-        console.warn('Failed to trigger backend notification:', notificationError);
-      }
-
-      // Log image message for dispute resolution
-      if (messageId && otherUser) {
-        await disputeLoggingService.logMessage(
-          messageId,
-          chatId,
-          user.uid,
-          [otherUser.uid],
-          `[Image: image_${Date.now()}.jpg]`,
-          [{
-            url: url,
-            type: 'image/jpeg',
-            size: 0,
-            filename: `image_${Date.now()}.jpg`,
-          }],
-          { jobId, messageType: 'image' }
-        );
-      }
-
-      console.log('✅ Image message sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending image message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الرسالة الصورة' : 'Failed to send image message'
-      );
-    }
-  };
-
-  // Send file
-  const handleSendFile = async (uri: string, name: string, type: string) => {
-    if (!user) return;
-
-    try {
-      console.log('📄 Uploading file message...');
-
-      // Extract file extension
-      const fileExtension = name.split('.').pop() || 'bin';
-
-      // Upload file first
-      const { url } = await chatFileService.uploadFileMessage(
-        chatId,
-        uri,
-        user.uid,
-        type,
-        fileExtension
-      );
-
-      // Create file message with proper data
-      const messageData = {
-        chatId,
-        senderId: user.uid,
-        text: '', // Empty text for file messages
-        type: 'file' as const,
-        attachments: [url],
-        status: 'sent' as const,
-        readBy: [user.uid],
-        fileMetadata: {
-          originalName: name,
-          size: 0, // Size not available from uploadFileMessage
-          type: type,
-        },
-      };
-
-      // Use ChatStorageProvider to send the file message
-      const messageId = await ChatStorageProvider.sendMessage(chatId, messageData);
-
-      // Update chat metadata
-      try {
-        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../../../config/firebase');
-        
-        await updateDoc(doc(db, 'chats', chatId), {
-          lastMessage: {
-            text: isRTL ? 'رسالة ملف' : 'File message',
-            senderId: user.uid,
-            timestamp: serverTimestamp(),
-          },
-          updatedAt: serverTimestamp(),
-        });
-      } catch (updateError) {
-        console.warn('Failed to update chat metadata:', updateError);
-      }
-
-      try {
-        await MessageNotificationService.triggerBackendNotification(
-          chatId,
-          user.uid,
-          isRTL ? 'رسالة ملف' : 'File message'
-        );
-      } catch (notificationError) {
-        console.warn('Failed to trigger backend notification:', notificationError);
-      }
-
-      // Log file message for dispute resolution
-      if (messageId && otherUser) {
-        await disputeLoggingService.logMessage(
-          messageId,
-          chatId,
-          user.uid,
-          [otherUser.uid],
-          `[File: ${name}]`,
-          [{
-            url: url,
-            type,
-            size: 0,
-            filename: name,
-          }],
-          { jobId, messageType: 'file' }
-        );
-      }
-
-      console.log('✅ File message sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending file message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الرسالة الملف' : 'Failed to send file message'
-      );
-    }
-  };
-
-  // Send location
-  const handleSendLocation = async (location: { latitude: number; longitude: number; address?: string }) => {
-    if (!user) return;
-
-    try {
-      // Create Google Maps link
-      const googleMapsLink = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-      
-      // Create Apple Maps link (for iOS)
-      const appleMapsLink = `http://maps.apple.com/?ll=${location.latitude},${location.longitude}`;
-      
-      // Create a rich location message with clickable links
-      const locationText = `📍 ${location.address || 'Shared Location'}\n\n` +
-        `📱 Open in:\n` +
-        `Google Maps: ${googleMapsLink}\n` +
-        `Apple Maps: ${appleMapsLink}\n\n` +
-        `📌 Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
-
-      // Send location message through chat service
-      await chatService.sendMessage(chatId, locationText, user.uid);
-
-      // Log for dispute resolution
-      await disputeLoggingService.logMessage(
-        `location-${Date.now()}`,
+      await messageSchedulerService.scheduleMessage(
         chatId,
         user.uid,
-        chatInfo?.participants.filter((id: string) => id !== user.uid) || [],
-        locationText,
-        [],
-        {
-          type: 'LOCATION',
-          latitude: location.latitude,
-          longitude: location.longitude,
-          address: location.address,
-          googleMapsLink,
-          appleMapsLink,
-        }
+        messageText,
+        scheduledDate
       );
+
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم جدولة الرسالة لـ ${scheduledDate.toLocaleString(isRTL ? 'ar-SA' : 'en-US')}`
+          : `Message scheduled for ${scheduledDate.toLocaleString('en-US')}`,
+        isRTL
+      );
+
+      // Clear input
+      setInputText('');
     } catch (error) {
-      console.error('Error sending location:', error);
+      logger.error('Error scheduling message:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إرسال الموقع' : 'Failed to send location'
+        isRTL ? 'فشل جدولة الرسالة' : 'Failed to schedule message',
+        isRTL
       );
     }
-  };
+  }, [chatId, user?.uid, isRTL, setInputText]);
 
-  // Edit message
-  const handleEditMessage = (messageId: string, currentText: string) => {
-    setEditingMessageId(messageId);
-    setEditingText(currentText);
-    setInputText(currentText);
-  };
+  // COMMENT: PRODUCTION HARDENING - Task 3.6 - Refresh messages with pagination support
+  const handleRefresh = React.useCallback(async () => {
+    if (!chatId || !user || isRefreshing) return;
 
-  // Cancel edit
-  const handleCancelEdit = () => {
-    setEditingMessageId(null);
-    setEditingText('');
-    setInputText('');
-  };
-
-  // Delete message
-  const handleDeleteMessage = async (messageId: string) => {
-    if (!user) return;
-
-    try {
-      const message = messages.find(m => m.id === messageId);
-      await chatService.deleteMessage(chatId, messageId, user.uid);
-      
-      // Log deletion for dispute resolution
-      if (message?.content) {
-        await disputeLoggingService.logDeletion(
-          messageId,
-          user.uid,
-          message.content,
-          true,
-          'User deleted message'
-        );
-      }
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل حذف الرسالة' : 'Failed to delete message'
-      );
-    }
-  };
-
-  // View edit history
-  const handleViewHistory = (messageId: string) => {
-    const message = messages.find((m) => m.id === messageId);
-    if (message) {
-      setSelectedMessageHistory(message);
-      setShowHistoryModal(true);
-    }
-  };
-
-  // Refresh messages
-  const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Messages are synced in real-time via Firebase listeners
-      // This provides visual feedback to the user
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      CustomAlertService.showSuccess(
-        isRTL ? 'تم التحديث' : 'Refreshed',
-        isRTL ? 'تم تحديث الرسائل' : 'Messages updated'
-      );
+      // Reload initial messages
+      const result = await chatService.getChatMessages(chatId, INITIAL_MESSAGE_LIMIT);
+      if (result.messages.length > 0) {
+        setAllMessages(result.messages);
+        setMessages(result.messages);
+        setHasMoreMessages(result.hasMore);
+      }
     } catch (error) {
-      console.error('Error refreshing chat:', error);
+      logger.error('Error refreshing messages:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل تحديث الرسائل' : 'Failed to refresh messages'
@@ -1186,7 +776,7 @@ export default function ChatScreen() {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [chatId, user, isRefreshing]);
 
   // Download file or image
   const handleDownloadFile = async (url: string, filename: string) => {
@@ -1236,7 +826,7 @@ export default function ChatScreen() {
         throw new Error(`Download failed with status ${downloadResult.status}`);
       }
     } catch (error) {
-      console.error('Error downloading file:', error);
+      logger.error('Error downloading file:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل التنزيل' : 'Failed to download'
@@ -1247,182 +837,164 @@ export default function ChatScreen() {
   // Check if user is admin (simplified - would check Firebase custom claims)
   const isAdmin = user?.email?.includes('admin') || false;
 
-  // Check mute and block status on load
+  // COMMENT: PRODUCTION HARDENING - Task 5.1 - Check mute and block status on load with cleanup
   useEffect(() => {
+    let isMounted = true; // Cleanup flag to prevent state updates on unmounted component
+    
     const checkStatus = async () => {
       if (!user || !chatId || !otherUser) return;
 
       try {
         const muted = await chatOptionsService.isChatMuted(chatId, user.uid);
+        if (!isMounted) return; // Early return if component unmounted
         setIsMuted(muted);
 
         const blocked = await chatOptionsService.isUserBlocked(user.uid, otherUser.id);
+        if (!isMounted) return; // Early return if component unmounted
         setIsBlocked(blocked);
       } catch (error) {
-        console.error('Error checking status:', error);
+        logger.error('Error checking status:', error);
       }
     };
 
     checkStatus();
+    
+    // Cleanup: Set flag to prevent state updates if component unmounts
+    return () => {
+      isMounted = false;
+    };
   }, [user, chatId, otherUser]);
 
-  // Handle chat options
-  const handleViewProfile = () => {
-    setShowOptionsMenu(false);
-    if (otherUser) {
-      // Navigate to user profile with user ID
-      router.push(`/(modals)/user-profile/${otherUser.id}` as any);
-    }
-  };
+  // COMMENT: PRIORITY 1 - File Modularization - Use extracted hooks instead of duplicate handlers
+  // Use chat options hook
+  const {
+    handleViewProfile,
+    handleMuteChat,
+    handleMuteDuration,
+    handleUnmute,
+    handleBlockUser,
+    handleUnblockUser,
+    handleReportUser,
+    handleDeleteChat,
+  } = useChatOptions({
+    chatId,
+    userId: user?.uid || null,
+    otherUser,
+    isRTL,
+    isMuted,
+    setIsMuted,
+    isBlocked,
+    setIsBlocked,
+    setShowOptionsMenu,
+    setShowMuteOptions,
+  });
 
-  const handleMuteChat = () => {
-    setShowOptionsMenu(false);
-    setShowMuteOptions(true);
-  };
-
-  const handleMuteDuration = async (duration: 'hour' | 'day' | 'week' | 'forever') => {
-    setShowMuteOptions(false);
-    if (!user) {
-      CustomAlertService.showError(isRTL ? 'خطأ' : 'Error', isRTL ? 'المستخدم غير مسجل الدخول' : 'User not logged in');
-      return;
+  // Advanced voice recorder handler
+  const handleAdvancedVoiceRecordingComplete = useCallback(async (uri: string, duration: number) => {
+    try {
+      setShowAdvancedVoiceRecorder(false);
+      await uploadVoiceMessage(uri, duration);
+    } catch (error) {
+      logger.error('Error with advanced voice recording:', error);
     }
+  }, [uploadVoiceMessage]);
+
+  // Use media handlers hook
+  const {
+    uploadVoiceMessage,
+    startVideoRecording,
+    uploadVideoMessage,
+    handleSendImage,
+    handleSendGif,
+    handleSendFile,
+    handleSendLocation,
+  } = useMediaHandlers({
+    chatId,
+    userId: user?.uid || null,
+    jobId,
+    otherUser,
+    chatInfo,
+    isRTL,
+    messages,
+    setMessages,
+    allMessages,
+    setAllMessages,
+    cameraRef,
+    cameraPermission,
+    requestCameraPermission,
+    micPermission,
+    requestMicPermission,
+    setIsRecording,
+    setRecordingDuration,
+    setIsUploadingVoice,
+    setMediaRecorder,
+    setAudioChunks,
+    setIsRecordingVideo,
+    setIsUploadingVideo,
+    setShowCameraModal,
+    setRecordingStartTime,
+    recordingDuration,
+    mediaRecorder,
+    isRecordingVideo,
+    recordingStartTime,
+  });
+
+  // COMMENT: PRIORITY 1 - File Modularization - Duplicate handlers removed (using hooks above)
+  // All chat options handlers (handleViewProfile, handleMuteChat, etc.) now provided by useChatOptions hook
+
+  // Pin/Star message handlers
+  const handlePinMessage = async (messageId: string) => {
+    if (!chatId || !user?.uid || !messageId) return;
 
     try {
-      console.log('[ChatScreen] Muting chat with params:', { chatId, userId: user.uid, duration });
-      await chatOptionsService.muteChat(chatId, user.uid, duration);
-      setIsMuted(true);
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return;
+
+      const isPinned = message.isPinned || false;
+      await chatService.pinMessage(chatId, messageId, user.uid, !isPinned);
       
-      const durationText = {
-        hour: isRTL ? 'لمدة ساعة' : 'for 1 hour',
-        day: isRTL ? 'لمدة يوم' : 'for 1 day',
-        week: isRTL ? 'لمدة أسبوع' : 'for 1 week',
-        forever: isRTL ? 'للأبد' : 'forever',
-      }[duration];
-
       CustomAlertService.showSuccess(
-        isRTL ? 'تم الكتم' : 'Muted',
-        `${isRTL ? 'تم كتم الإشعارات' : 'Notifications muted'} ${durationText}`
-      );
-    } catch (error: any) {
-      console.error('[ChatScreen] Mute error:', error);
-      CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        `${isRTL ? 'فشل كتم الإشعارات' : 'Failed to mute notifications'}: ${error.message || 'Unknown error'}`
-      );
-    }
-  };
-
-  const handleUnmute = async () => {
-    if (!user) return;
-
-    try {
-      await chatOptionsService.unmuteChat(chatId, user.uid);
-      setIsMuted(false);
-      CustomAlertService.showSuccess(
-        isRTL ? 'تم إلغاء الكتم' : 'Unmuted',
-        isRTL ? 'تم إلغاء كتم الإشعارات' : 'Notifications unmuted'
+        isRTL ? 'نجح' : 'Success',
+        isPinned 
+          ? (isRTL ? 'تم إلغاء تثبيت الرسالة' : 'Message unpinned')
+          : (isRTL ? 'تم تثبيت الرسالة' : 'Message pinned'),
+        isRTL
       );
     } catch (error) {
+      logger.error('Error pinning/unpinning message:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إلغاء كتم الإشعارات' : 'Failed to unmute notifications'
+        isRTL ? 'فشل تثبيت/إلغاء تثبيت الرسالة' : 'Failed to pin/unpin message',
+        isRTL
       );
     }
   };
 
-  const handleBlockUser = () => {
-    setShowOptionsMenu(false);
-    if (!otherUser) return;
-
-    CustomAlertService.showConfirmation(
-      isRTL ? 'حظر المستخدم' : 'Block User',
-      isRTL ? 'هل تريد حظر هذا المستخدم؟ لن تتمكن من تلقي رسائل منه.' : 'Do you want to block this user? You will not receive messages from them.',
-      async () => {
-        if (!user) return;
-        try {
-          console.log('[ChatScreen] Blocking user:', { blockerId: user.uid, blockedUserId: otherUser.id });
-          await chatOptionsService.blockUser(user.uid, otherUser.id);
-          setIsBlocked(true);
-          CustomAlertService.showSuccess(
-            isRTL ? 'تم الحظر' : 'Blocked',
-            isRTL ? 'تم حظر المستخدم بنجاح' : 'User blocked successfully'
-          );
-        } catch (error: any) {
-          console.error('[ChatScreen] Block error:', error);
-          CustomAlertService.showError(
-            isRTL ? 'خطأ' : 'Error',
-            `${isRTL ? 'فشل حظر المستخدم' : 'Failed to block user'}: ${error.message || 'Unknown error'}`
-          );
-        }
-      },
-      undefined,
-      isRTL
-    );
-  };
-
-  const handleUnblockUser = async () => {
-    if (!user || !otherUser) return;
+  const handleStarMessage = async (messageId: string) => {
+    if (!chatId || !user?.uid || !messageId) return;
 
     try {
-      await chatOptionsService.unblockUser(user.uid, otherUser.id);
-      setIsBlocked(false);
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return;
+
+      const isStarred = message.starredBy?.includes(user.uid) || false;
+      await chatService.starMessage(chatId, messageId, user.uid, !isStarred);
+      
       CustomAlertService.showSuccess(
-        isRTL ? 'تم إلغاء الحظر' : 'Unblocked',
-        isRTL ? 'تم إلغاء حظر المستخدم' : 'User unblocked'
+        isRTL ? 'نجح' : 'Success',
+        isStarred 
+          ? (isRTL ? 'تم إلغاء تميز الرسالة' : 'Message unstarred')
+          : (isRTL ? 'تم تميز الرسالة' : 'Message starred'),
+        isRTL
       );
     } catch (error) {
+      logger.error('Error starring/unstarring message:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل إلغاء حظر المستخدم' : 'Failed to unblock user'
+        isRTL ? 'فشل تميز/إلغاء تميز الرسالة' : 'Failed to star/unstar message',
+        isRTL
       );
     }
-  };
-
-  const handleReportUser = () => {
-    setShowOptionsMenu(false);
-    if (!otherUser) return;
-
-    CustomAlertService.showConfirmation(
-      isRTL ? 'الإبلاغ عن المستخدم' : 'Report User',
-      isRTL ? 'هل تريد الإبلاغ عن هذا المستخدم للمسؤولين؟' : 'Do you want to report this user to administrators?',
-      () => {
-        router.push({
-          pathname: '/(modals)/dispute-filing-form',
-          params: { reportedUserId: otherUser.id, chatId }
-        });
-      },
-      undefined,
-      isRTL
-    );
-  };
-
-  const handleDeleteChat = () => {
-    setShowOptionsMenu(false);
-
-    CustomAlertService.showConfirmation(
-      isRTL ? 'حذف المحادثة' : 'Delete Chat',
-      isRTL ? 'هل تريد حذف هذه المحادثة؟ سيتم حذفها من قائمتك فقط.' : 'Do you want to delete this chat? It will only be removed from your list.',
-      async () => {
-        if (!user) return;
-        try {
-          console.log('[ChatScreen] Deleting chat:', { chatId, userId: user.uid });
-          await chatOptionsService.deleteChat(chatId, user.uid);
-          CustomAlertService.showSuccess(
-            isRTL ? 'تم الحذف' : 'Deleted',
-            isRTL ? 'تم حذف المحادثة' : 'Chat deleted'
-          );
-          router.back();
-        } catch (error: any) {
-          console.error('[ChatScreen] Delete error:', error);
-          CustomAlertService.showError(
-            isRTL ? 'خطأ' : 'Error',
-            `${isRTL ? 'فشل حذف المحادثة' : 'Failed to delete chat'}: ${error.message || 'Unknown error'}`
-          );
-        }
-      },
-      undefined,
-      isRTL
-    );
   };
 
   const handleSearchMessages = () => {
@@ -1430,12 +1002,17 @@ export default function ChatScreen() {
     setShowSearchModal(true);
   };
 
-  const performSearch = async () => {
+  const performSearch = async (filters?: {
+    messageType?: 'TEXT' | 'IMAGE' | 'FILE' | 'VOICE' | 'VIDEO';
+    senderId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+  }) => {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     try {
-      const results = await messageSearchService.searchInChat(chatId, searchQuery.trim());
+      const results = await messageSearchService.searchInChat(chatId, searchQuery.trim(), filters);
       setSearchResults(results);
       
       // Save to search history
@@ -1443,13 +1020,315 @@ export default function ChatScreen() {
         await messageSearchService.saveSearchHistory(user.uid, searchQuery.trim());
       }
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل البحث في الرسائل' : 'Failed to search messages'
       );
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleForwardMessage = (message: any) => {
+    setMessageToForward(message);
+    setShowForwardModal(true);
+  };
+
+  const handleForwardToChats = async (message: any, targetChatIds: string[]) => {
+    if (!user?.uid || !message) return;
+
+    try {
+      // Forward message to each target chat
+      for (const targetChatId of targetChatIds) {
+        await chatService.sendMessage(
+          targetChatId,
+          message.text || (message.type !== 'TEXT' ? `Forwarded ${message.type}` : 'Forwarded message'),
+          user.uid
+        );
+        
+        logger.debug(`Forwarded message ${message.id} to chat ${targetChatId}`);
+      }
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم إعادة توجيه الرسالة إلى ${targetChatIds.length} محادثة`
+          : `Message forwarded to ${targetChatIds.length} chat(s)`,
+        isRTL
+      );
+    } catch (error) {
+      logger.error('Error forwarding message:', error);
+      throw error;
+    }
+  };
+
+  // Selection mode handlers
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      setSelectedMessages(new Set());
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allMessageIds = new Set(messages.map(m => m.id));
+    setSelectedMessages(allMessageIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedMessages(new Set());
+  };
+
+  // Batch actions
+  const handleBatchDelete = async () => {
+    if (selectedMessages.size === 0) return;
+
+    CustomAlertService.showConfirmation(
+      isRTL ? 'حذف الرسائل' : 'Delete Messages',
+      isRTL 
+        ? `هل أنت متأكد من حذف ${selectedMessages.size} رسالة؟`
+        : `Are you sure you want to delete ${selectedMessages.size} message(s)?`,
+      async () => {
+        try {
+          for (const messageId of selectedMessages) {
+            await handleDeleteMessage(messageId);
+          }
+          setSelectedMessages(new Set());
+          setIsSelectionMode(false);
+          CustomAlertService.showSuccess(
+            isRTL ? 'نجح' : 'Success',
+            isRTL ? 'تم حذف الرسائل' : 'Messages deleted',
+            isRTL
+          );
+        } catch (error) {
+          logger.error('Error deleting messages:', error);
+          CustomAlertService.showError(
+            isRTL ? 'خطأ' : 'Error',
+            isRTL ? 'فشل حذف الرسائل' : 'Failed to delete messages',
+            isRTL
+          );
+        }
+      },
+      undefined,
+      isRTL
+    );
+  };
+
+  const handleBatchForward = () => {
+    if (selectedMessages.size === 0) return;
+    
+    // For now, forward only the first message (can be enhanced to forward all)
+    const firstMessageId = Array.from(selectedMessages)[0];
+    const message = messages.find(m => m.id === firstMessageId);
+    
+    if (message) {
+      setMessageToForward(message);
+      setShowForwardModal(true);
+      // Note: After forwarding, user can continue selecting more messages or exit selection mode
+    }
+  };
+
+  const handleBatchCopy = async () => {
+    if (selectedMessages.size === 0) return;
+
+    try {
+      const selectedMessagesList = messages
+        .filter(m => selectedMessages.has(m.id))
+        .sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || (typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime());
+          const bTime = b.createdAt?.toMillis?.() || (typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime());
+          return aTime - bTime;
+        });
+
+      const textToCopy = selectedMessagesList
+        .map(m => `${m.senderId === user?.uid ? (isRTL ? 'أنت' : 'You') : 'Other'}: ${m.text || (m.type !== 'TEXT' ? `[${m.type}]` : '')}`)
+        .join('\n\n');
+
+      // Use Clipboard API
+      try {
+        const Clipboard = await import('@react-native-clipboard/clipboard');
+        await Clipboard.default.setString(textToCopy);
+      } catch (clipboardError) {
+        // Fallback to expo-clipboard if available
+        try {
+          const Clipboard = await import('expo-clipboard');
+          await Clipboard.default.setStringAsync(textToCopy);
+        } catch (expoClipboardError) {
+          logger.error('No clipboard package available');
+          throw new Error('Clipboard not available');
+        }
+      }
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL ? 'تم نسخ الرسائل' : 'Messages copied',
+        isRTL
+      );
+    } catch (error) {
+      logger.error('Error copying messages:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل نسخ الرسائل' : 'Failed to copy messages',
+        isRTL
+      );
+    }
+  };
+
+  const handleBatchPin = async () => {
+    if (selectedMessages.size === 0 || !user?.uid) return;
+
+    try {
+      for (const messageId of selectedMessages) {
+        await chatService.pinMessage(chatId, messageId, user.uid, true);
+      }
+      
+      setSelectedMessages(new Set());
+      setIsSelectionMode(false);
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم تثبيت ${selectedMessages.size} رسالة`
+          : `Pinned ${selectedMessages.size} message(s)`,
+        isRTL
+      );
+    } catch (error) {
+      logger.error('Error pinning messages:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل تثبيت الرسائل' : 'Failed to pin messages',
+        isRTL
+      );
+    }
+  };
+
+  const handleBatchStar = async () => {
+    if (selectedMessages.size === 0 || !user?.uid) return;
+
+    try {
+      for (const messageId of selectedMessages) {
+        await chatService.starMessage(chatId, messageId, user.uid, true);
+      }
+      
+      setSelectedMessages(new Set());
+      setIsSelectionMode(false);
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم تميز ${selectedMessages.size} رسالة`
+          : `Starred ${selectedMessages.size} message(s)`,
+        isRTL
+      );
+    } catch (error) {
+      logger.error('Error starring messages:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل تميز الرسائل' : 'Failed to star messages',
+        isRTL
+      );
+    }
+  };
+
+  // Advanced features from reference system - Reactions
+  const handleReaction = async (message: any) => {
+    if (!user?.uid || !chatId || !message.id) return;
+
+    try {
+      const emoji = message.selectedEmoji || '👍'; // Default emoji
+      await chatService.addReaction(chatId, message.id, user.uid, emoji);
+      
+      logger.debug(`🔥 Reaction added: ${emoji} by ${user.uid}`);
+    } catch (error) {
+      logger.error('Error adding reaction:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل إضافة التفاعل' : 'Failed to add reaction',
+        isRTL
+      );
+    }
+  };
+
+  // Reply handler
+  const handleReply = (message: any) => {
+    if (!message) {
+      logger.warn('Cannot reply: message is missing');
+      return;
+    }
+    // Set reply context - this will be shown in the input
+    // TODO: Implement reply preview in input area
+    logger.debug(`📩 Reply to message: ${message.id}`);
+    // For now, just show a success message indicating the feature is being implemented
+    CustomAlertService.showSuccess(
+      isRTL ? 'نجح' : 'Success',
+      isRTL ? 'سيتم إضافة معاينة الرد قريباً' : 'Reply preview will be added soon',
+      isRTL
+    );
+  };
+
+  // Quote handler (different from Reply)
+  const handleQuote = (message: any) => {
+    if (!message || !message.text) {
+      logger.warn('Cannot quote: message or message.text is missing');
+      return;
+    }
+    // Quote shows the original message text differently
+    // TODO: Implement quote functionality
+    logger.debug(`💬 Quote message: ${message.id}`);
+    // For now, just show a success message indicating the feature is being implemented
+    CustomAlertService.showSuccess(
+      isRTL ? 'نجح' : 'Success',
+      isRTL ? 'سيتم إضافة وظيفة الاقتباس قريباً' : 'Quote functionality will be added soon',
+      isRTL
+    );
+  };
+
+  // Copy handler
+  const handleCopy = async (message: any) => {
+    if (!message || !message.text) {
+      logger.warn('Cannot copy: message or message.text is missing', { message });
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'لا يمكن نسخ هذه الرسالة' : 'Cannot copy this message',
+        isRTL
+      );
+      return;
+    }
+
+    try {
+      const textToCopy = message.text;
+      logger.debug('Copying message text:', { length: textToCopy.length });
+      
+      // Try expo-clipboard first (most common in Expo projects)
+      try {
+        const Clipboard = require('expo-clipboard');
+        await Clipboard.setStringAsync(textToCopy);
+        logger.debug('Successfully copied using expo-clipboard');
+      } catch (expoError) {
+        // Fallback to @react-native-clipboard/clipboard
+        try {
+          const Clipboard = require('@react-native-clipboard/clipboard');
+          Clipboard.setString(textToCopy);
+          logger.debug('Successfully copied using @react-native-clipboard/clipboard');
+        } catch (clipboardError) {
+          logger.error('Both clipboard packages failed:', { expoError, clipboardError });
+          throw new Error('Clipboard not available - packages not installed');
+        }
+      }
+      
+      // Simple one-word notification - no full alert popup
+      // Just log success (user will see clipboard worked when they paste)
+      logger.debug('Copied');
+    } catch (error: any) {
+      logger.error('Error copying message:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL 
+          ? `فشل نسخ الرسالة: ${error?.message || 'Unknown error'}` 
+          : `Failed to copy message: ${error?.message || 'Unknown error'}`,
+        isRTL
+      );
     }
   };
   
@@ -1552,15 +1431,48 @@ export default function ChatScreen() {
             <View style={[styles.dateSeparatorLine, { backgroundColor: theme.border }]} />
           </View>
         )}
-        <ChatMessage
-          message={item}
-          isOwnMessage={isOwnMessage}
+        {/* ✅ MODERN 2025: Animated message fade-in (reanimated) */}
+        <Animated.View entering={FadeInDown.duration(250)}>
+          <ChatMessage
+            message={{ ...item, chatId }}
+            isOwnMessage={isOwnMessage}
           isAdmin={isAdmin}
+          currentUserId={user?.uid}
           onEdit={handleEditMessage}
           onDelete={handleDeleteMessage}
           onViewHistory={handleViewHistory}
           onDownload={handleDownloadFile}
-        />
+          onPin={handlePinMessage}
+          onStar={handleStarMessage}
+          onRetry={handleRetryMessage}
+          onViewReadReceipts={(messageId) => {
+            router.push({
+              pathname: '/(modals)/read-receipts',
+              params: { chatId, messageId }
+            });
+          }}
+          onForward={handleForwardMessage}
+          isSelectionMode={isSelectionMode}
+          isSelected={selectedMessages.has(item.id)}
+          onSelect={(messageId, selected) => {
+            setSelectedMessages(prev => {
+              const next = new Set(prev);
+              if (selected) {
+                next.add(messageId);
+              } else {
+                next.delete(messageId);
+              }
+              return next;
+            });
+          }}
+          // Advanced features from reference system
+          onReaction={handleReaction}
+          onReply={handleReply}
+          onQuote={handleQuote}
+          onCopy={handleCopy}
+          chatId={chatId}
+          />
+        </Animated.View>
         {/* Show "Seen" indicator for latest sent message */}
         {isOwnMessage && index === messages.length - 1 && (
           <View style={styles.seenIndicator}>
@@ -1573,7 +1485,7 @@ export default function ChatScreen() {
     );
   };
   
-  // Render typing indicator with TTL check
+  // Render enhanced typing indicator with TTL check and multiple users support
   const renderTypingIndicator = () => {
     if (typingUsers.length === 0) return null;
     
@@ -1585,318 +1497,320 @@ export default function ChatScreen() {
     
     if (freshTypingUsers.length === 0) return null;
     
-    return <MessageLoading />;
+    // Get user names for typing users
+    const typingUserNames: Record<string, string> = {};
+    freshTypingUsers.forEach(uid => {
+      if (uid === otherUser?.id || uid === otherUser?.uid) {
+        typingUserNames[uid] = otherUser?.name || t('someone');
+      } else if (chatInfo?.participantNames?.[uid]) {
+        typingUserNames[uid] = chatInfo.participantNames[uid];
+      } else {
+        typingUserNames[uid] = t('someone');
+      }
+    });
+
+    return (
+      <EnhancedTypingIndicator
+        typingUsers={freshTypingUsers}
+        typingUserNames={typingUserNames}
+        maxVisibleUsers={3}
+        isOwnMessage={false}
+      />
+    );
   };
   
+  // COMMENT: PRODUCTION HARDENING - Task 4.5 - Wrap chat screen in error boundary
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
+      <ErrorBoundary
+        fallback={null}
+        onError={(error, errorInfo) => {
+          logger.error('Chat screen loading error:', {
+            error: error.message,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack,
+          });
+        }}
+        resetOnPropsChange={true}
+        resetKeys={[chatId]}
+      >
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+          </View>
         </View>
-      </View>
+      </ErrorBoundary>
     );
   }
   
   return (
+    <ErrorBoundary
+      fallback={null}
+      onError={(error, errorInfo) => {
+        logger.error('Chat screen error:', {
+          error: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+        });
+      }}
+      resetOnPropsChange={true}
+      resetKeys={[chatId]}
+    >
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: theme.surface,
-            paddingTop: insets.top + 8,
-            borderBottomColor: theme.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
+      {/* Background Gradient - Matching Home Screen Theme */}
+      <LinearGradient
+        colors={[theme.background, theme.surfaceSecondary]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
+      {/* Chat Background Theme - DISABLED: Restored to original theme colors */}
+      {/* {chatTheme && (() => {
+        if (chatTheme.type === 'color') {
+          return (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: chatTheme.value as string, opacity: 0.3 },
+              ]}
+            />
+          );
+        } else if (chatTheme.type === 'gradient' && Array.isArray(chatTheme.value)) {
+          return (
+            <LinearGradient
+              colors={chatTheme.value as string[]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          );
+        } else if (chatTheme.type === 'image' && typeof chatTheme.value === 'object' && 'uri' in chatTheme.value) {
+          return (
+            <ImageBackground
+              source={{ uri: chatTheme.value.uri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+              imageStyle={{ opacity: 0.2 }}
+            />
+          );
+        }
+        return null;
+      })()} */}
+      
+      {/* COMMENT: PRODUCTION HARDENING - Task 4.10 - Responsive container with max width on tablet */}
+      <View style={[
+        styles.contentWrapper,
+        {
+          maxWidth: isTablet ? getMaxContentWidth() : '100%',
+          alignSelf: isTablet ? 'center' : 'stretch',
+        }
+      ]}>
+      {/* COMMENT: PRIORITY 1 - File Modularization - Use extracted ChatHeader component */}
+      <ChatHeader
+        otherUser={otherUser}
+        typingUsers={typingUsers}
+        presenceStatus={getPresenceStatus()}
+        onOptionsPress={() => setShowOptionsMenu(true)}
+        isSelectionMode={isSelectionMode}
+        selectedCount={selectedMessages.size}
+        onToggleSelection={toggleSelectionMode}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+      />
 
-        <View style={[styles.headerCenter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          {/* User Avatar */}
-          {otherUser?.avatar ? (
-                      <Image
-              source={{ uri: otherUser.avatar }}
-              style={[styles.avatar, { marginLeft: isRTL ? 12 : 0, marginRight: isRTL ? 0 : 12 }]}
-                      />
-                    ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.surface, borderWidth: 2, borderColor: theme.primary, marginLeft: isRTL ? 12 : 0, marginRight: isRTL ? 0 : 12 }]}>
-              <Text style={[styles.avatarText, { color: theme.primary }]}>
-                {otherUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </Text>
-                      </View>
-                    )}
-
-          {/* User Info */}
-          <View style={[styles.userInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-            <Text style={[styles.userName, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
-              {otherUser?.name || t('chat')}
-            </Text>
-            {typingUsers.length > 0 ? (
-              <Text style={[styles.typingStatus, { color: theme.primary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'يكتب...' : 'typing...'}
-              </Text>
-            ) : (
-              <Text style={[styles.userStatus, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                {getPresenceStatus()}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.moreButton}
-          onPress={() => setShowOptionsMenu(true)}
-        >
-          <MoreVertical size={24} color={theme.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Options Menu Modal */}
-      <Modal
+      {/* COMMENT: PRIORITY 1 - File Modularization - Use extracted modal components */}
+      <ChatOptionsModal
         visible={showOptionsMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowOptionsMenu(false)}
-      >
-        <Pressable 
-          style={styles.optionsOverlay} 
-          onPress={() => setShowOptionsMenu(false)}
-        >
-          <View style={[styles.optionsMenu, { backgroundColor: theme.surface }]}>
-            <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={handleViewProfile}
-            >
-              <User size={20} color={theme.textPrimary} />
-              <Text style={[styles.optionText, { color: theme.textPrimary, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'عرض الملف الشخصي' : 'View Profile'}
-            </Text>
-            </TouchableOpacity>
-            
-              <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={handleSearchMessages}
-            >
-              <Search size={20} color={theme.textPrimary} />
-              <Text style={[styles.optionText, { color: theme.textPrimary, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'البحث في الرسائل' : 'Search Messages'}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={isMuted ? handleUnmute : handleMuteChat}
-            >
-              <BellOff size={20} color={isMuted ? theme.primary : theme.textPrimary} />
-              <Text style={[styles.optionText, { color: isMuted ? theme.primary : theme.textPrimary, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isMuted 
-                  ? (isRTL ? 'إلغاء كتم الإشعارات' : 'Unmute Notifications')
-                  : (isRTL ? 'كتم الإشعارات' : 'Mute Notifications')
-                }
-              </Text>
-              {isMuted && (
-                <View style={[styles.statusBadge, { backgroundColor: theme.primary }]}>
-                  <Text style={styles.statusBadgeText}>{isRTL ? 'مكتوم' : 'Muted'}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        onClose={() => setShowOptionsMenu(false)}
+        isMuted={isMuted}
+        isBlocked={isBlocked}
+        chatId={chatId}
+        onViewProfile={handleViewProfile}
+        onSearchMessages={handleSearchMessages}
+        onViewMediaGallery={() => {
+          setShowOptionsMenu(false);
+          router.push({
+            pathname: '/(modals)/chat-media-gallery',
+            params: { chatId }
+          });
+        }}
+        onViewPinnedMessages={() => {
+          setShowOptionsMenu(false);
+          router.push({
+            pathname: '/(modals)/pinned-messages',
+            params: { chatId }
+          });
+        }}
+        onViewStarredMessages={() => {
+          setShowOptionsMenu(false);
+          router.push('/(modals)/starred-messages');
+        }}
+        onViewChatInfo={() => {
+          setShowOptionsMenu(false);
+          const displayName = chatInfo?.name || otherUser?.name || t('chat');
+          const groupName = chatInfo?.groupName || null;
+          router.push({
+            pathname: '/(modals)/chat-info',
+            params: {
+              chatId,
+              chatName: displayName,
+              groupName: groupName || '',
+            },
+          });
+        }}
+        onMute={handleMuteChat}
+        onUnmute={handleUnmute}
+        onBlock={handleBlockUser}
+        onUnblock={handleUnblockUser}
+        onReport={handleReportUser}
+        onDeleteChat={handleDeleteChat}
+        onDisappearingMessages={() => {
+          setShowOptionsMenu(false);
+          setShowDisappearingSettings(true);
+        }}
+        onChatTheme={() => {
+          setShowOptionsMenu(false);
+          setShowThemeSelector(true);
+        }}
+        onExportChat={() => {
+          setShowOptionsMenu(false);
+          setShowExportModal(true);
+        }}
+      />
 
-            <View style={[styles.optionDivider, { backgroundColor: theme.border }]} />
-
-            <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={isBlocked ? handleUnblockUser : handleBlockUser}
-            >
-              <Ban size={20} color={isBlocked ? theme.error : theme.warning} />
-              <Text style={[styles.optionText, { color: isBlocked ? theme.error : theme.warning, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isBlocked
-                  ? (isRTL ? 'إلغاء حظر المستخدم' : 'Unblock User')
-                  : (isRTL ? 'حظر المستخدم' : 'Block User')
-                }
-              </Text>
-              {isBlocked && (
-                <View style={[styles.statusBadge, { backgroundColor: theme.error }]}>
-                  <Text style={styles.statusBadgeText}>{isRTL ? 'محظور' : 'Blocked'}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={handleReportUser}
-            >
-              <Flag size={20} color={theme.error} />
-              <Text style={[styles.optionText, { color: theme.error, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'الإبلاغ عن المستخدم' : 'Report User'}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-              style={[styles.optionItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-              onPress={handleDeleteChat}
-            >
-              <Trash2 size={20} color={theme.error} />
-              <Text style={[styles.optionText, { color: theme.error, marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                {isRTL ? 'حذف المحادثة' : 'Delete Chat'}
-                </Text>
-              </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Mute Options Modal */}
-      <Modal
+      <ChatMuteModal
         visible={showMuteOptions}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMuteOptions(false)}
-      >
-        <Pressable 
-          style={styles.optionsOverlay} 
-          onPress={() => setShowMuteOptions(false)}
-        >
-          <View style={[styles.muteOptionsMenu, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.muteTitle, { color: theme.textPrimary }]}>
-              {isRTL ? 'كتم الإشعارات لمدة' : 'Mute notifications for'}
-            </Text>
-            
-            <TouchableOpacity 
-              style={styles.muteOption}
-              onPress={() => handleMuteDuration('hour')}
-            >
-              <Text style={[styles.muteOptionText, { color: theme.textPrimary }]}>
-                {isRTL ? 'ساعة واحدة' : '1 hour'}
-              </Text>
-            </TouchableOpacity>
+        onClose={() => setShowMuteOptions(false)}
+        onMuteDuration={handleMuteDuration}
+      />
 
-            <TouchableOpacity 
-              style={styles.muteOption}
-              onPress={() => handleMuteDuration('day')}
-            >
-              <Text style={[styles.muteOptionText, { color: theme.textPrimary }]}>
-                {isRTL ? 'يوم واحد' : '1 day'}
-              </Text>
-            </TouchableOpacity>
+      {/* Forward Message Modal */}
+      <ForwardMessageModal
+        visible={showForwardModal}
+        onClose={() => {
+          setShowForwardModal(false);
+          setMessageToForward(null);
+        }}
+        message={messageToForward}
+        onForward={handleForwardToChats}
+      />
 
-            <TouchableOpacity 
-              style={styles.muteOption}
-              onPress={() => handleMuteDuration('week')}
-            >
-              <Text style={[styles.muteOptionText, { color: theme.textPrimary }]}>
-                {isRTL ? 'أسبوع واحد' : '1 week'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.muteOption}
-              onPress={() => handleMuteDuration('forever')}
-            >
-              <Text style={[styles.muteOptionText, { color: theme.error }]}>
-                {isRTL ? 'للأبد' : 'Forever'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Search Modal */}
-      <Modal
+      {/* COMMENT: PRIORITY 1 - File Modularization - Use extracted ChatSearchModal component */}
+      <ChatSearchModal
         visible={showSearchModal}
-        animationType="slide"
-        onRequestClose={() => setShowSearchModal(false)}
-      >
-        <View style={[styles.searchModalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.searchHeader, { backgroundColor: theme.surface, paddingTop: insets.top + 8 }]}>
-            <TouchableOpacity onPress={() => setShowSearchModal(false)} style={styles.searchBackButton}>
-              <ArrowLeft size={24} color={theme.textPrimary} />
-            </TouchableOpacity>
-            <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
-              <Search size={20} color={theme.textSecondary} />
-              <TextInput
-                style={[styles.searchInput, { color: theme.textPrimary }]}
-                placeholder={isRTL ? 'البحث في الرسائل...' : 'Search messages...'}
-                placeholderTextColor={theme.textSecondary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={performSearch}
-                autoFocus
-              />
-            </View>
-          </View>
-
-          {isSearching ? (
-            <View style={styles.searchLoadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>
-                {isRTL ? 'جاري البحث...' : 'Searching...'}
-              </Text>
-            </View>
-          ) : searchResults.length > 0 ? (
-            <ScrollView style={styles.searchResults}>
-              {searchResults.map((result, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.searchResultItem, { backgroundColor: theme.surface }]}
-                  onPress={() => {
-                    setShowSearchModal(false);
-                    // Scroll to message
-                  }}
-                >
-                  <Text style={[styles.searchResultText, { color: theme.textPrimary }]}>
-                    {result.context}
-                  </Text>
-                  <Text style={[styles.searchResultDate, { color: theme.textSecondary }]}>
-                    {result.message.createdAt?.toDate?.().toLocaleDateString()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : searchQuery.trim() ? (
-            <View style={styles.searchEmptyContainer}>
-              <Search size={48} color={theme.textSecondary} />
-              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
-                {isRTL ? 'لم يتم العثور على نتائج' : 'No results found'}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.searchEmptyContainer}>
-              <Search size={48} color={theme.textSecondary} />
-              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
-                {isRTL ? 'ابحث في رسائل هذه المحادثة' : 'Search in this chat'}
-              </Text>
-            </View>
-          )}
-        </View>
-      </Modal>
+        onClose={() => setShowSearchModal(false)}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onSearch={performSearch}
+        isSearching={isSearching}
+        searchResults={searchResults}
+        participants={
+          chatInfo?.participants
+            ? chatInfo.participants
+                .filter((id: string) => id !== user?.uid)
+                .map((id: string) => ({
+                  id,
+                  name: chatInfo.participantNames?.[id] || otherUser?.name || 'Unknown',
+                }))
+            : otherUser
+            ? [{ id: otherUser.id, name: otherUser.name }]
+            : []
+        }
+        onResultPress={async (result, index) => {
+          // Close search modal first
+          setShowSearchModal(false);
+          
+          // Get message ID from search result
+          const messageId = result.message?.id || result.messageId;
+          if (!messageId) {
+            logger.warn('Search result missing message ID');
+            return;
+          }
+          
+          // Find message in current messages array
+          const messageIndex = messages.findIndex(msg => msg.id === messageId);
+          
+          if (messageIndex === -1) {
+            // Message not in current view, need to load more or search differently
+            logger.debug(`Message ${messageId} not found in current view, may need to load older messages`);
+            
+            // Try to find in allMessages
+            const allMessagesIndex = allMessages.findIndex(msg => msg.id === messageId);
+            if (allMessagesIndex !== -1) {
+              // Message exists but not visible, we need to ensure it's loaded
+              // For now, show a message to user
+              CustomAlertService.showInfo(
+                isRTL ? 'معلومات' : 'Info',
+                isRTL ? 'الرسالة موجودة لكن ليست في العرض الحالي. قم بالتمرير للعثور عليها.' : 'Message exists but not in current view. Please scroll to find it.',
+                isRTL
+              );
+            } else {
+              CustomAlertService.showError(
+                isRTL ? 'خطأ' : 'Error',
+                isRTL ? 'لم يتم العثور على الرسالة' : 'Message not found',
+                isRTL
+              );
+            }
+            return;
+          }
+          
+          // Scroll to message
+          // Estimate message position (each message is approximately 60-80px high)
+          const estimatedHeightPerMessage = 70;
+          const scrollOffset = messageIndex * estimatedHeightPerMessage;
+          
+          // Wait a bit for UI to settle after modal closes
+          setTimeout(() => {
+            if (scrollViewRef.current) {
+              scrollViewRef.current.scrollTo({
+                y: scrollOffset,
+                animated: true,
+              });
+              
+              // Highlight the message briefly (could add visual highlight here)
+              logger.debug(`Scrolled to message at index ${messageIndex}, offset ${scrollOffset}`);
+            }
+          }, 300);
+        }}
+      />
 
       {/* Messages and Input Container */}
       <KeyboardAvoidingView
         style={styles.innerContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        enabled={true}
       >
         {/* Messages List */}
         <ScrollView
           ref={scrollViewRef}
           style={styles.messagesScrollView}
-          contentContainerStyle={styles.messagesContent}
+          contentContainerStyle={[
+            styles.messagesContent,
+            {
+              paddingHorizontal: isTablet ? 24 : 8,
+            }
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() => {
+            if (!isLoadingMore) {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
           onScroll={(event) => {
-            // Track visible messages for read receipts
+            // COMMENT: PRODUCTION HARDENING - Task 3.6 - Detect scroll to top for pagination
             const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
             const scrollY = contentOffset.y;
             const viewHeight = layoutMeasurement.height;
             
-            // Simple heuristic: mark messages as read when scrolled past them
+            // Load more messages when scrolled near the top (within 100px)
+            const threshold = 100;
+            if (scrollY < threshold && hasMoreMessages && !isLoadingMore && messages.length > 0) {
+              handleLoadMore();
+            }
+            
+            // Track visible messages for read receipts
             const visibleMessageIds = messages
               .filter((msg, index) => {
                 // Estimate message position (rough calculation)
@@ -1924,102 +1838,267 @@ export default function ChatScreen() {
             />
           }
         >
+          {/* COMMENT: PRODUCTION HARDENING - Task 3.6 - Loading indicator for pagination */}
+          {isLoadingMore && (
+            <View style={styles.loadMoreContainer}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.loadMoreText, { color: theme.textSecondary }]}>
+                {isRTL ? 'جاري تحميل المزيد...' : 'Loading more messages...'}
+              </Text>
+            </View>
+          )}
           {messages.map((item, index) => renderMessage({ item, index }))}
           {renderTypingIndicator()}
         </ScrollView>
 
-        {/* Typing Indicator */}
-        {typingUsers.length > 0 && (
-          <View style={[styles.typingIndicator, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-            <Text style={[styles.typingText, { color: theme.textSecondary }]}>
-              {isRTL ? 'يكتب...' : 'Typing...'}
-            </Text>
-          </View>
-        )}
+        {/* Enhanced Typing Indicator - Already rendered in messages list via renderTypingIndicator() */}
 
         {/* Chat Input - Fixed at bottom */}
-        <View style={[styles.inputContainer, { backgroundColor: theme.surface }]}>
-          <ChatInput
-            value={inputText}
-            onChangeText={setInputText}
-            onSend={handleSendMessage}
-            onSendImage={handleSendImage}
-            onSendFile={handleSendFile}
-            onSendLocation={handleSendLocation}
-            onTyping={handleTyping}
-            editMode={!!editingMessageId}
-            onCancelEdit={handleCancelEdit}
-            onStartRecording={startRecording}
-            onStopRecording={stopRecording}
-            isRecording={isRecording}
-            recordingDuration={recordingDuration}
-            isUploadingVoice={isUploadingVoice}
-            onStartVideoRecording={startVideoRecording}
-            isRecordingVideo={isRecordingVideo}
-            isUploadingVideo={isUploadingVideo}
-          />
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Edit History Modal */}
-      {selectedMessageHistory && (
-        <EditHistoryModal
-          visible={showHistoryModal}
-          onClose={() => {
-            setShowHistoryModal(false);
-            setSelectedMessageHistory(null);
-          }}
-          originalText={selectedMessageHistory.text}
-          editHistory={selectedMessageHistory.editHistory || []}
-          currentText={selectedMessageHistory.text}
-          createdAt={selectedMessageHistory.createdAt}
-        />
-      )}
-
-      {/* Camera Modal for Video Recording - Expo SDK 54 Compatible */}
-      {showCameraModal && (
-        <Modal
-          visible={showCameraModal}
-          animationType="slide"
-          onRequestClose={() => setShowCameraModal(false)}
-        >
-          <View style={styles.cameraContainer}>
-            {/* CameraView with NO children - Expo SDK 54 requirement */}
-            <CameraView
-              style={styles.camera}
-              facing="back"
-              mode="video"
-              ref={cameraRef}
-              onCameraReady={() => console.log('🎥 Camera ready')}
+        <View style={[
+          styles.inputContainer, 
+          { 
+            backgroundColor: 'transparent', // Removed grey background
+            paddingHorizontal: isTablet ? 24 : 16,
+            // Don't add paddingBottom here - ChatInput handles its own padding
+            // Safe area insets are handled by KeyboardAvoidingView
+          }
+        ]}>
+          {!isSelectionMode && (
+            <ChatInput
+              value={inputText}
+              onChangeText={setInputText}
+              onSend={handleSendMessage}
+              onSendImage={async (uri: string) => {
+                logger.debug('🟢 [ChatScreen] onSendImage wrapper called', { uri, chatId, userId: user?.uid });
+                try {
+                  if (!uri || typeof uri !== 'string') {
+                    logger.error('❌ [ChatScreen] Invalid image URI in onSendImage:', uri);
+                    CustomAlertService.showError(
+                      isRTL ? 'خطأ' : 'Error',
+                      isRTL ? 'رابط الصورة غير صحيح' : 'Invalid image URI'
+                    );
+                    return;
+                  }
+                  logger.debug('🟢 [ChatScreen] Valid URI, checking handleSendImage function', { 
+                    uri, 
+                    isFunction: typeof handleSendImage === 'function',
+                    chatId,
+                    userId: user?.uid
+                  });
+                  
+                  if (typeof handleSendImage !== 'function') {
+                    logger.error('❌ [ChatScreen] handleSendImage is not a function:', typeof handleSendImage);
+                    throw new Error('handleSendImage is not a function');
+                  }
+                  
+                  logger.debug('📸 [ChatScreen] Calling handleSendImage with URI:', uri);
+                  await handleSendImage(uri);
+                  logger.debug('✅ [ChatScreen] handleSendImage completed successfully');
+                } catch (error) {
+                  logger.error('❌ [ChatScreen] Error in onSendImage wrapper:', error);
+                  CustomAlertService.showError(
+                    isRTL ? 'خطأ' : 'Error',
+                    isRTL ? 'فشل إرسال الصورة. الرجاء المحاولة مرة أخرى' : 'Failed to send image. Please try again.'
+                  );
+                }
+                logger.debug('🟢 [ChatScreen] onSendImage wrapper completed');
+              }}
+              onSendGif={handleSendGif}
+              onSendFile={handleSendFile}
+              onSendLocation={handleSendLocation}
+              useGiphyAPI={false} // TODO: Add Giphy API key configuration
+              giphyApiKey={undefined} // TODO: Get from config
+              quickReplies={undefined} // TODO: Load from user preferences or chat context
+              showQuickReplies={!inputText.trim()} // Show when input is empty
+              onScheduleMessage={handleScheduleMessage}
+              onTyping={handleTyping}
+              editMode={!!editingMessageId}
+              onCancelEdit={handleCancelEdit}
+              // Voice recording - Only advanced recorder
+              isUploadingVoice={isUploadingVoice}
+              onOpenAdvancedVoiceRecorder={() => setShowAdvancedVoiceRecorder(true)}
+              // Video recording - ImagePicker
+              onStartVideoRecording={startVideoRecording}
+              isUploadingVideo={isUploadingVideo}
             />
-            
-            {/* Camera controls OVERLAY using absolute positioning */}
-            <View style={styles.cameraControls}>
+          )}
+
+          {/* Batch Action Toolbar */}
+          {isSelectionMode && (
+            <View style={[styles.batchToolbar, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
               <TouchableOpacity
-                style={styles.cameraCloseButton}
-                onPress={() => setShowCameraModal(false)}
+                onPress={() => setIsSelectionMode(false)}
+                style={styles.batchToolbarButton}
               >
-                <Text style={styles.cameraCloseText}>✕</Text>
+                <X size={20} color={theme.textPrimary} />
               </TouchableOpacity>
               
-              <View style={styles.cameraBottomControls}>
+              <Text style={[styles.batchToolbarText, { color: theme.textPrimary }]}>
+                {selectedMessages.size > 0 
+                  ? (isRTL ? `${selectedMessages.size} محدد` : `${selectedMessages.size} selected`)
+                  : (isRTL ? 'اختر الرسائل' : 'Select messages')
+                }
+              </Text>
+
+              <View style={styles.batchToolbarActions}>
                 <TouchableOpacity
-                  style={[
-                    styles.recordButton,
-                    { backgroundColor: isRecordingVideo ? theme.error : theme.primary }
-                  ]}
-                  onPress={isRecordingVideo ? stopVideoRecording : recordVideo}
+                  onPress={handleBatchCopy}
+                  style={[styles.batchActionButton, selectedMessages.size === 0 && styles.batchActionButtonDisabled]}
+                  disabled={selectedMessages.size === 0}
                 >
-                  <Text style={styles.recordButtonText}>
-                    {isRecordingVideo ? '⏹️' : '▶️'}
-                  </Text>
+                  <Copy size={18} color={selectedMessages.size > 0 ? theme.textPrimary : theme.textSecondary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleBatchForward}
+                  style={[styles.batchActionButton, selectedMessages.size === 0 && styles.batchActionButtonDisabled]}
+                  disabled={selectedMessages.size === 0}
+                >
+                  <Forward size={18} color={selectedMessages.size > 0 ? theme.textPrimary : theme.textSecondary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleBatchPin}
+                  style={[styles.batchActionButton, selectedMessages.size === 0 && styles.batchActionButtonDisabled]}
+                  disabled={selectedMessages.size === 0}
+                >
+                  <Pin size={18} color={selectedMessages.size > 0 ? theme.textPrimary : theme.textSecondary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleBatchStar}
+                  style={[styles.batchActionButton, selectedMessages.size === 0 && styles.batchActionButtonDisabled]}
+                  disabled={selectedMessages.size === 0}
+                >
+                  <Star size={18} color={selectedMessages.size > 0 ? '#FFD700' : theme.textSecondary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleBatchDelete}
+                  style={[styles.batchActionButton, selectedMessages.size === 0 && styles.batchActionButtonDisabled]}
+                  disabled={selectedMessages.size === 0}
+                >
+                  <Trash2 size={18} color={selectedMessages.size > 0 ? theme.error : theme.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
-        </Modal>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+      </View>
+      {/* COMMENT: PRODUCTION HARDENING - Task 4.10 - End responsive wrapper */}
+
+      {/* Edit History Modal */}
+      {/* COMMENT: PRODUCTION HARDENING - Task 4.7 - Lazy load EditHistoryModal with Suspense */}
+      {selectedMessageHistory && (
+        <Suspense
+          fallback={
+            <Modal visible={showHistoryModal} transparent animationType="fade">
+              <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                  Loading history...
+                </Text>
+              </View>
+            </Modal>
+          }
+        >
+          <EditHistoryModal
+            visible={showHistoryModal}
+            onClose={() => {
+              setShowHistoryModal(false);
+              setSelectedMessageHistory(null);
+            }}
+            originalText={selectedMessageHistory.text}
+            editHistory={selectedMessageHistory.editHistory || []}
+            currentText={selectedMessageHistory.text}
+            createdAt={selectedMessageHistory.createdAt}
+          />
+        </Suspense>
       )}
+
+      {/* Advanced Voice Recorder Modal */}
+      <Modal
+        visible={showAdvancedVoiceRecorder}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAdvancedVoiceRecorder(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <AdvancedVoiceRecorder
+              onRecordingComplete={handleAdvancedVoiceRecordingComplete}
+              onCancel={() => setShowAdvancedVoiceRecorder(false)}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Camera Modal for Video Recording - Expo SDK 54 Compatible */}
+      {/* Camera Modal removed - using ImagePicker for video selection instead */}
+
+      {/* Disappearing Message Settings Modal */}
+      <DisappearingMessageSettings
+        visible={showDisappearingSettings}
+        onClose={() => setShowDisappearingSettings(false)}
+        currentDuration={disappearingDuration === 0 ? 'off' : disappearingDuration as DisappearingMessageDuration}
+        onDurationChange={async (duration) => {
+          if (!chatId) return;
+          try {
+            const durationValue = duration === 'off' ? 0 : duration;
+            await disappearingMessageService.setDisappearingDuration(chatId, durationValue);
+            setDisappearingDuration(durationValue);
+            setShowDisappearingSettings(false);
+            
+            CustomAlertService.showSuccess(
+              isRTL ? 'نجح' : 'Success',
+              isRTL 
+                ? `تم تعيين مدة الرسائل المتلاشية إلى ${duration === 'off' ? 'إيقاف' : duration === 30 ? '30 ثانية' : duration === 60 ? 'دقيقة واحدة' : duration === 300 ? '5 دقائق' : duration === 3600 ? 'ساعة واحدة' : duration === 86400 ? '24 ساعة' : duration === 604800 ? '7 أيام' : `${duration} ثانية`}`
+                : `Disappearing messages set to ${duration === 'off' ? 'Off' : duration === 30 ? '30 seconds' : duration === 60 ? '1 minute' : duration === 300 ? '5 minutes' : duration === 3600 ? '1 hour' : duration === 86400 ? '24 hours' : duration === 604800 ? '7 days' : `${duration} seconds`}`,
+              isRTL
+            );
+          } catch (error) {
+            logger.error('Error setting disappearing message duration:', error);
+            CustomAlertService.showError(
+              isRTL ? 'خطأ' : 'Error',
+              isRTL ? 'فشل تعيين مدة الرسائل المتلاشية' : 'Failed to set disappearing message duration',
+              isRTL
+            );
+          }
+        }}
+      />
+      
+      {/* Chat Theme Selector Modal */}
+      <ChatThemeSelector
+        visible={showThemeSelector}
+        onClose={() => setShowThemeSelector(false)}
+        chatId={chatId}
+        currentTheme={chatTheme}
+        onThemeChange={async (newTheme) => {
+          setChatTheme(newTheme);
+          setShowThemeSelector(false);
+        }}
+      />
+
+      {/* Chat Export Modal */}
+      <ChatExportModal
+        visible={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        chatId={chatId}
+        chatName={chatInfo?.name || otherUser?.name || 'Chat'}
+        messages={messages}
+        onExportComplete={(format) => {
+          CustomAlertService.showSuccess(
+            isRTL ? 'نجح' : 'Success',
+            isRTL 
+              ? `تم تصدير المحادثة بنجاح بتنسيق ${format === 'text' ? 'نص' : 'PDF'}`
+              : `Chat exported successfully as ${format.toUpperCase()}`,
+            isRTL
+          );
+        }}
+      />
     </View>
+    </ErrorBoundary>
   );
 }
 
@@ -2027,13 +2106,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+  // COMMENT: PRODUCTION HARDENING - Task 4.10 - Responsive content wrapper for tablet
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
   },
+  // COMMENT: PRIORITY 1 - File Modularization - Header styles moved to ChatHeader component
   dateSeparatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2056,180 +2134,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  backButton: {
-    padding: 4,
-    marginRight: 8,
-  },
-  headerCenter: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  userInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  userStatus: {
-    fontSize: 12,
-  },
-  typingStatus: {
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  moreButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  optionsOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    paddingTop: 60,
-    paddingRight: 16,
-  },
-  optionsMenu: {
-    borderRadius: 12,
-    paddingVertical: 8,
-    minWidth: 220,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  optionDivider: {
-    height: 1,
-    marginVertical: 8,
-  },
-  statusBadge: {
-    marginLeft: 'auto',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  muteOptionsMenu: {
-    borderRadius: 12,
-    paddingVertical: 16,
-    minWidth: 220,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  muteTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  muteOption: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  muteOptionText: {
-    fontSize: 16,
-  },
-  searchModalContainer: {
-    flex: 1,
-  },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  searchBackButton: {
-    padding: 4,
-    marginRight: 8,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  searchLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  searchLoadingText: {
-    fontSize: 16,
-  },
-  searchResults: {
-    flex: 1,
-    padding: 16,
-  },
-  searchResultItem: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  searchResultText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  searchResultDate: {
-    fontSize: 12,
-  },
-  searchEmptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  searchEmptyText: {
-    fontSize: 16,
-  },
+  // COMMENT: PRIORITY 1 - File Modularization - Header-related styles (backButton, headerCenter, avatar, etc.) moved to ChatHeader component
+  // COMMENT: PRIORITY 1 - File Modularization - Search modal styles moved to ChatSearchModal component
   innerContainer: {
     flex: 1,
   },
@@ -2248,13 +2154,14 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   messagesContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingVertical: 12, // ✅ Modern spacing: 8-12px padding around chat
+    paddingHorizontal: 10, // ✅ Modern spacing: 8-12px padding around chat
     flexGrow: 1,
   },
   inputContainer: {
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.1)',
+    paddingBottom: 0, // No padding here - ChatInput handles it with safe area insets
   },
   cameraContainer: {
     flex: 1,
@@ -2322,5 +2229,55 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: 'italic',
     opacity: 0.7,
+  },
+  // COMMENT: PRODUCTION HARDENING - Task 3.6 - Pagination loading styles
+  loadMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  loadMoreText: {
+    fontSize: 14,
+  },
+  batchToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  batchToolbarButton: {
+    padding: 8,
+  },
+  batchToolbarText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  batchToolbarActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  batchActionButton: {
+    padding: 8,
+  },
+  batchActionButtonDisabled: {
+    opacity: 0.3,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
   },
 });

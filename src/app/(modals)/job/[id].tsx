@@ -8,6 +8,8 @@ import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, User, CheckCircle, Hea
 import ModalHeader from '../../components/ModalHeader';
 import { jobService, Job } from '../../../services/jobService';
 import { useAuth } from '../../../contexts/AuthContext';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -45,7 +47,8 @@ export default function JobDetailScreen() {
         setJob(jobData);
       }
     } catch (error) {
-      console.error('Error loading job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job:', error);
     } finally {
       setLoading(false);
     }

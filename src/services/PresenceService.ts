@@ -22,11 +22,16 @@ import {
   deleteField
 } from 'firebase/firestore';
 import { PresenceStatus, PresenceData, TypingIndicator } from '../types/EnhancedChat';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 class PresenceServiceClass {
   private presenceListeners: Map<string, () => void> = new Map();
   private typingTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private typingListeners: Map<string, () => void> = new Map();
+  private retryAttempts: Map<string, number> = new Map();
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
 
   /**
    * Subscribe to user presence updates
@@ -71,7 +76,7 @@ class PresenceServiceClass {
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } catch (error) {
-      console.error('Error updating presence:', error);
+      logger.error('Error updating presence:', error);
     }
   }
 
@@ -108,9 +113,9 @@ class PresenceServiceClass {
       }, 3000);
 
       this.typingTimeouts.set(timeoutKey, timeout);
-      console.log('✅ Typing indicator started for chat:', chatId);
+      logger.debug('✅ Typing indicator started for chat:', chatId);
     } catch (error) {
-      console.error('Error starting typing:', error);
+      logger.error('Error starting typing:', error);
     }
   }
 
@@ -136,9 +141,9 @@ class PresenceServiceClass {
         clearTimeout(this.typingTimeouts.get(timeoutKey)!);
         this.typingTimeouts.delete(timeoutKey);
       }
-      console.log('✅ Typing indicator stopped for chat:', chatId);
+      logger.debug('✅ Typing indicator stopped for chat:', chatId);
     } catch (error) {
-      console.error('Error stopping typing:', error);
+      logger.error('Error stopping typing:', error);
     }
   }
 
@@ -155,7 +160,7 @@ class PresenceServiceClass {
         [`typing.${targetUid}`]: deleteField(),
         [`typingUpdated.${targetUid}`]: deleteField()
       }).catch(() => {});
-      console.log('✅ Typing fields cleared for chat:', chatId);
+      logger.debug('✅ Typing fields cleared for chat:', chatId);
     } catch (error) {
       // Silent fail - cleanup is best-effort
     }
@@ -206,12 +211,12 @@ class PresenceServiceClass {
         callback([]);
       }
     }, (error) => {
-      console.error('Error in typing subscription:', error);
+      logger.error('Error in typing subscription:', error);
       callback([]);
     });
 
     this.typingListeners.set(listenerKey, unsubscribe);
-    console.log('✅ Real-time typing subscription active for chat:', chatId);
+    logger.debug('✅ Real-time typing subscription active for chat:', chatId);
     return unsubscribe;
   }
 
@@ -230,7 +235,7 @@ class PresenceServiceClass {
       
       return new Date();
     } catch (error) {
-      console.error('Error getting last seen:', error);
+      logger.error('Error getting last seen:', error);
       return new Date();
     }
   }
@@ -249,18 +254,21 @@ class PresenceServiceClass {
         this.typingTimeouts.delete(key);
       });
 
-      console.log('🧹 Force stopped all typing indicators');
+      logger.debug('🧹 Force stopped all typing indicators');
     } catch (error) {
-      console.error('Error force stopping typing:', error);
+      logger.error('Error force stopping typing:', error);
     }
   }
 
   /**
-   * Connect user and set online status
+   * Connect user and set online status with retry logic
    */
   async connectUser(uid: string): Promise<void> {
+    const operationKey = `connect_${uid}`;
+    const attempt = this.retryAttempts.get(operationKey) || 0;
+    
     try {
-      console.log('🟢 Presence: Connecting user', uid);
+      logger.debug(`🟢 Presence: Connecting user ${uid} (attempt ${attempt + 1})`);
       
       const presenceRef = doc(db, 'presence', uid);
       await setDoc(presenceRef, {
@@ -268,9 +276,28 @@ class PresenceServiceClass {
         lastSeen: serverTimestamp()
       });
       
-      console.log('✅ Presence: User connected successfully');
-    } catch (error) {
-      console.error('❌ Presence: Error connecting user:', error);
+      logger.info('✅ Presence: User connected successfully');
+      this.retryAttempts.delete(operationKey); // Clear retry count on success
+    } catch (error: any) {
+      logger.error(`❌ Presence: Error connecting user (attempt ${attempt + 1}):`, error);
+      
+      // Check if it's a permission error and we haven't exceeded max retries
+      if (error?.code === 'permission-denied' && attempt < this.MAX_RETRIES) {
+        const delay = this.RETRY_DELAYS[attempt] || 4000;
+        logger.debug(`🔄 Presence: Retrying connection in ${delay}ms...`);
+        
+        this.retryAttempts.set(operationKey, attempt + 1);
+        setTimeout(() => {
+          this.connectUser(uid).catch(() => {
+            // Final attempt failed, emit explicit error
+            logger.error(`❌ Presence: Failed to connect user ${uid} after ${this.MAX_RETRIES} attempts`);
+          });
+        }, delay);
+        return;
+      }
+      
+      // Emit explicit error for non-retryable cases
+      logger.error(`❌ Presence: Failed to connect user ${uid} - ${error?.message || 'Unknown error'}`);
       throw error;
     }
   }
@@ -283,7 +310,7 @@ class PresenceServiceClass {
     if (!uid) return;
 
     try {
-      console.log('🔴 Presence: Disconnecting user', uid);
+      logger.debug('🔴 Presence: Disconnecting user', uid);
       
       const presenceRef = doc(db, 'presence', uid);
       await setDoc(presenceRef, {
@@ -294,9 +321,9 @@ class PresenceServiceClass {
       // Clean up all listeners
       this.cleanup();
       
-      console.log('✅ Presence: User disconnected successfully');
+      logger.info('✅ Presence: User disconnected successfully');
     } catch (error) {
-      console.error('❌ Presence: Error disconnecting user:', error);
+      logger.error('❌ Presence: Error disconnecting user:', error);
       throw error;
     }
   }
@@ -308,7 +335,8 @@ class PresenceServiceClass {
     uids: string[],
     callback: (presenceMap: Record<string, { state: 'online' | 'offline', lastSeen: number }>) => void
   ): () => void {
-    console.log('👥 Presence: Subscribing to users', uids);
+    // COMMENT: PRIORITY 1 - Use logger instead of console.log
+    logger.debug('👥 Presence: Subscribing to users', uids);
     
     const presenceMap: Record<string, { state: 'online' | 'offline', lastSeen: number }> = {};
     const unsubscribes: (() => void)[] = [];
@@ -332,7 +360,8 @@ class PresenceServiceClass {
         // Call callback with updated map
         callback({ ...presenceMap });
       }, (error) => {
-        console.error('❌ Presence: Error in presence subscription:', error);
+        // COMMENT: PRIORITY 1 - Use logger instead of console.error
+        logger.error('❌ Presence: Error in presence subscription:', error);
         presenceMap[uid] = {
           state: 'offline',
           lastSeen: Date.now()
@@ -345,7 +374,9 @@ class PresenceServiceClass {
     
     // Return cleanup function
     return () => {
-      console.log('🧹 Presence: Unsubscribing from users', uids);
+      if (__DEV__) {
+        logger.debug('🧹 Presence: Unsubscribing from users', uids);
+      }
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
   }

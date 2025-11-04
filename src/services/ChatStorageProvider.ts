@@ -33,6 +33,7 @@ import {
   doc, 
   getDocs, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc,
   query, 
@@ -44,6 +45,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import LocalChatStorage from './LocalChatStorage';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface ChatMessage {
   id: string;
@@ -64,11 +67,14 @@ export interface MessageOptions {
 class ChatStorageProviderClass {
   /**
    * Determine if chat should use Firestore or LocalStorage
-   * UNIFIED ROUTING RULE: job-*, admin-*, system-* → Firestore, all others → LocalStorage
+   * UNIFIED ROUTING RULE: All chats use Firestore for real-time sync
+   * Previously: job-*, admin-*, system-* → Firestore, all others → LocalStorage
+   * Updated: All chats now use Firestore to ensure real-time message delivery across devices
    */
   shouldUseFirestore(chatId: string): boolean {
-    // Job chats, admin chats, and system chats use Firestore
-    return chatId.includes('job-') || chatId.includes('admin-') || chatId.includes('system-');
+    // All chats now use Firestore for real-time synchronization
+    // This ensures messages appear on receiver's device immediately
+    return true;
   }
 
   /**
@@ -76,7 +82,8 @@ class ChatStorageProviderClass {
    */
   async getMessages(chatId: string, opts?: MessageOptions): Promise<ChatMessage[]> {
     const useFirestore = this.shouldUseFirestore(chatId);
-    console.log(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
     
     if (useFirestore) {
       return this.getMessagesFromFirestore(chatId, opts);
@@ -90,7 +97,8 @@ class ChatStorageProviderClass {
    */
   async sendMessage(chatId: string, payload: any): Promise<string> {
     const useFirestore = this.shouldUseFirestore(chatId);
-    console.log(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
     
     if (useFirestore) {
       return this.sendMessageToFirestore(chatId, payload);
@@ -104,7 +112,8 @@ class ChatStorageProviderClass {
    */
   async updateMessage(chatId: string, id: string, patch: Partial<ChatMessage>): Promise<void> {
     const useFirestore = this.shouldUseFirestore(chatId);
-    console.log(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
     
     if (useFirestore) {
       return this.updateMessageInFirestore(chatId, id, patch);
@@ -118,7 +127,8 @@ class ChatStorageProviderClass {
    */
   async deleteMessage(chatId: string, id: string): Promise<void> {
     const useFirestore = this.shouldUseFirestore(chatId);
-    console.log(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug(`Storage → ${useFirestore ? 'Firestore' : 'Local'}`, chatId);
     
     if (useFirestore) {
       return this.deleteMessageFromFirestore(chatId, id);
@@ -145,12 +155,25 @@ class ChatStorageProviderClass {
 
   private async sendMessageToFirestore(chatId: string, payload: any): Promise<string> {
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const docRef = await addDoc(messagesRef, {
-      ...payload,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return docRef.id;
+    
+    // If payload includes an id, use setDoc instead of addDoc to use that specific ID
+    if (payload.id) {
+      const messageRef = doc(db, 'chats', chatId, 'messages', payload.id);
+      const { id, ...messageData } = payload; // Remove id from payload
+      await setDoc(messageRef, {
+        ...messageData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      return id;
+    } else {
+      const docRef = await addDoc(messagesRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      return docRef.id;
+    }
   }
 
   private async updateMessageInFirestore(chatId: string, id: string, patch: Partial<ChatMessage>): Promise<void> {

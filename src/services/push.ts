@@ -13,6 +13,14 @@ import { logger } from "@/utils/logger";
  * Register push token for user with proper EAS projectId
  */
 export async function registerPushToken(userId: string): Promise<string> {
+  // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip in Expo Go
+  // Expo Go doesn't support push notifications in SDK 53+
+  const isExpoGo = Constants.executionEnvironment === 'storeClient';
+  
+  if (isExpoGo) {
+    throw new Error("Push notifications not supported in Expo Go. Use a development build.");
+  }
+
   try {
     logger.info(`[PushService] 🚀 Registering push token for user: ${userId}`);
 
@@ -154,6 +162,17 @@ export async function registerPushTokenSafely(userId: string): Promise<string | 
  * Configure notification handlers
  */
 export function configureNotificationHandlers() {
+  // COMMENT: PRODUCTION HARDENING - Expo Go Compatibility - Skip in Expo Go
+  // Expo Go doesn't support push notifications in SDK 53+
+  const isExpoGo = Constants.executionEnvironment === 'storeClient';
+  
+  if (isExpoGo) {
+    if (__DEV__) {
+      logger.info(`[PushService] ⚠️ Running in Expo Go - notification handlers disabled`);
+    }
+    return;
+  }
+
   // Set notification handler
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -165,3 +184,9 @@ export function configureNotificationHandlers() {
 
   logger.info(`[PushService] ✅ Notification handlers configured`);
 }
+
+
+
+
+
+

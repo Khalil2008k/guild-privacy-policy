@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { Upload, Camera, FileText, Image as ImageIcon, Trash2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BackendAPI } from '../../config/backend';
@@ -75,7 +76,7 @@ export default function EvidenceUploadScreen() {
   const handleImagePicker = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,

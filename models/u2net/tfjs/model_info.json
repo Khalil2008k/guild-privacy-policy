@@ -1,0 +1,26 @@
+{
+  "name": "U²-Net",
+  "version": "1.0",
+  "description": "U²-Net: Going Deeper with Nested U-Structure for Salient Object Detection",
+  "paper": "Pattern Recognition 2020",
+  "github": "https://github.com/xuebinqin/U-2-Net",
+  "input_size": [
+    320,
+    320,
+    3
+  ],
+  "output_size": [
+    320,
+    320,
+    1
+  ],
+  "format": "TensorFlow.js",
+  "files": {
+    "model.json": "Model architecture",
+    "model.weights.bin": "Model weights"
+  },
+  "usage": {
+    "preprocessing": "Resize image to 320x320, normalize to 0-1",
+    "postprocessing": "Resize mask back to original size, apply to image"
+  }
+}

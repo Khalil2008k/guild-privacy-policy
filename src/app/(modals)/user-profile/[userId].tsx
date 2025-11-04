@@ -15,6 +15,8 @@ import { useI18n } from '@/contexts/I18nProvider';
 import { ArrowLeft, Star, MapPin, Briefcase, Mail, Phone } from 'lucide-react-native';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 interface UserProfile {
   id: string;
@@ -77,7 +79,8 @@ export default function UserProfileScreen() {
         });
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading user profile:', error);
     } finally {
       setLoading(false);
     }

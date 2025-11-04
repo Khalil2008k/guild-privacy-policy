@@ -21,6 +21,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { CoinWalletAPIClient } from '../../services/CoinWalletAPIClient';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -47,7 +49,8 @@ export default function CoinTransactionsScreen() {
       const data = await CoinWalletAPIClient.getTransactions();
       setTransactions(data.transactions || []);
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading transactions:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

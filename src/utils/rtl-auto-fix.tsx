@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { useI18n } from '../contexts/I18nProvider';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from './logger';
 
 /**
  * Hook that automatically detects and fixes common RTL issues
@@ -37,7 +39,7 @@ export function useRTLAutoFix() {
   useEffect(() => {
     if (isRTL) {
       // Auto-fix would happen here in production
-      console.log('RTL mode enabled - auto-fixes applied');
+      logger.debug('RTL mode enabled - auto-fixes applied');
     }
   }, [isRTL]);
   
@@ -88,7 +90,7 @@ export function makeRTLAware<P extends object>(
  */
 export function validateRTLSupport(componentName: string): boolean {
   // This would run at build time in a real setup
-  console.log(`Validating RTL support for: ${componentName}`);
+  logger.debug(`Validating RTL support for: ${componentName}`);
   return true;
 }
 

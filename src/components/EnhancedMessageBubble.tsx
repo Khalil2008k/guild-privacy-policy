@@ -145,11 +145,13 @@ export default function EnhancedMessageBubble({
           {!message.deletedForEveryone ? (
             <>
               {/* Image */}
+              {/* COMMENT: PRODUCTION HARDENING - Task 4.9 - Use OptimizedImage for message images */}
               {message.fileType?.startsWith('image/') && message.fileUrl && (
-                <Image
+                <OptimizedImage
                   source={{ uri: message.fileUrl }}
                   style={styles.messageImage}
                   resizeMode="cover"
+                  compression={{ maxWidth: 800, maxHeight: 800, quality: 0.85 }}
                 />
               )}
 
@@ -559,5 +561,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+
+
+
+
+
 
 

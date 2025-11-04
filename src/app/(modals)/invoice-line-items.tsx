@@ -17,6 +17,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useCustomAlert } from '../../components/CustomAlert';
 import { getContrastTextColor } from '../../utils/colorUtils';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -258,7 +260,8 @@ export default function InvoiceLineItemsScreen() {
         'success'
       );
     } catch (error) {
-      console.error('Error saving invoice:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving invoice:', error);
       showAlert('Save Error', 'Failed to save invoice. Please try again.', 'error');
     } finally {
       setSaving(false);
@@ -286,7 +289,8 @@ export default function InvoiceLineItemsScreen() {
         'success'
       );
     } catch (error) {
-      console.error('Error sending invoice:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending invoice:', error);
       showAlert('Send Error', 'Failed to send invoice. Please try again.', 'error');
     } finally {
       setLoading(false);

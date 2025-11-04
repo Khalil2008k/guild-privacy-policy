@@ -1,3 +1,12 @@
+/**
+ * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+ * This file is deprecated - Socket.IO is no longer used in production.
+ * Chat system now uses Firestore onSnapshot for real-time messaging.
+ * 
+ * @deprecated Use Firestore onSnapshot via chatService.listenToMessages() instead
+ */
+
+/*
 import { io, Socket } from 'socket.io-client';
 import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
@@ -6,6 +15,9 @@ import Constants from 'expo-constants';
  * Safe Socket Connection Service
  * Only connects with valid auth token, otherwise skips gracefully (no noise)
  * Fixes: Socket connection errors and authentication issues
+ * 
+ * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+ * @deprecated Use Firestore onSnapshot instead
  */
 
 /**
@@ -133,7 +145,10 @@ export function isSocketConnectionSupported(): boolean {
 
 /**
  * Disconnect socket safely
+ * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+ * @deprecated
  */
+/*
 export function disconnectSocketSafely(socket: Socket | null): void {
   if (socket) {
     try {
@@ -143,4 +158,22 @@ export function disconnectSocketSafely(socket: Socket | null): void {
       logger.warn(`[SocketService] ⚠️ Error disconnecting socket:`, error);
     }
   }
+}
+*/
+
+// Export placeholder functions to maintain compatibility
+export async function maybeConnectSocket(authToken?: string): Promise<any> {
+  return null;
+}
+
+export async function connectSocketSafely(): Promise<any> {
+  return null;
+}
+
+export function isSocketConnectionSupported(): boolean {
+  return false;
+}
+
+export function disconnectSocketSafely(socket: any): void {
+  // No-op
 }

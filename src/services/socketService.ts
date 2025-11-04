@@ -1,4 +1,15 @@
 /**
+ * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+ * Socket.IO Service - DEPRECATED
+ * 
+ * This service is no longer used in production. Chat system now uses Firestore onSnapshot
+ * for real-time messaging. This file is kept for reference only.
+ * 
+ * @deprecated Use Firestore onSnapshot via chatService.listenToMessages() instead
+ */
+
+/*
+/**
  * Socket.IO Service - Production-grade real-time communication
  * Following 2025 best practices for React Native Socket.IO implementation
  * 
@@ -9,6 +20,9 @@
  * - Type-safe event handling
  * - Token refresh on reconnect
  * - Network state monitoring
+ * 
+ * COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+ * @deprecated Use Firestore onSnapshot instead
  */
 
 import { io, Socket } from 'socket.io-client';
@@ -16,6 +30,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { config } from '../config/environment';
 import { maybeConnectSocket, disconnectSocketSafely } from './socket';
+// COMMENT: PRIORITY 1 - Replace console statements with logger (deprecated service but still has active code)
+import { logger } from '../utils/logger';
 
 // Event types for type safety
 export interface SocketEvents {
@@ -82,12 +98,12 @@ class SocketService {
       
       if (this.socket) {
         this.setupEventHandlers();
-        console.log('✅ Socket connection initiated with authenticated token');
+        logger.debug('✅ Socket connection initiated with authenticated token');
       } else {
-        console.log('Socket connection skipped (no token/offline)');
+        logger.debug('Socket connection skipped (no token/offline)');
       }
     } catch (error) {
-      console.error('❌ Socket connection error:', error);
+      logger.error('❌ Socket connection error:', error);
     }
   }
 
@@ -99,7 +115,7 @@ class SocketService {
 
     // Connection events
     this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket?.id);
+      logger.debug('Socket connected:', this.socket?.id);
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.processEventQueue();
@@ -107,13 +123,13 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
+      logger.debug('Socket disconnected:', reason);
       this.isConnected = false;
       this.emit('disconnected', { reason });
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
+      logger.error('Socket connection error:', error.message);
       this.reconnectAttempts++;
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -147,7 +163,7 @@ class SocketService {
 
     // Error handling
     this.socket.on('error', (error) => {
-      console.error('Socket error:', error);
+      logger.error('Socket error:', error);
       this.emit('error', error);
     });
 
@@ -185,7 +201,7 @@ class SocketService {
   private setupNetworkListener(): void {
     this.networkUnsubscribe = NetInfo.addEventListener(state => {
       if (state.isConnected && !this.isConnected && this.socket) {
-        console.log('Network reconnected, attempting socket reconnection');
+        logger.debug('Network reconnected, attempting socket reconnection');
         this.socket.connect();
       }
     });
@@ -200,7 +216,7 @@ class SocketService {
     } else {
       // Queue event for later
       this.eventQueue.push({ event, data });
-      console.log(`Event queued: ${event}`);
+      logger.debug(`Event queued: ${event}`);
     }
   }
 
@@ -243,7 +259,7 @@ class SocketService {
         try {
           callback(data);
         } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
+          logger.error(`Error in event listener for ${event}:`, error);
         }
       });
     }
@@ -255,7 +271,7 @@ class SocketService {
   private processEventQueue(): void {
     if (!this.isConnected || !this.socket) return;
 
-    console.log(`Processing ${this.eventQueue.length} queued events`);
+    logger.debug(`Processing ${this.eventQueue.length} queued events`);
     
     while (this.eventQueue.length > 0) {
       const { event, data } = this.eventQueue.shift()!;
@@ -409,8 +425,34 @@ class SocketService {
 }
 
 // Export singleton instance
+// COMMENT: PRODUCTION HARDENING - Task 3.2 - Socket.IO removed from production
+/*
 export const socketService = new SocketService();
 
 // Export types
 export type { SocketEvents, SocketEventName };
+*/
+
+// Export placeholder to maintain compatibility
+export const socketService = {
+  connect: async () => {},
+  disconnect: () => {},
+  on: () => {},
+  off: () => {},
+  emit: () => {},
+  sendMessage: () => {},
+  markMessagesAsRead: () => {},
+  joinChat: () => {},
+  leaveChat: () => {},
+  startTyping: () => {},
+  stopTyping: () => {},
+  initiateCall: () => {},
+  acceptCall: () => {},
+  rejectCall: () => {},
+  endCall: () => {},
+};
+
+// Export placeholder types
+export type SocketEvents = Record<string, any>;
+export type SocketEventName = string;
 

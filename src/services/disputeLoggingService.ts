@@ -14,6 +14,8 @@ import { db } from '../config/firebase';
 import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import * as Crypto from 'expo-crypto';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface DeviceInfo {
   platform: string;
@@ -97,7 +99,8 @@ export class DisputeLoggingService {
           deviceId = 'unknown-platform';
         }
       } catch (idError) {
-        console.warn('[DisputeLogging] Error getting device ID:', idError);
+        // COMMENT: PRIORITY 1 - Replace console.warn with logger
+        logger.warn('[DisputeLogging] Error getting device ID:', idError);
         deviceId = `unknown-${Device.osName || 'platform'}`;
       }
 
@@ -111,7 +114,8 @@ export class DisputeLoggingService {
         modelName: Device.modelName || 'unknown',
       };
     } catch (error) {
-      console.error('[DisputeLogging] Error getting device info:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error getting device info:', error);
       return {
         platform: 'unknown',
         osVersion: 'unknown',
@@ -145,7 +149,8 @@ export class DisputeLoggingService {
       );
       return hash;
     } catch (error) {
-      console.error('Error generating content hash:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error generating content hash:', error);
       return 'error-generating-hash';
     }
   }
@@ -236,9 +241,11 @@ export class DisputeLoggingService {
 
       await setDoc(auditRef, dataToSave, { merge: true });
 
-      console.log('[DisputeLogging] Message logged successfully:', messageId);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('[DisputeLogging] Message logged successfully:', messageId);
     } catch (error) {
-      console.error('[DisputeLogging] Error logging message:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error logging message:', error);
       // Don't throw - logging failure shouldn't break message sending
     }
   }
@@ -292,9 +299,11 @@ export class DisputeLoggingService {
         }));
       }
 
-      console.log('[DisputeLogging] Edit logged successfully:', messageId);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('[DisputeLogging] Edit logged successfully:', messageId);
     } catch (error) {
-      console.error('[DisputeLogging] Error logging edit:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error logging edit:', error);
     }
   }
 
@@ -349,9 +358,11 @@ export class DisputeLoggingService {
         }));
       }
 
-      console.log('[DisputeLogging] Deletion logged successfully:', messageId);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('[DisputeLogging] Deletion logged successfully:', messageId);
     } catch (error) {
-      console.error('[DisputeLogging] Error logging deletion:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error logging deletion:', error);
     }
   }
 
@@ -409,7 +420,8 @@ export class DisputeLoggingService {
 
       return logs;
     } catch (error) {
-      console.error('[DisputeLogging] Error getting message history:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error getting message history:', error);
       return [];
     }
   }
@@ -461,7 +473,8 @@ export class DisputeLoggingService {
 
       return JSON.stringify(report, null, 2);
     } catch (error) {
-      console.error('[DisputeLogging] Error exporting audit trail:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error exporting audit trail:', error);
       throw error;
     }
   }
@@ -500,10 +513,12 @@ export class DisputeLoggingService {
         );
       }
 
-      console.log('[DisputeLogging] Dispute report created:', disputeRef.id);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('[DisputeLogging] Dispute report created:', disputeRef.id);
       return disputeRef.id;
     } catch (error) {
-      console.error('[DisputeLogging] Error creating dispute report:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('[DisputeLogging] Error creating dispute report:', error);
       throw error;
     }
   }

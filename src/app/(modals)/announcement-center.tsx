@@ -28,6 +28,8 @@ import { collection, query, orderBy, limit as fbLimit, getDocs, doc, updateDoc, 
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { CustomAlertService } from '@/services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -94,7 +96,8 @@ export default function AnnouncementCenterScreen() {
         updateUnreadCount([]);
       }
     } catch (error) {
-      console.log('Loading announcements:', error);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('Loading announcements:', error);
       setAnnouncements([]);
       updateUnreadCount([]);
     } finally {
@@ -136,7 +139,8 @@ export default function AnnouncementCenterScreen() {
         readBy: [...(announcements.find(a => a.id === announcementId)?.isRead ? [] : [user.uid])]
       });
     } catch (error) {
-      console.log('Error marking as read:', error);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('Error marking as read:', error);
     }
   }, [user, announcements]);
 
@@ -165,7 +169,8 @@ export default function AnnouncementCenterScreen() {
         isRTL ? 'تم وضع علامة على جميع الإعلانات كمقروءة' : 'All announcements marked as read'
       );
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error marking all as read:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل تحديث الإعلانات' : 'Failed to update announcements'

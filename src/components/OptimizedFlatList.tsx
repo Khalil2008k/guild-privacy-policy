@@ -9,6 +9,8 @@ import {
   ViewToken,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface OptimizedFlatListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
   data: T[] | undefined;
@@ -77,7 +79,8 @@ export function OptimizedFlatList<T>({
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       // You can add analytics or lazy loading logic here
       if (__DEV__) {
-        console.log(`Visible items: ${viewableItems.length}`);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug(`Visible items: ${viewableItems.length}`);
       }
     },
     []

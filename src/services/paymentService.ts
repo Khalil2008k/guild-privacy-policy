@@ -218,19 +218,35 @@ export const formatAmount = (amount: number, currency: string = 'QAR'): string =
 
 /**
  * Validate payment amount
+ * COMMENT: PRODUCTION HARDENING - Task 2.6 - Enhanced validation using PaymentProcessor
  */
 export const validatePaymentAmount = (amount: number): { valid: boolean; error?: string } => {
-  if (!amount || isNaN(amount)) {
-    return { valid: false, error: 'Invalid amount' };
-  }
+  // Use PaymentProcessor for consistent validation
+  try {
+    const PaymentProcessor = require('./PaymentProcessor').default;
+    const validation = PaymentProcessor.validatePaymentInput({ amount, orderId: 'temp' });
+    
+    if (!validation.valid) {
+      return { valid: false, error: validation.errors.join(', ') };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    // Fallback to basic validation if PaymentProcessor not available
+    logger.warn('PaymentProcessor not available, using fallback validation', error);
+    
+    if (!amount || isNaN(amount)) {
+      return { valid: false, error: 'Invalid amount' };
+    }
 
-  if (amount <= 0) {
-    return { valid: false, error: 'Amount must be greater than 0' };
-  }
+    if (amount <= 0) {
+      return { valid: false, error: 'Amount must be greater than 0' };
+    }
 
-  if (amount > 1000000) {
-    return { valid: false, error: 'Amount exceeds maximum limit' };
-  }
+    if (amount > 1000000) {
+      return { valid: false, error: 'Amount exceeds maximum limit' };
+    }
 
-  return { valid: true };
+    return { valid: true };
+  }
 };

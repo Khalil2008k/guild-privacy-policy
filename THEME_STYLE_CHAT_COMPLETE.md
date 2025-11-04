@@ -144,3 +144,12 @@ backgroundColor: headerColor
 **The chat screen is now perfectly aligned with your app's theme and enhanced with all the details! 🎉**
 
 
+
+
+
+
+
+
+
+
+

@@ -11,6 +11,7 @@ import {
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { Stack, useRouter } from 'expo-router';
 import { ArrowLeft, QrCode, Clock, User, Trash2, Search } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import * as Haptics from 'expo-haptics';

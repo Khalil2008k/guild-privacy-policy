@@ -9,12 +9,14 @@ import {
   StatusBar,
 } from 'react-native';
 import { CustomAlertService } from '../services/CustomAlertService';
-// import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nProvider';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 const { width, height } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -35,6 +37,7 @@ export default function QRCodeScanner({
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useI18n();
   
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isFlashOn, setIsFlashOn] = useState(false);
   
@@ -45,6 +48,7 @@ export default function QRCodeScanner({
 
   useEffect(() => {
     if (isVisible) {
+      setScanned(false); // Reset scanned state when visible
       startAnimations();
     }
   }, [isVisible]);
@@ -102,14 +106,16 @@ export default function QRCodeScanner({
   const handleBarCodeScanned = ({ type, data }: any) => {
     if (scanned) return;
     
-    console.log('QR Code scanned:', { type, data });
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('QR Code scanned:', { type, data });
     setScanned(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     // Validate QR code format
     try {
       const parsedData = JSON.parse(data);
-      console.log('Parsed QR data:', parsedData);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('Parsed QR data:', parsedData);
       if (parsedData.gid || parsedData.name) {
         onScan(data);
       } else {
@@ -125,7 +131,8 @@ export default function QRCodeScanner({
         );
       }
     } catch (error) {
-      console.error('QR parsing error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('QR parsing error:', error);
       CustomAlertService.showError(
         isRTL ? 'رمز QR غير صالح' : 'Invalid QR Code',
         isRTL ? 'تعذر قراءة رمز QR' : 'Could not read QR code',
@@ -139,17 +146,6 @@ export default function QRCodeScanner({
     }
   };
 
-  const handleTestScan = () => {
-    // Test QR code data (same as profile screen)
-    const testData = JSON.stringify({
-      name: 'John Doe',
-      guild: 'GUILD',
-      gid: '12345678',
-      userId: 'test123',
-      timestamp: Date.now()
-    });
-    handleBarCodeScanned({ type: 'qr', data: testData });
-  };
 
   const toggleFlash = () => {
     setIsFlashOn(!isFlashOn);
@@ -184,139 +180,190 @@ export default function QRCodeScanner({
 
   if (!isVisible) return null;
 
+  // Handle camera permissions
+  if (!permission) {
+    // Permission is still being requested
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <View style={styles.permissionContainer}>
+          <Text style={[styles.permissionTitle, { color: '#FFFFFF' }]}>
+            {isRTL ? 'جاري طلب الإذن' : 'Requesting Permission...'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    // Permission not granted
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <View style={styles.permissionContainer}>
+          <MaterialIcons name="camera-alt" size={64} color="#FFFFFF" />
+          <Text style={[styles.permissionTitle, { color: '#FFFFFF' }]}>
+            {isRTL ? 'إذن الكاميرا مطلوب' : 'Camera Permission Required'}
+          </Text>
+          <Text style={[styles.permissionDescription, { color: 'rgba(255,255,255,0.8)' }]}>
+            {isRTL 
+              ? 'نحتاج إلى إذن الكاميرا لمسح رموز QR'
+              : 'We need camera permission to scan QR codes'
+            }
+          </Text>
+          <TouchableOpacity
+            style={[styles.permissionButton, { backgroundColor: theme.primary }]}
+            onPress={requestPermission}
+          >
+            <Text style={[styles.permissionButtonText, { color: theme.buttonText }]}>
+              {isRTL ? 'منح الإذن' : 'Grant Permission'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.permissionButton, { backgroundColor: 'rgba(255,255,255,0.2)', marginTop: 12 }]}
+            onPress={onClose}
+          >
+            <Text style={[styles.permissionButtonText, { color: '#FFFFFF' }]}>
+              {isRTL ? 'إغلاق' : 'Close'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       
-             {/* Camera View */}
-             <View style={styles.camera}>
-        {/* Header */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.8)', 'transparent']}
-          style={styles.header}
+      {/* Camera View */}
+      <CameraView
+        style={styles.camera}
+        facing="back"
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr'],
+        }}
+        enableTorch={isFlashOn}
+      />
+      
+      {/* Overlay UI with absolute positioning */}
+      {/* Header */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.8)', 'transparent']}
+        style={[styles.header, styles.overlay]}
+      >
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
         >
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <MaterialIcons name="close" size={28} color="#FFFFFF" />
-          </TouchableOpacity>
-          
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>
-              {getScanTypeTitle()}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {getScanTypeDescription()}
-            </Text>
-          </View>
-          
-          <TouchableOpacity
-            style={styles.flashButton}
-            onPress={toggleFlash}
-          >
-            <MaterialIcons 
-              name={isFlashOn ? "flash-on" : "flash-off"} 
-              size={28} 
-              color={isFlashOn ? theme.primary : "#FFFFFF"} 
-            />
-          </TouchableOpacity>
-        </LinearGradient>
+          <MaterialIcons name="close" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {getScanTypeTitle()}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {getScanTypeDescription()}
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.flashButton}
+          onPress={toggleFlash}
+        >
+          <MaterialIcons 
+            name={isFlashOn ? "flash-on" : "flash-off"} 
+            size={28} 
+            color={isFlashOn ? theme.primary : "#FFFFFF"} 
+          />
+        </TouchableOpacity>
+      </LinearGradient>
 
-        {/* Scanning Area */}
-        <View style={styles.scanningArea}>
-          {/* Animated Glow Effect */}
+      {/* Scanning Area */}
+      <View style={[styles.scanningArea, styles.overlay]}>
+        {/* Animated Glow Effect */}
+        <Animated.View
+          style={[
+            styles.scanFrame,
+            {
+              shadowOpacity: glowAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.8],
+              }),
+              shadowRadius: glowAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 30],
+              }),
+            }
+          ]}
+        >
+          {/* Corner Indicators */}
+          <Animated.View 
+            style={[
+              styles.corner, 
+              styles.topLeft,
+              { transform: [{ scale: pulseAnimation }] }
+            ]}
+          />
+          <Animated.View 
+            style={[
+              styles.corner, 
+              styles.topRight,
+              { transform: [{ scale: pulseAnimation }] }
+            ]}
+          />
+          <Animated.View 
+            style={[
+              styles.corner, 
+              styles.bottomLeft,
+              { transform: [{ scale: pulseAnimation }] }
+            ]}
+          />
+          <Animated.View 
+            style={[
+              styles.corner, 
+              styles.bottomRight,
+              { transform: [{ scale: pulseAnimation }] }
+            ]}
+          />
+
+          {/* Scanning Line */}
           <Animated.View
             style={[
-              styles.scanFrame,
+              styles.scanLine,
               {
-                shadowOpacity: glowAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 0.8],
-                }),
-                shadowRadius: glowAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [10, 30],
-                }),
+                transform: [{
+                  translateY: scanLineAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -240],
+                  })
+                }]
               }
             ]}
-          >
-            {/* Corner Indicators */}
-            <Animated.View 
-              style={[
-                styles.corner, 
-                styles.topLeft,
-                { transform: [{ scale: pulseAnimation }] }
-              ]}
-            />
-            <Animated.View 
-              style={[
-                styles.corner, 
-                styles.topRight,
-                { transform: [{ scale: pulseAnimation }] }
-              ]}
-            />
-            <Animated.View 
-              style={[
-                styles.corner, 
-                styles.bottomLeft,
-                { transform: [{ scale: pulseAnimation }] }
-              ]}
-            />
-            <Animated.View 
-              style={[
-                styles.corner, 
-                styles.bottomRight,
-                { transform: [{ scale: pulseAnimation }] }
-              ]}
-            />
+          />
+        </Animated.View>
+      </View>
 
-            {/* Scanning Line */}
-            <Animated.View
-              style={[
-                styles.scanLine,
-                {
-                  transform: [{
-                    translateY: scanLineAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, -240],
-                    })
-                  }]
-                }
-              ]}
-            />
-          </Animated.View>
-          
-          {/* Test Button */}
-          <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: theme.primary }]}
-            onPress={handleTestScan}
-          >
-            <Text style={[styles.testButtonText, { color: theme.buttonText }]}>
-              {isRTL ? 'اختبار المسح' : 'Test Scan'}
-            </Text>
-          </TouchableOpacity>
+      {/* Bottom Instructions */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={[styles.footer, styles.overlay]}
+      >
+        <View style={styles.instructionsContainer}>
+          <MaterialIcons name="qr-code-scanner" size={32} color={theme.primary} />
+          <Text style={styles.instructionTitle}>
+            {isRTL ? 'وجه الكاميرا نحو رمز QR' : 'Point camera at QR code'}
+          </Text>
+          <Text style={styles.instructionSubtitle}>
+            {isRTL 
+              ? 'سيتم المسح تلقائياً عند اكتشاف الرمز'
+              : 'Scanning will happen automatically'
+            }
+          </Text>
         </View>
-
-        {/* Bottom Instructions */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.footer}
-        >
-          <View style={styles.instructionsContainer}>
-            <MaterialIcons name="qr-code-scanner" size={32} color={theme.primary} />
-            <Text style={styles.instructionTitle}>
-              {isRTL ? 'وجه الكاميرا نحو رمز QR' : 'Point camera at QR code'}
-            </Text>
-            <Text style={styles.instructionSubtitle}>
-              {isRTL 
-                ? 'سيتم المسح تلقائياً عند اكتشاف الرمز'
-                : 'Scanning will happen automatically'
-              }
-            </Text>
-          </View>
-        </LinearGradient>
-             </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -329,6 +376,14 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'box-none',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,6 +391,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    pointerEvents: 'auto',
   },
   closeButton: {
     width: 44,
@@ -377,6 +433,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    pointerEvents: 'auto',
   },
   scanFrame: {
     width: 250,
@@ -439,6 +496,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 50,
     paddingTop: 20,
+    pointerEvents: 'auto',
   },
   instructionsContainer: {
     alignItems: 'center',
@@ -491,18 +549,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   permissionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: FONT_FAMILY,
-  },
-  testButton: {
-    marginTop: 30,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  testButtonText: {
     fontSize: 16,
     fontWeight: '600',
     fontFamily: FONT_FAMILY,

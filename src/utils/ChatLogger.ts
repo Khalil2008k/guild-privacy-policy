@@ -183,3 +183,12 @@ export const logTrace = (category: string, message: string, data?: any) =>
 
 export default chatLogger;
 
+
+
+
+
+
+
+
+
+

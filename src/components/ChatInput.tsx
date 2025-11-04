@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -9,10 +9,15 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { CustomAlertService } from '../services/CustomAlertService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nProvider';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 import {
   Send,
   Camera,
@@ -26,20 +31,15 @@ import {
   MicOff,
   Video,
   VideoOff,
+  ImagePlus,
+  Clock,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-
-// Import MediaType separately to ensure it's available
-// Fallback to string literal if MediaType is undefined (SDK 54 compatibility)
-const getMediaType = () => {
-  if (ImagePicker.MediaType && ImagePicker.MediaType.Images) {
-    return ImagePicker.MediaType.Images;
-  }
-  // Fallback for SDK 54 if MediaType enum is not available
-  return 'images';
-};
 import * as DocumentPicker from 'expo-document-picker';
 import * as Location from 'expo-location';
+import { GifPicker } from './GifPicker';
+import { QuickReplies, DEFAULT_QUICK_REPLIES_LIST } from './QuickReplies';
+import { MessageScheduler } from './MessageScheduler';
 
 interface ChatInputProps {
   value: string;
@@ -52,14 +52,17 @@ interface ChatInputProps {
   disabled?: boolean;
   editMode?: boolean;
   onCancelEdit?: () => void;
-  onStartRecording?: () => void;
-  onStopRecording?: () => void;
-  isRecording?: boolean;
-  recordingDuration?: number;
+  // Voice recording - Only advanced recorder
   isUploadingVoice?: boolean;
+  onOpenAdvancedVoiceRecorder?: () => void;
+  // Video recording - Use ImagePicker
   onStartVideoRecording?: () => void;
-  isRecordingVideo?: boolean;
   isUploadingVideo?: boolean;
+  onSendGif?: (gifUrl: string, gifId?: string) => void;
+  giphyApiKey?: string;
+  useGiphyAPI?: boolean;
+  quickReplies?: Array<{ id: string; text: string; emoji?: string }>;
+  showQuickReplies?: boolean;
 }
 
 export function ChatInput({
@@ -73,34 +76,137 @@ export function ChatInput({
   disabled = false,
   editMode = false,
   onCancelEdit,
-  onStartRecording,
-  onStopRecording,
-  isRecording = false,
-  recordingDuration = 0,
+  // Voice recording - Only advanced recorder
   isUploadingVoice = false,
+  onOpenAdvancedVoiceRecorder,
+  // Video recording - Use ImagePicker
   onStartVideoRecording,
-  isRecordingVideo = false,
   isUploadingVideo = false,
+  onSendGif,
+  giphyApiKey,
+  useGiphyAPI = false,
+  quickReplies,
+  showQuickReplies = true,
 }: ChatInputProps) {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
+  const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  
+  // Track keyboard visibility to recalculate padding when keyboard hides
+  // Use keyboardWillHide (before animation) to fix gap immediately BEFORE keyboard disappears
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+
+    // Use keyboardWillHide on iOS and keyboardDidHide on Android
+    // This triggers BEFORE keyboard fully disappears to fix gap immediately
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        // Force immediate state update BEFORE keyboard animation completes
+        // This ensures padding is recalculated instantly when keyboard starts hiding
+        // Multiple forced updates ensure React re-renders immediately
+        setKeyboardVisible(false);
+        // Force immediate re-render using requestAnimationFrame (runs before next paint)
+        requestAnimationFrame(() => {
+          setKeyboardVisible(false);
+        });
+        // Additional forced update using setTimeout (runs immediately after current call stack)
+        setTimeout(() => {
+          setKeyboardVisible(false);
+        }, 0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
+
+  const handleQuickReplySelect = (reply: { id: string; text: string; emoji?: string }) => {
+    onChangeText(reply.text);
+    // Small delay to ensure text is set before sending
+    setTimeout(() => {
+      onSend();
+    }, 100);
+  };
 
   const handleSend = () => {
-    if (!value.trim() && selectedImages.length === 0) return;
+    logger.debug('🔵 [ChatInput] handleSend called', { 
+      hasText: !!value.trim(), 
+      imageCount: selectedImages.length,
+      imageUris: selectedImages
+    });
+    
+    if (!value.trim() && selectedImages.length === 0) {
+      logger.debug('🔵 [ChatInput] handleSend: No text and no images, returning');
+      return;
+    }
     
     if (selectedImages.length > 0) {
-      // Send images
-      selectedImages.forEach(uri => onSendImage(uri));
-      setSelectedImages([]);
-      setShowImagePreview(false);
+      logger.debug(`🔵 [ChatInput] handleSend: Starting to send ${selectedImages.length} image(s)`);
+      // Send images - wrap in try/catch to prevent crashes
+      try {
+        logger.debug(`🔵 [ChatInput] handleSend: Entering images loop, count: ${selectedImages.length}`);
+        selectedImages.forEach((uri, index) => {
+          try {
+            logger.debug(`🔵 [ChatInput] handleSend: Processing image ${index + 1}/${selectedImages.length}`, { uri });
+            if (!uri || typeof uri !== 'string') {
+              logger.warn(`⚠️ [ChatInput] Invalid image URI at index ${index}:`, uri);
+              return;
+            }
+            logger.debug(`📸 [ChatInput] Calling onSendImage for image ${index + 1}/${selectedImages.length}`, { uri });
+            onSendImage(uri);
+            logger.debug(`✅ [ChatInput] onSendImage called successfully for image ${index + 1}`);
+          } catch (error) {
+            logger.error(`❌ [ChatInput] Error sending image ${index + 1}:`, error);
+            CustomAlertService.showError(
+              isRTL ? 'خطأ' : 'Error',
+              isRTL 
+                ? `فشل إرسال الصورة ${index + 1} من ${selectedImages.length}`
+                : `Failed to send image ${index + 1} of ${selectedImages.length}`
+            );
+          }
+        });
+        logger.debug(`🔵 [ChatInput] handleSend: All images processed, clearing state`);
+        setSelectedImages([]);
+        setShowImagePreview(false);
+        logger.debug(`✅ [ChatInput] handleSend: Image state cleared`);
+      } catch (error) {
+        logger.error('❌ [ChatInput] Error in handleSend for images:', error);
+        CustomAlertService.showError(
+          isRTL ? 'خطأ' : 'Error',
+          isRTL ? 'فشل إرسال الصور' : 'Failed to send images'
+        );
+      }
     }
     
     if (value.trim()) {
-      onSend();
+      try {
+        logger.debug('🔵 [ChatInput] handleSend: Sending text message');
+        onSend();
+        logger.debug('✅ [ChatInput] handleSend: Text message sent');
+      } catch (error) {
+        logger.error('❌ [ChatInput] Error in handleSend for text:', error);
+        CustomAlertService.showError(
+          isRTL ? 'خطأ' : 'Error',
+          isRTL ? 'فشل إرسال الرسالة' : 'Failed to send message'
+        );
+      }
     }
+    
+    logger.debug('🔵 [ChatInput] handleSend: Completed');
   };
 
   const handleTextChange = (text: string) => {
@@ -144,10 +250,10 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [getMediaType()],
+        mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
-        base64: false,
+        allowsMultipleSelection: false,
       });
 
       if (!result.canceled && result.assets[0]) {
@@ -155,7 +261,8 @@ export function ChatInput({
         setShowImagePreview(true);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error taking photo:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل التقاط الصورة' : 'Failed to take photo'
@@ -171,10 +278,10 @@ export function ChatInput({
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [getMediaType()],
+        mediaTypes: ['images'],
         allowsMultipleSelection: true,
         quality: 0.8,
-        base64: false,
+        allowsEditing: false,
       });
 
       if (!result.canceled && result.assets.length > 0) {
@@ -183,7 +290,8 @@ export function ChatInput({
         setShowImagePreview(true);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error picking image:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل اختيار الصورة' : 'Failed to pick image'
@@ -205,7 +313,8 @@ export function ChatInput({
         onSendFile(file.uri, file.name, file.mimeType || 'application/octet-stream');
       }
     } catch (error) {
-      console.error('Error picking document:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error picking document:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل اختيار المستند' : 'Failed to pick document'
@@ -249,7 +358,8 @@ export function ChatInput({
             .join(', ');
         }
       } catch (error) {
-        console.log('Could not get address:', error);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('Could not get address:', error);
       }
 
       // Send location
@@ -261,7 +371,8 @@ export function ChatInput({
         });
       }
     } catch (error) {
-      console.error('Error sharing location:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sharing location:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل مشاركة الموقع' : 'Failed to share location'
@@ -324,6 +435,23 @@ export function ChatInput({
               {isRTL ? 'مشاركة الموقع' : 'Share Location'}
             </Text>
           </TouchableOpacity>
+
+          {onOpenAdvancedVoiceRecorder && (
+            <TouchableOpacity 
+              style={styles.attachmentOption} 
+              onPress={() => {
+                setShowAttachmentMenu(false);
+                onOpenAdvancedVoiceRecorder();
+              }}
+            >
+              <View style={[styles.attachmentIcon, { backgroundColor: theme.error + '20' }]}>
+                <Mic size={24} color={theme.error} />
+              </View>
+              <Text style={[styles.attachmentText, { color: theme.textPrimary }]}>
+                {isRTL ? 'تسجيل صوتي متقدم' : 'Advanced Voice'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </Modal>
@@ -393,7 +521,31 @@ export function ChatInput({
 
   return (
     <>
-      <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      {/* Quick Replies - Show when input is empty and not in edit mode */}
+      {showQuickReplies && !editMode && !value.trim() && (
+        <View style={{ marginBottom: 10, backgroundColor: 'transparent' }}>
+          <QuickReplies
+            replies={quickReplies || DEFAULT_QUICK_REPLIES_LIST}
+            onSelect={handleQuickReplySelect}
+            visible={true}
+          />
+        </View>
+      )}
+      
+      {/* Input Bar - Matching Home Screen Theme */}
+      <View
+        style={[
+          styles.container, 
+          { 
+            backgroundColor: 'transparent', // Transparent background
+            // Force immediate padding recalculation when keyboard starts hiding
+            // Use keyboardWillHide to trigger BEFORE keyboard fully disappears
+            // When keyboard visible: minimal padding (8px)
+            // When keyboard hidden: safe area insets or minimum 8px
+            paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom || 0, 8), // Always use max of safe area or 8px when keyboard is hidden
+          }
+        ]}
+      >
         {editMode && (
           <View style={[styles.editModeBar, { backgroundColor: theme.primary + '20' }]}>
             <Text style={[styles.editModeText, { color: theme.primary }]}>
@@ -406,143 +558,161 @@ export function ChatInput({
         )}
 
         <View style={styles.inputRow}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => setShowAttachmentMenu(true)}
-            disabled={disabled || editMode}
-          >
-            <Paperclip
-              size={24}
-              color={disabled || editMode ? theme.textSecondary : theme.primary}
+          {/* Input Container (80% width) with camera button inside */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[
+                styles.input,
+              {
+                backgroundColor: theme.background,
+                color: theme.textPrimary,
+                borderWidth: 0.5, // Reduced thickness
+                borderColor: theme.primary, // Use theme color
+                paddingRight: onStartVideoRecording ? 46 : 12, // Space for camera button
+                paddingLeft: 12,
+              },
+              ]}
+              placeholder={
+                editMode
+                  ? isRTL
+                    ? 'تعديل رسالتك...'
+                    : 'Edit your message...'
+                  : isRTL
+                  ? 'اكتب رسالة...'
+                  : 'Type a message...'
+              }
+              placeholderTextColor={theme.textSecondary}
+              value={value}
+              onChangeText={handleTextChange}
+              multiline
+              maxLength={1000}
+              editable={!disabled}
+              textAlign={isRTL ? 'right' : 'left'}
+              textAlignVertical="center"
             />
-          </TouchableOpacity>
+            
+            {/* Camera Button - Inside input field at the end, slightly up */}
+            {onStartVideoRecording && (
+              <TouchableOpacity
+                style={styles.inputEndButton}
+                onPress={onStartVideoRecording}
+                disabled={disabled || isUploadingVideo || isUploadingVoice}
+                accessibilityLabel={isRTL ? 'كاميرا / فيديو' : 'Camera / Video'}
+                accessibilityRole="button"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Camera 
+                  size={21} 
+                  color={disabled || isUploadingVideo || isUploadingVoice ? theme.textSecondary : (theme.iconPrimary || theme.primary)} 
+                />
+              </TouchableOpacity>
+            )}
+          </View>
 
-                  {/* Voice Recording Button */}
-                  {!editMode && (
-                    <TouchableOpacity
-                      style={[
-                        styles.iconButton,
-                        {
-                          backgroundColor: isRecording ? theme.error : 'transparent',
-                        },
-                      ]}
-                      onPress={isRecording ? onStopRecording : onStartRecording}
-                      disabled={disabled || isUploadingVoice || isRecordingVideo}
-                    >
-                      {isRecording ? (
-                        <MicOff size={24} color="#FFFFFF" />
-                      ) : (
-                        <Mic size={24} color={disabled ? theme.textSecondary : theme.primary} />
-                      )}
-                    </TouchableOpacity>
-                  )}
+          {/* Icons Container - Attachment and Voice/Send buttons */}
+          <View style={styles.iconsContainer}>
 
-                  {/* Video Recording Button */}
-                  {!editMode && (
-                    <TouchableOpacity
-                      style={[
-                        styles.iconButton,
-                        {
-                          backgroundColor: isRecordingVideo ? theme.error : 'transparent',
-                        },
-                      ]}
-                      onPress={onStartVideoRecording}
-                      disabled={disabled || isUploadingVideo || isRecording}
-                    >
-                      {isRecordingVideo ? (
-                        <VideoOff size={24} color="#FFFFFF" />
-                      ) : (
-                        <Video size={24} color={disabled ? theme.textSecondary : theme.primary} />
-                      )}
-                    </TouchableOpacity>
-                  )}
+            {/* Attachment/Add button */}
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => setShowAttachmentMenu(true)}
+              disabled={disabled || editMode}
+              accessibilityLabel={isRTL ? 'إضافة مرفق' : 'Add attachment'}
+              accessibilityRole="button"
+            >
+              <Paperclip
+                size={22}
+                color={disabled || editMode ? theme.textSecondary : (theme.iconPrimary || theme.primary)}
+              />
+            </TouchableOpacity>
 
-          {/* Recording Duration Display */}
-          {isRecording && (
-            <View style={[styles.recordingIndicator, { backgroundColor: theme.error }]}>
-              <Text style={styles.recordingText}>
-                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+            {/* Voice Recording or Send Button */}
+            {!value.trim() && !editMode ? (
+              /* Voice Recording Button - Show when input is empty */
+              onOpenAdvancedVoiceRecorder && (
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={onOpenAdvancedVoiceRecorder}
+                  disabled={disabled || isUploadingVoice || isUploadingVideo}
+                  accessibilityLabel={isRTL ? 'تسجيل صوتي' : 'Record voice'}
+                  accessibilityRole="button"
+                >
+                  <Mic 
+                    size={22} 
+                    color={disabled || isUploadingVoice || isUploadingVideo ? theme.textSecondary : (theme.iconPrimary || theme.primary)} 
+                  />
+                </TouchableOpacity>
+              )
+            ) : (
+              /* Send Button - Show only when there is text */
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  {
+                    backgroundColor: theme.primary,
+                  },
+                ]}
+                onPress={handleSend}
+                disabled={disabled || (!value.trim() && selectedImages.length === 0)}
+                accessibilityLabel={isRTL ? 'إرسال' : 'Send'}
+                accessibilityRole="button"
+              >
+                <Send
+                  size={20}
+                  color={theme.buttonText || '#000000'}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Uploading Indicators */}
+          {isUploadingVoice && (
+            <View style={styles.uploadingIndicator}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
+                {isRTL ? 'جاري الرفع...' : 'Uploading...'}
               </Text>
             </View>
           )}
 
-                  {/* Uploading Indicator */}
-                  {isUploadingVoice && (
-                    <View style={styles.uploadingIndicator}>
-                      <ActivityIndicator size="small" color={theme.primary} />
-                      <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
-                        {isRTL ? 'جاري الرفع...' : 'Uploading...'}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Video Uploading Indicator */}
-                  {isUploadingVideo && (
-                    <View style={styles.uploadingIndicator}>
-                      <ActivityIndicator size="small" color={theme.primary} />
-                      <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
-                        {isRTL ? 'جاري رفع الفيديو...' : 'Uploading video...'}
-                      </Text>
-                    </View>
-                  )}
-
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.textPrimary,
-              },
-            ]}
-            placeholder={
-              editMode
-                ? isRTL
-                  ? 'تعديل رسالتك...'
-                  : 'Edit your message...'
-                : isRTL
-                ? 'اكتب رسالة...'
-                : 'Type a message...'
-            }
-            placeholderTextColor={theme.textSecondary}
-            value={value}
-            onChangeText={handleTextChange}
-            multiline
-            maxLength={1000}
-            editable={!disabled}
-            textAlign={isRTL ? 'right' : 'left'}
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              {
-                backgroundColor:
-                  value.trim() || selectedImages.length > 0 ? theme.primary : theme.surface,
-              },
-            ]}
-            onPress={handleSend}
-            disabled={disabled || (!value.trim() && selectedImages.length === 0)}
-          >
-            <Send
-              size={20}
-              color={value.trim() || selectedImages.length > 0 ? '#000000' : theme.textSecondary}
-            />
-          </TouchableOpacity>
+          {isUploadingVideo && (
+            <View style={styles.uploadingIndicator}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.uploadingText, { color: theme.textSecondary }]}>
+                {isRTL ? 'جاري رفع الفيديو...' : 'Uploading video...'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
       {renderAttachmentMenu()}
       {renderImagePreview()}
+      
+      {/* GIF Picker Modal */}
+      {onSendGif && (
+        <GifPicker
+          visible={showGifPicker}
+          onClose={() => setShowGifPicker(false)}
+          onSelectGif={(gifUrl, gifId) => {
+            if (onSendGif) {
+              onSendGif(gifUrl, gifId);
+            }
+          }}
+          useGiphyAPI={useGiphyAPI}
+          giphyApiKey={giphyApiKey}
+        />
+      )}
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    // paddingBottom handled dynamically with safe area insets
+    // Removed borderTopWidth and borderTopColor - no grey border
   },
   editModeBar: {
     flexDirection: 'row',
@@ -559,28 +729,74 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: 8,
   },
-  iconButton: {
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  inputContainer: {
+    flex: 0.8, // 80% of width
+    position: 'relative',
   },
   input: {
-    flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    width: '100%',
+    borderRadius: 24, // Pill shape - WhatsApp-like
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    maxHeight: 100,
+    maxHeight: 100, // ~4 lines (25px per line) - WhatsApp-like growth
     fontSize: 15,
+    minHeight: 40,
+    textAlignVertical: 'center', // Center text vertically
+    lineHeight: 20,
   },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  inputEndButton: {
+    position: 'absolute',
+    right: 6, // Always at the right end
+    top: 6, // Slightly down (was 4, now 6 - moved down 2px)
+    padding: 6,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 31, // Increased by 3px (was 28)
+    height: 31, // Increased by 3px (was 28)
+    borderRadius: 15.5, // Half of width/height for perfect circle
+    zIndex: 1, // Ensure it's above the input text
+  },
+  iconsContainer: {
+    flex: 0.2, // 20% of width
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+    paddingLeft: 4,
+    paddingTop: 0, // Aligned with camera button center
+  },
+  iconButton: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 36,
+    minHeight: 36,
+    borderRadius: 18,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraIconContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dualModeIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   recordingIndicator: {
     paddingHorizontal: 12,

@@ -22,6 +22,8 @@ import {
 } from 'lucide-react-native';
 import { realPaymentService, Wallet as RealWallet, Transaction } from '@/services/realPaymentService';
 import { CustomAlertService } from '@/services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -61,7 +63,8 @@ export default function UserWalletScreen() {
       setWallet(walletData);
       setTransactions(transactionData);
     } catch (error) {
-      console.error('Error loading wallet:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading wallet:', error);
       CustomAlertService.showError('Error', 'Failed to load wallet data');
     } finally {
       setLoading(false);
@@ -73,7 +76,8 @@ export default function UserWalletScreen() {
       const demoMode = await realPaymentService.isDemoModeEnabled();
       setIsDemoMode(demoMode);
     } catch (error) {
-      console.error('Error checking demo mode:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error checking demo mode:', error);
     }
   };
 
@@ -147,7 +151,8 @@ export default function UserWalletScreen() {
                   throw new Error(result.message || 'Withdrawal request failed');
                 }
               } catch (error) {
-                console.error('Withdrawal error:', error);
+                // COMMENT: PRIORITY 1 - Replace console.error with logger
+                logger.error('Withdrawal error:', error);
                 CustomAlertService.showError(
                   isRTL ? 'خطأ في السحب' : 'Withdrawal Error',
                   error instanceof Error ? error.message : 'Failed to process withdrawal request'
@@ -159,7 +164,8 @@ export default function UserWalletScreen() {
         'plain-text'
       );
     } catch (error) {
-      console.error('Error showing withdrawal dialog:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error showing withdrawal dialog:', error);
     }
   };
 

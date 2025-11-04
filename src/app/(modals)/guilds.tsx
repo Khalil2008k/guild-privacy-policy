@@ -19,6 +19,8 @@ import { useI18n } from '@/contexts/I18nProvider';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { guildService } from '@/services/firebase/GuildService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -99,7 +101,8 @@ export default function Guilds() {
       const discovered = await guildService.searchGuilds(searchQuery || '');
       setGuilds(discovered as any);
     } catch (error) {
-      console.error('Error loading guilds:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading guilds:', error);
     } finally {
       setLoading(false);
     }
@@ -111,7 +114,8 @@ export default function Guilds() {
       const myGuilds = await guildService.getUserGuilds(user.uid);
       setUserGuild(myGuilds && myGuilds.length > 0 ? (myGuilds[0] as any) : null);
     } catch (error) {
-      console.error('Error loading user guild:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading user guild:', error);
     }
   };
   

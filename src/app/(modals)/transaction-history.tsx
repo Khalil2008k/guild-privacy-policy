@@ -22,6 +22,8 @@ import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Shield, TrendingUp, TrendingDown, Search, Filter, Download, Calendar } from 'lucide-react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 
@@ -75,7 +77,8 @@ export default function TransactionHistoryScreen() {
         setTransactions([]);
       }
     } catch (error) {
-      console.error('Error loading transaction history:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading transaction history:', error);
       CustomAlertService.showError('Error', 'Failed to load transaction history');
     } finally {
       setLoading(false);
@@ -135,7 +138,8 @@ export default function TransactionHistoryScreen() {
 
       CustomAlertService.showSuccess('Success', 'Transaction history exported successfully');
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error exporting CSV:', error);
       CustomAlertService.showError('Error', 'Failed to export transaction history');
     }
   };
@@ -164,7 +168,8 @@ export default function TransactionHistoryScreen() {
 
       CustomAlertService.showSuccess('Success', 'Transaction history exported successfully');
     } catch (error) {
-      console.error('Error exporting text:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error exporting text:', error);
       CustomAlertService.showError('Error', 'Failed to export transaction history');
     }
   };

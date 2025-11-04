@@ -1,6 +1,11 @@
 /**
  * Mobile App Logger
  * Simple logging utility for React Native
+ * 
+ * COMMENT: Upgraded per Production Hardening Task 1.7
+ * - Disables console.log in production builds
+ * - Only logs ERROR and WARN in production
+ * - All logs disabled when __DEV__ is false
  */
 
 interface LogLevel {
@@ -21,22 +26,37 @@ class Logger {
   private currentLevel: number;
 
   constructor() {
-    // Set log level based on environment
+    // COMMENT: SECURITY - Disable logs in production per Task 1.7
+    // In production, only log ERROR and WARN
+    // In development, log everything (DEBUG level)
     this.currentLevel = __DEV__ ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
   }
 
   private shouldLog(level: number): boolean {
+    // COMMENT: SECURITY - Never log in production except errors/warnings
+    if (!__DEV__ && level > LOG_LEVELS.WARN) {
+      return false;
+    }
     return level <= this.currentLevel;
   }
 
   private formatMessage(level: string, message: string, ...args: any[]): void {
+    // COMMENT: SECURITY - Don't format/log if not in development per Task 1.7
+    if (!__DEV__ && level !== 'ERROR' && level !== 'WARN') {
+      return;
+    }
+    
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] [${level}]`;
     
-    if (args.length > 0) {
-      console.log(prefix, message, ...args);
-    } else {
-      console.log(prefix, message);
+    // COMMENT: SECURITY - Use conditional logging per Task 1.7
+    // Only call console.log in development or for errors/warnings
+    if (__DEV__ || level === 'ERROR' || level === 'WARN') {
+      if (args.length > 0) {
+        console.log(prefix, message, ...args);
+      } else {
+        console.log(prefix, message);
+      }
     }
   }
 

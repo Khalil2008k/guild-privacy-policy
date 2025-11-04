@@ -274,3 +274,12 @@ color: theme.textPrimary // Theme colors
 **All issues fixed and chat screen is now fully functional with modern design! 🎉**
 
 
+
+
+
+
+
+
+
+
+

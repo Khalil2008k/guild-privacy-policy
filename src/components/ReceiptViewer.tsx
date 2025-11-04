@@ -20,6 +20,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useI18n } from '../contexts/I18nProvider';
 import { RTLText, RTLView } from '../app/components/primitives/primitives';
 import { Receipt, walletAPIClient } from '../services/walletAPIClient';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface ReceiptViewerProps {
   receipt: Receipt;
@@ -52,7 +54,8 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({ receipt, onClose }
       }
     } catch (error) {
       CustomAlertService.showError('Verification Error', 'Failed to verify receipt');
-      console.error('Receipt verification error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Receipt verification error:', error);
     } finally {
       setVerifying(false);
     }
@@ -97,7 +100,8 @@ Verify at: https://guild.qa/verify/${receipt.receiptNumber}
         title: `GUILD Receipt ${receipt.receiptNumber}`,
       });
     } catch (error) {
-      console.error('Share error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Share error:', error);
     }
   };
   

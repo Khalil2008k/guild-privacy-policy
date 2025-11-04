@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 // Settings interface
 export interface SettingsState {
@@ -56,7 +58,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         setSettings({ ...defaultSettings, ...parsedSettings });
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading settings:', error);
       // Use default settings if loading fails
       setSettings(defaultSettings);
     } finally {
@@ -71,7 +74,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setSettings(updatedSettings);
       await AsyncStorage.setItem('userSettings', JSON.stringify(updatedSettings));
     } catch (error) {
-      console.error('Error saving settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving settings:', error);
     }
   };
 
@@ -81,7 +85,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setSettings(defaultSettings);
       await AsyncStorage.setItem('userSettings', JSON.stringify(defaultSettings));
     } catch (error) {
-      console.error('Error resetting settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error resetting settings:', error);
     }
   };
 

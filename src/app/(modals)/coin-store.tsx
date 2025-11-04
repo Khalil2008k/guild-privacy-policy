@@ -26,6 +26,8 @@ import * as Haptics from 'expo-haptics';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { WebView } from 'react-native-webview';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -148,7 +150,8 @@ export default function CoinStoreScreen() {
       setCart({});
       router.back();
     } catch (error) {
-      console.error('Error refreshing wallet:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error refreshing wallet:', error);
     } finally {
       setLoading(false);
     }
@@ -586,7 +589,8 @@ export default function CoinStoreScreen() {
               source={{ uri: paymentUrl }}
               style={styles.webView}
               onNavigationStateChange={(navState) => {
-                console.log('Navigation:', navState.url);
+                // COMMENT: PRIORITY 1 - Replace console.log with logger
+                logger.debug('Navigation:', navState.url);
                 
                 // Check for success/failure URLs
                 if (navState.url.includes('success') || navState.url.includes('payment/success')) {
@@ -599,7 +603,8 @@ export default function CoinStoreScreen() {
               }}
               onError={(syntheticEvent) => {
                 const { nativeEvent } = syntheticEvent;
-                console.error('WebView error:', nativeEvent);
+                // COMMENT: PRIORITY 1 - Replace console.error with logger
+                logger.error('WebView error:', nativeEvent);
                 handlePaymentFailure();
               }}
               startInLoadingState={true}

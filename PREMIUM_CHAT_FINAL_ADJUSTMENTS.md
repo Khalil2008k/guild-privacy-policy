@@ -141,3 +141,12 @@ The chat screen now features:
 The chat screen is now a truly premium experience that matches the best messaging apps in 2025! 🎉
 
 
+
+
+
+
+
+
+
+
+

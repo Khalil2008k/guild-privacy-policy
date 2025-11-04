@@ -24,6 +24,8 @@ import { useI18n } from '../../contexts/I18nProvider';
 import { useUserProfile } from '../../contexts/UserProfileContext';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { ValidationRules } from '../../utils/validation';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -114,7 +116,8 @@ export default function ProfileCompletionScreen() {
 
   // Animate on step change
   useEffect(() => {
-    console.log('📝 ProfileCompletion: Step changed to:', currentStep);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('📝 ProfileCompletion: Step changed to:', currentStep);
     
     Animated.timing(slideAnimation, {
       toValue: 1,
@@ -140,7 +143,7 @@ export default function ProfileCompletionScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -148,10 +151,12 @@ export default function ProfileCompletionScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setProfileImage(result.assets[0].uri);
-        console.log('📝 Profile image selected:', result.assets[0].uri);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('📝 Profile image selected:', result.assets[0].uri);
       }
     } catch (error) {
-      console.error('📝 Error picking image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📝 Error picking image:', error);
       CustomAlertService.showError(t('error'), t('failedToSelectImage'));
     }
   };
@@ -194,17 +199,21 @@ export default function ProfileCompletionScreen() {
           
           setProfileImage(imageUri);
           setFaceDetected(true);
-          console.log('📝 Profile photo with face taken:', imageUri);
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('📝 Profile photo with face taken:', imageUri);
         } else if (imageType === 'idFront') {
           setIdFrontImage(imageUri);
-          console.log('📝 ID front photo taken:', imageUri);
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('📝 ID front photo taken:', imageUri);
         } else if (imageType === 'idBack') {
           setIdBackImage(imageUri);
-          console.log('📝 ID back photo taken:', imageUri);
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('📝 ID back photo taken:', imageUri);
         }
       }
     } catch (error) {
-      console.error('📝 Error taking photo:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📝 Error taking photo:', error);
       CustomAlertService.showError(t('error'), t('failedToTakePhoto'));
     }
   };
@@ -244,10 +253,12 @@ export default function ProfileCompletionScreen() {
       };
 
       setLocation(locationData);
-      console.log('📝 Location obtained:', locationData);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('📝 Location obtained:', locationData);
       
     } catch (error) {
-      console.error('📝 Error getting location:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📝 Error getting location:', error);
       CustomAlertService.showError(t('error'), t('failedToGetLocation'));
     } finally {
       setIsLoading(false);
@@ -342,7 +353,8 @@ export default function ProfileCompletionScreen() {
         completedAt: new Date().toISOString(),
       };
 
-      console.log('📝 Submitting profile data:', profileData);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('📝 Submitting profile data:', profileData);
       
       // Save to user profile context
       await updateProfile(profileData);
@@ -350,11 +362,13 @@ export default function ProfileCompletionScreen() {
       // Mock API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      console.log('✅ Profile submitted and saved successfully');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ Profile submitted and saved successfully');
       setCurrentStep('complete');
       
     } catch (error) {
-      console.error('📝 Error submitting profile:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📝 Error submitting profile:', error);
       CustomAlertService.showError(t('error'), t('failedToSaveProfile'));
     } finally {
       setIsLoading(false);

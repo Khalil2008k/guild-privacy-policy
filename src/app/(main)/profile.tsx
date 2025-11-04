@@ -24,13 +24,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { walletAPIClient } from '../../services/walletAPIClient';
 import { router } from 'expo-router';
 import { Shield } from 'lucide-react-native';
-import { QrCode, CheckCircle, Grid, User, MessageCircle, Briefcase, Phone, IdCard, MapPin, ChevronLeft, ChevronRight, Check, Edit, Wallet, Users, FileText, File, Settings, Bell, BarChart3, Trophy, HelpCircle, LogOut, XCircle, Eye, EyeOff, X } from 'lucide-react-native';
+import { QrCode, CheckCircle, Grid, User, MessageCircle, Briefcase, Phone, IdCard, MapPin, ChevronLeft, ChevronRight, Check, Edit, Wallet, Users, FileText, File, Settings, Bell, BarChart3, Trophy, HelpCircle, LogOut, XCircle, Eye, EyeOff, X, RefreshCw } from 'lucide-react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useI18n } from '../../contexts/I18nProvider';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
+import { logger } from '../../utils/logger'; // COMMENT: PRIORITY 1 - Logger migration
 
 const { width, height } = Dimensions.get('window');
 
@@ -77,6 +78,7 @@ const getLucideIcon = (iconName: string, color: string) => {
     'trophy-outline': Trophy,
     'help-circle-outline': HelpCircle,
     'log-out-outline': LogOut,
+    'refresh-outline': RefreshCw,
   };
   
   const IconComponent = iconMap[iconName];
@@ -88,6 +90,19 @@ export default function ProfileScreen() {
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useI18n();
   const { profile, updateProfile } = useUserProfile();
+  
+  // Debug: Log profile data
+  React.useEffect(() => {
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🔍 Profile Screen - Current profile data:', {
+      fullName: profile.fullName,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      idNumber: profile.idNumber,
+      profileImage: profile.profileImage ? 'Has image' : 'No image',
+      isLoading: profile.isLoading
+    });
+  }, [profile]);
   const { currentRank, rankBenefits, nextRankProgress, userStats } = useRanking();
   const { user, signOut } = useAuth();
   const { userGuildStatus } = useGuild();
@@ -131,10 +146,11 @@ export default function ProfileScreen() {
   const qrCodeData = JSON.stringify({
     name: profile.firstName && profile.lastName 
       ? `${profile.firstName} ${profile.lastName}`
-      : 'User Profile',
+      : profile.fullName || 'User Profile',
     guild: userGuildStatus.isSolo ? 'SOLO' : (userGuildStatus.guild?.displayText || 'GUILD'),
-    gid: profile.idNumber || '12356555',
+    gid: profile.idNumber || 'Loading...',
     userId: user?.uid || 'unknown',
+    profileImage: profile.profileImage || profile.processedImage || null,
     timestamp: new Date().toISOString()
   });
   
@@ -144,7 +160,8 @@ export default function ProfileScreen() {
   
   // 🧪 PREMIUM TEST: Start animations on mount
   useEffect(() => {
-    console.log('🎮 Starting premium animations...');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🎮 Starting premium animations...');
     
     // Animated neon glow effect - MORE VISIBLE
     Animated.loop(
@@ -166,7 +183,8 @@ export default function ProfileScreen() {
     
     // Crown animation removed - keeping it static as requested
     
-    console.log('✨ Premium animations started!');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('✨ Premium animations started!');
   }, []);
 
   // Fetch wallet balance - COMMENTED OUT FOR FAKE PAYMENT SYSTEM
@@ -188,13 +206,16 @@ export default function ProfileScreen() {
   
   // 🧪 PREMIUM TEST: Haptic feedback function
   const handlePremiumPress = (callback: () => void) => {
-    console.log('🎮 Premium button pressed!');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🎮 Premium button pressed!');
     
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      console.log('✨ Haptic feedback triggered!');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✨ Haptic feedback triggered!');
     } catch (error) {
-      console.log('❌ Haptic error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('❌ Haptic error:', error);
     }
     
     Animated.sequence([
@@ -241,7 +262,8 @@ export default function ProfileScreen() {
         isRTL
       );
     } catch (error) {
-      console.error('📷 Error requesting camera permission:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📷 Error requesting camera permission:', error);
     }
   };
 
@@ -272,7 +294,8 @@ export default function ProfileScreen() {
                 faceDetected: false,
                 aiProcessed: false
               });
-              console.log('📷 Profile image updated (original)');
+              // COMMENT: PRIORITY 1 - Replace console.log with logger
+              logger.debug('📷 Profile image updated (original)');
             },
             () => {
               // User chose not to use original, try again
@@ -290,7 +313,8 @@ export default function ProfileScreen() {
           aiProcessed: true
         });
         
-        console.log('🤖 Profile image processed with AI successfully');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('🤖 Profile image processed with AI successfully');
         CustomAlertService.showSuccess(
           isRTL ? 'تم معالجة الصورة!' : 'Image Processed!',
           isRTL 
@@ -299,7 +323,8 @@ export default function ProfileScreen() {
         );
       }
     } catch (error) {
-      console.error('📷 Error taking photo:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('📷 Error taking photo:', error);
       CustomAlertService.showError(t('error'), t('failedToTakePhoto'));
       setIsLoading(false);
     }
@@ -354,7 +379,8 @@ export default function ProfileScreen() {
       }
       
     } catch (error) {
-      console.error('🤖 AI processing error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🤖 AI processing error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -378,11 +404,13 @@ export default function ProfileScreen() {
       await updateProfile(editData);
       setIsEditing(false);
       
-      console.log('👤 Profile updated successfully:', editData);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('👤 Profile updated successfully:', editData);
       CustomAlertService.showSuccess(t('success'), t('profileUpdatedSuccessfully'));
       
     } catch (error) {
-      console.error('👤 Error updating profile:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('👤 Error updating profile:', error);
       CustomAlertService.showError(t('error'), t('failedToUpdateProfile'));
     } finally {
       setIsLoading(false);
@@ -556,7 +584,7 @@ export default function ProfileScreen() {
             {/* TOP HALF - WHITE BACKGROUND */}
             <View style={styles.whiteSection}>
               {/* STEP 2: Header - GUILD logo (left) and Balance (right) */}
-              <View style={styles.cardTopHeader}>
+              <View style={[styles.cardTopHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {/* GUILD Logo - Left */}
                 <View style={styles.guildLogoLeft}>
                   <Shield size={30} color="#000000" />
@@ -565,7 +593,7 @@ export default function ProfileScreen() {
                 
                 {/* Balance - Right */}
                 <View style={styles.balanceContainer}>
-                  <Text style={styles.balanceLabel}>Guild Coins</Text>
+                  <Text style={styles.balanceLabel}>Guild COINS</Text>
                   <View style={styles.balancePillRow}>
                     <View style={styles.balancePill}>
                       <Text style={styles.balanceAmount}>
@@ -590,9 +618,9 @@ export default function ProfileScreen() {
               {/* STEP 3: User Photo - Center */}
               <View style={styles.photoContainer}>
                 {/* User Photo - RECTANGULAR */}
-                {profile.profileImage ? (
+                {(profile.processedImage || profile.profileImage) ? (
                   <Image 
-                    source={{ uri: profile.profileImage }} 
+                    source={{ uri: profile.processedImage || profile.profileImage }} 
                     style={styles.userPhotoRect}
                   />
                 ) : (
@@ -610,7 +638,7 @@ export default function ProfileScreen() {
 
             {/* Rank Badge - Overlapping between white and green on LEFT */}
             <View style={styles.rankBadgeAbsolute}>
-              <Text style={styles.rankLabel}>Rank</Text>
+              <Text style={styles.rankLabel}>RANK</Text>
               <View style={styles.rankBadgeCircle}>
                 <Text style={styles.rankBadgeText}>{currentRank}</Text>
               </View>
@@ -639,16 +667,18 @@ export default function ProfileScreen() {
                     <Text style={styles.infoLabel}>NAME : </Text>
                     {profile.firstName && profile.lastName 
                       ? `${profile.firstName.toLowerCase()} ${profile.lastName.toLowerCase()}`
-                      : 'khalil ahmed ali'
+                      : profile.fullName 
+                        ? profile.fullName.toLowerCase()
+                        : 'Loading...'
                     }
                   </Text>
                   <Text style={styles.infoText}>
                     <Text style={styles.infoLabel}>ID : </Text>
-                    {profile.idNumber || '12356555'}
+                    {profile.idNumber || 'Loading...'}
                   </Text>
                   <Text style={styles.infoText}>
                     <Text style={styles.infoLabel}>GID : </Text>
-                    {profile.idNumber || '12356555'}
+                    {profile.idNumber || 'Loading...'}
                   </Text>
                   <Text style={styles.infoText}>
                     <Text style={styles.infoLabel}>GUILD : </Text>
@@ -661,7 +691,7 @@ export default function ProfileScreen() {
               </View>
               
               {/* All Icons - Horizontal Row */}
-              <View style={styles.allIconsRow}>
+              <View style={[styles.allIconsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {/* Verification Status - Admin given */}
                 <TouchableOpacity style={styles.iconButton}>
                   {true ? ( // Temporarily set to true for testing
@@ -709,7 +739,7 @@ export default function ProfileScreen() {
                 <View style={styles.rankingHeader}>
                   <Trophy size={24} color="#000000" />
                   <Text style={styles.rankingTitle}>
-                    {isRTL ? 'تقدم الترتيب' : 'Ranking Progress'}
+                    RANKING PROGRESS
                   </Text>
                 </View>
                 
@@ -722,7 +752,7 @@ export default function ProfileScreen() {
                   </View>
                   <View style={styles.rankDetails}>
                     <Text style={styles.rankTitleModern}>
-                      {rankBenefits.titlePrefix ? `${rankBenefits.titlePrefix} Rank` : `Rank ${currentRank}`}
+                      {rankBenefits.titlePrefix ? `${rankBenefits.titlePrefix} RANK` : `RANK ${currentRank}`}
                     </Text>
                     <Text style={styles.rankSubtitleModern}>
                       {userStats?.tasksCompleted || 0} tasks completed • {userStats?.totalEarnings || 0} QAR earned

@@ -31,6 +31,8 @@ import BiometricAuthService from '../../utils/biometricAuth';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { detectAuthInputType, getInputPlaceholder, getInputIcon, AuthInputType } from '../../utils/authInputDetector';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -88,25 +90,29 @@ export default function SignInScreen() {
       const savedEmail = await AsyncStorage.getItem('rememberedEmail');
       const savedRememberMe = await AsyncStorage.getItem('rememberMe');
       
-      console.log('🔐 Remember Me: Loading saved credentials...', { 
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔐 Remember Me: Loading saved credentials...', { 
         hasSavedEmail: !!savedEmail, 
         rememberMeEnabled: savedRememberMe === 'true',
         savedEmail: savedEmail || 'none'
       });
       
       if (savedEmail && savedRememberMe === 'true') {
-        console.log('✅ Remember Me: Auto-filling email:', savedEmail);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Remember Me: Auto-filling email:', savedEmail);
         setIdentifier(savedEmail);
         setRememberMe(true);
         const result = detectAuthInputType(savedEmail);
         setDetectedType(result.type);
       } else {
-        console.log('ℹ️ Remember Me: No saved credentials found', {
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('ℹ️ Remember Me: No saved credentials found', {
           reason: !savedEmail ? 'No email saved' : 'Remember Me was not enabled'
         });
       }
     } catch (error) {
-      console.error('❌ Remember Me: Error loading saved credentials:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('❌ Remember Me: Error loading saved credentials:', error);
     }
   };
 
@@ -114,9 +120,11 @@ export default function SignInScreen() {
     try {
       const isAvailable = await BiometricAuthService.isAvailable();
       setBiometricAvailable(isAvailable);
-      console.log('🔒 Biometric availability:', isAvailable);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔒 Biometric availability:', isAvailable);
     } catch (error) {
-      console.error('🔒 Error checking biometric availability:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔒 Error checking biometric availability:', error);
       setBiometricAvailable(false);
     }
   };
@@ -240,15 +248,19 @@ export default function SignInScreen() {
     try {
       // Save credentials BEFORE sign-in to ensure it completes
       if (rememberMe) {
-        console.log('💾 Remember Me: Saving email for next time:', inputResult.formattedValue);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('💾 Remember Me: Saving email for next time:', inputResult.formattedValue);
         await AsyncStorage.setItem('rememberedEmail', inputResult.formattedValue);
         await AsyncStorage.setItem('rememberMe', 'true');
-        console.log('✅ Remember Me: Email saved successfully');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Remember Me: Email saved successfully');
       } else {
-        console.log('🗑️ Remember Me: Clearing saved credentials');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('🗑️ Remember Me: Clearing saved credentials');
         await AsyncStorage.removeItem('rememberedEmail');
         await AsyncStorage.removeItem('rememberMe');
-        console.log('✅ Remember Me: Credentials cleared');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Remember Me: Credentials cleared');
       }
       
       // Now sign in
@@ -266,10 +278,12 @@ export default function SignInScreen() {
       ].includes(error.code);
 
       if (isExpectedAuthFailure) {
-        console.log('🔐 Authentication failed:', error.code);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('🔐 Authentication failed:', error.code);
       } else {
         // Actual unexpected errors (network, server issues)
-        console.error('🔐 Sign-in error:', error);
+        // COMMENT: PRIORITY 1 - Replace console.error with logger
+        logger.error('🔐 Sign-in error:', error);
       }
       
       const errorMessage = getAuthErrorMessage(error.code || 'unknown', isRTL);
@@ -282,7 +296,8 @@ export default function SignInScreen() {
 
   const handleBiometricAuth = async () => {
     try {
-      console.log('🔒 Starting biometric authentication...');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔒 Starting biometric authentication...');
       
       // Import LocalAuthentication
       const LocalAuthentication = require('expo-local-authentication');
@@ -291,7 +306,8 @@ export default function SignInScreen() {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       
-      console.log('🔒 Device biometric check:', { hasHardware, isEnrolled });
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔒 Device biometric check:', { hasHardware, isEnrolled });
       
       if (!hasHardware) {
         CustomAlertService.showError(
@@ -317,10 +333,12 @@ export default function SignInScreen() {
         disableDeviceFallback: false,
       });
       
-      console.log('🔒 Biometric result:', result);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔒 Biometric result:', result);
       
       if (result.success) {
-        console.log('✅ Biometric authentication successful!');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Biometric authentication successful!');
         
         // Demo credentials for testing
         const demoEmail = 'demo@guild.app';
@@ -330,7 +348,8 @@ export default function SignInScreen() {
           await signInWithEmail(demoEmail, demoPassword);
           router.replace('/(main)/home');
         } catch (firebaseError: any) {
-          console.log('Demo account setup needed');
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('Demo account setup needed');
           CustomAlertService.showInfo(
             isRTL ? 'إعداد مطلوب' : 'Setup Required',
             isRTL ? 'للاستخدام الأول، يرجى تسجيل الدخول بالبريد الإلكتروني' : 'For first use, please sign in with email',
@@ -344,7 +363,8 @@ export default function SignInScreen() {
         }
       }
     } catch (error) {
-    console.error('🔒 Biometric authentication error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔒 Biometric authentication error:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل المصادقة البيومترية' : 'Biometric authentication failed'

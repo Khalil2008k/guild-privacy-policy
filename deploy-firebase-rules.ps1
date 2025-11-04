@@ -58,3 +58,12 @@ Write-Host "   https://console.firebase.google.com/project/guild-4f46b/storage/r
 Write-Host ""
 
 
+
+
+
+
+
+
+
+
+

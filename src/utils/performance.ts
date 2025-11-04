@@ -1,6 +1,8 @@
 // Performance optimization utilities for React components
 
 import { useMemo, useCallback, useRef, useEffect } from 'react';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from './logger';
 
 // Memoization helper for expensive computations
 export function useMemoizedValue<T>(
@@ -14,7 +16,8 @@ export function useMemoizedValue<T>(
     // Only log in development and when explicitly enabled
     const shouldLog = process.env.EXPO_PUBLIC_DEBUG_PERFORMANCE === 'true';
     if (shouldLog) {
-      console.log(`[Performance] ${debugLabel} recomputed`, { 
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`[Performance] ${debugLabel} recomputed`, { 
         deps: deps.map(dep => typeof dep === 'string' ? dep : typeof dep), 
         hasValue: !!value 
       });
@@ -165,7 +168,8 @@ export function useRenderCounter(componentName: string, enabled: boolean = __DEV
   useEffect(() => {
     if (enabled) {
       renderCount.current += 1;
-      console.log(`[Render Counter] ${componentName}: ${renderCount.current}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`[Render Counter] ${componentName}: ${renderCount.current}`);
     }
   });
 
@@ -176,7 +180,8 @@ export function useRenderCounter(componentName: string, enabled: boolean = __DEV
 export function logBundleSize() {
   if (__DEV__) {
     // In development, we can monitor bundle size
-    console.log('[Bundle Size] Monitoring enabled');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('[Bundle Size] Monitoring enabled');
 
     // You can integrate with webpack-bundle-analyzer or similar
     // This is a placeholder for actual bundle size monitoring

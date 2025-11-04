@@ -47,3 +47,12 @@ All blur effects have been removed from the Guild app to improve performance and
 - The app now has a cleaner, more performant interface
 - No functionality was lost, only visual blur effects were removed
 
+
+
+
+
+
+
+
+
+

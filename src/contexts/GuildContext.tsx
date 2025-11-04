@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GuildSystem, Guild, GuildMember, UserGuildStatus, GuildRole, MemberLevel, GuildInvitation, GuildJoinRequest } from '../utils/guildSystem';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface GuildContextType {
   // Current user's guild status
@@ -135,7 +137,8 @@ export function GuildProvider({ children }: GuildProviderProps) {
         setGuildJoinRequests(requests);
       }
     } catch (error) {
-      console.error('Failed to load guild data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to load guild data:', error);
     } finally {
       setLoading(false);
     }
@@ -155,7 +158,8 @@ export function GuildProvider({ children }: GuildProviderProps) {
         await AsyncStorage.removeItem(STORAGE_KEYS.CURRENT_MEMBERSHIP);
       }
     } catch (error) {
-      console.error('Failed to save guild data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to save guild data:', error);
     }
   };
 
@@ -178,9 +182,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setCurrentMembership(membership);
       await saveGuildData(guild, membership);
 
-      console.log(`✅ Joined guild: ${guild.name} as ${GuildSystem.getRoleDisplayText(role, level)}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Joined guild: ${guild.name} as ${GuildSystem.getRoleDisplayText(role, level)}`);
     } catch (error) {
-      console.error('Failed to join guild:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to join guild:', error);
       throw error;
     }
   };
@@ -191,9 +197,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setCurrentMembership(null);
       await saveGuildData(null, null);
 
-      console.log('✅ Left guild successfully');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ Left guild successfully');
     } catch (error) {
-      console.error('Failed to leave guild:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to leave guild:', error);
       throw error;
     }
   };
@@ -245,9 +253,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setCurrentMembership(membership);
       await saveGuildData(newGuild, membership);
 
-      console.log(`✅ Created guild: ${newGuild.name}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Created guild: ${newGuild.name}`);
     } catch (error) {
-      console.error('Failed to create guild:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to create guild:', error);
       throw error;
     }
   };
@@ -267,9 +277,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setCurrentMembership(updatedMembership);
       await saveGuildData(currentGuild, updatedMembership);
 
-      console.log(`✅ Updated guild role to: ${GuildSystem.getRoleDisplayText(role, level)}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Updated guild role to: ${GuildSystem.getRoleDisplayText(role, level)}`);
     } catch (error) {
-      console.error('Failed to update guild membership:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to update guild membership:', error);
       throw error;
     }
   };
@@ -329,9 +341,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setGuildInvitations(updatedInvitations);
       await AsyncStorage.setItem(STORAGE_KEYS.GUILD_INVITATIONS, JSON.stringify(updatedInvitations));
 
-      console.log(`✅ Invitation sent to user ${userId} for guild ${guild.name}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Invitation sent to user ${userId} for guild ${guild.name}`);
     } catch (error) {
-      console.error('Failed to send guild invitation:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to send guild invitation:', error);
       throw error;
     }
   };
@@ -356,9 +370,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
         await joinGuild(invitation.guildId, invitation.role, invitation.level);
       }
 
-      console.log(`✅ Invitation ${response}ed for guild ${invitation.guildName}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Invitation ${response}ed for guild ${invitation.guildName}`);
     } catch (error) {
-      console.error('Failed to respond to invitation:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to respond to invitation:', error);
       throw error;
     }
   };
@@ -393,9 +409,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
       setGuildJoinRequests(updatedRequests);
       await AsyncStorage.setItem(STORAGE_KEYS.GUILD_JOIN_REQUESTS, JSON.stringify(updatedRequests));
 
-      console.log(`✅ Join request sent to guild ${guild.name}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Join request sent to guild ${guild.name}`);
     } catch (error) {
-      console.error('Failed to request guild join:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to request guild join:', error);
       throw error;
     }
   };
@@ -417,12 +435,15 @@ export function GuildProvider({ children }: GuildProviderProps) {
 
       if (response === 'approve') {
         // In real app, this would notify the user and add them to the guild
-        console.log(`✅ User ${request.userName} approved to join guild`);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug(`✅ User ${request.userName} approved to join guild`);
       }
 
-      console.log(`✅ Join request ${response}d for user ${request.userName}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Join request ${response}d for user ${request.userName}`);
     } catch (error) {
-      console.error('Failed to respond to join request:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to respond to join request:', error);
       throw error;
     }
   };
@@ -442,9 +463,11 @@ export function GuildProvider({ children }: GuildProviderProps) {
 
       await AsyncStorage.setItem(STORAGE_KEYS.AVAILABLE_GUILDS, JSON.stringify(updatedGuilds));
 
-      console.log(`✅ Guild settings updated for ${guildId}`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Guild settings updated for ${guildId}`);
     } catch (error) {
-      console.error('Failed to update guild settings:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Failed to update guild settings:', error);
       throw error;
     }
   };

@@ -7,6 +7,8 @@
 import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import MessageNotificationService from './MessageNotificationService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 class GlobalChatNotificationServiceClass {
   private unsubscribe: (() => void) | null = null;
@@ -22,7 +24,8 @@ class GlobalChatNotificationServiceClass {
     }
 
     this.currentUserId = userId;
-    console.log('🔔 Starting global chat notification listener for user:', userId);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🔔 Starting global chat notification listener for user:', userId);
 
     // Listen to all chats where user is a participant
     const chatsQuery = query(
@@ -37,7 +40,8 @@ class GlobalChatNotificationServiceClass {
             const chat = change.doc.data();
             // Guard: Validate chat data structure
             if (!chat || typeof chat !== 'object') {
-              console.warn('🔔 Invalid chat data, skipping:', change.doc.id);
+              // COMMENT: PRIORITY 1 - Replace console.warn with logger
+              logger.warn('🔔 Invalid chat data, skipping:', change.doc.id);
               return;
             }
             const chatId = change.doc.id;
@@ -50,14 +54,16 @@ class GlobalChatNotificationServiceClass {
 
               // New message detected
               if (lastMessageTime > previousTime && chat.lastMessage.senderId !== userId) {
-                console.log('🔔 New message detected in chat:', chatId);
+                // COMMENT: PRIORITY 1 - Replace console.log with logger
+                logger.debug('🔔 New message detected in chat:', chatId);
                 
                 // Update timestamp
                 this.lastMessageTimestamps.set(chatId, lastMessageTime);
 
                 // Guard: Validate senderId before calling getSenderName
                 if (!chat.lastMessage.senderId || typeof chat.lastMessage.senderId !== 'string') {
-                  console.warn('🔔 Invalid senderId, skipping notification:', chatId);
+                  // COMMENT: PRIORITY 1 - Replace console.warn with logger
+                  logger.warn('🔔 Invalid senderId, skipping notification:', chatId);
                   return;
                 }
 
@@ -76,7 +82,8 @@ class GlobalChatNotificationServiceClass {
             }
           }
         } catch (error) {
-          console.error('🔔 Error processing chat change:', error, {
+          // COMMENT: PRIORITY 1 - Replace console.error with logger
+          logger.error('🔔 Error processing chat change:', error, {
             chatId: change.doc?.id,
             changeType: change.type
           });
@@ -84,7 +91,8 @@ class GlobalChatNotificationServiceClass {
         }
       });
     }, (error) => {
-      console.error('🔔 GlobalChatNotificationService error:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔔 GlobalChatNotificationService error:', error);
       // Don't stop listening on error, just log it
       // The service will continue to work for other chats
     });
@@ -95,7 +103,8 @@ class GlobalChatNotificationServiceClass {
    */
   stopListening() {
     if (this.unsubscribe) {
-      console.log('🔕 Stopping global chat notification listener');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔕 Stopping global chat notification listener');
       this.unsubscribe();
       this.unsubscribe = null;
     }
@@ -114,7 +123,8 @@ class GlobalChatNotificationServiceClass {
       }
       return 'Someone';
     } catch (error) {
-      console.error('Error getting sender name:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting sender name:', error);
       return 'Someone';
     }
   }

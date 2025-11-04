@@ -6,6 +6,8 @@
 
 import { BackendAPI } from '../config/backend';
 import { CustomAlertService } from './CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface Wallet {
   userId: string;
@@ -84,7 +86,7 @@ class RealPaymentService {
       // If no wallet exists, create one
       return await this.initializeWallet(userId);
     } catch (error) {
-      console.warn('Error getting wallet (using offline mode):', error);
+      logger.warn('Error getting wallet (using offline mode):', error);
       // Return default wallet for offline mode with proper structure
       return {
         userId,
@@ -131,7 +133,7 @@ class RealPaymentService {
       await this.saveWallet(wallet);
       return wallet;
     } catch (error) {
-      console.error('Error initializing wallet:', error);
+      logger.error('Error initializing wallet:', error);
       throw new Error('Failed to initialize wallet');
     }
   }
@@ -155,7 +157,7 @@ class RealPaymentService {
       
       throw new Error(response.data.message || 'Payment failed');
     } catch (error) {
-      console.error('Error processing payment:', error);
+      logger.error('Error processing payment:', error);
       throw new Error('Payment processing failed');
     }
   }
@@ -184,11 +186,11 @@ class RealPaymentService {
       
       throw new Error(response.data.error || 'Withdrawal request failed');
     } catch (error) {
-      console.error('Error requesting withdrawal:', error);
+      logger.error('Error requesting withdrawal:', error);
       
       // If backend is not available, simulate a successful withdrawal request
       if (error instanceof Error && error.message.includes('HTTP 404')) {
-        console.warn('Backend not available, simulating withdrawal request');
+        logger.warn('Backend not available, simulating withdrawal request');
         return {
           success: true,
           transactionId: `WD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -221,7 +223,7 @@ class RealPaymentService {
       
       throw new Error(response.data.message || 'Deposit failed');
     } catch (error) {
-      console.error('Error processing deposit:', error);
+      logger.error('Error processing deposit:', error);
       throw new Error('Deposit processing failed');
     }
   }
@@ -239,7 +241,7 @@ class RealPaymentService {
       
       return [];
     } catch (error) {
-      console.error('Error getting transaction history:', error);
+      logger.error('Error getting transaction history:', error);
       return [];
     }
   }
@@ -257,7 +259,7 @@ class RealPaymentService {
       
       return ['card', 'bank_transfer'];
     } catch (error) {
-      console.error('Error getting payment methods:', error);
+      logger.error('Error getting payment methods:', error);
       return ['card', 'bank_transfer'];
     }
   }
@@ -275,34 +277,41 @@ class RealPaymentService {
       
       return ['Guild Coins', 'USD', 'EUR', 'QR'];
     } catch (error) {
-      console.error('Error getting currencies:', error);
+      logger.error('Error getting currencies:', error);
       return ['Guild Coins', 'USD', 'EUR', 'QR'];
     }
   }
 
   /**
    * Check if demo mode is enabled
+   * COMMENT: PRODUCTION HARDENING - Demo mode disabled, always returns false (production mode)
    */
   async isDemoModeEnabled(): Promise<boolean> {
-    try {
-      // Backend route is registered at /api/v1/payments/demo-mode
-      // BackendAPI.baseURL already includes /api, so full path is correct
-      // Verify: backend/src/routes/payments.ts mounts at /api/v1/payments
-      const response = await BackendAPI.get('/api/v1/payments/demo-mode');
-      
-      if (response.data && response.data.success) {
-        return response.data.demoMode === true;
-      }
-      
-      return false; // Default to production mode
-    } catch (error) {
-      console.error('Error checking demo mode:', error);
-      // Log full error for debugging
-      if (error instanceof Error) {
-        console.error('Demo mode check error details:', error.message, error.stack);
-      }
-      return false;
-    }
+    // COMMENT: PRODUCTION HARDENING - Demo mode check commented out to prevent errors
+    // Backend endpoint /api/v1/payments/demo-mode does not exist or is not needed
+    // Always return false (production mode) to prevent unnecessary API calls
+    return false;
+    
+    // COMMENTED OUT - Original implementation that was causing errors
+    // try {
+    //   // Backend route is registered at /api/v1/payments/demo-mode
+    //   // BackendAPI.baseURL already includes /api, so full path is correct
+    //   // Verify: backend/src/routes/payments.ts mounts at /api/v1/payments
+    //   const response = await BackendAPI.get('/api/v1/payments/demo-mode');
+    //   
+    //   if (response.data && response.data.success) {
+    //     return response.data.demoMode === true;
+    //   }
+    //   
+    //   return false; // Default to production mode
+    // } catch (error) {
+    //   console.error('Error checking demo mode:', error);
+    //   // Log full error for debugging
+    //   if (error instanceof Error) {
+    //     console.error('Demo mode check error details:', error.message, error.stack);
+    //   }
+    //   return false;
+    // }
   }
 
   /**
@@ -312,10 +321,10 @@ class RealPaymentService {
     try {
       // Wallet is stored in Firestore, not backend API
       // This method is kept for compatibility but doesn't need to call backend
-      console.log('💾 Wallet saved to Firestore (not backend API)');
+      logger.debug('💾 Wallet saved to Firestore (not backend API)');
       // If backend API is needed in future, use: await BackendAPI.post('/api/v1/wallet', wallet);
     } catch (error) {
-      console.error('Error saving wallet:', error);
+      logger.error('Error saving wallet:', error);
       throw new Error('Failed to save wallet');
     }
   }
@@ -347,7 +356,7 @@ class RealPaymentService {
       
       return amount; // Fallback to original amount
     } catch (error) {
-      console.error('Error converting currency:', error);
+      logger.error('Error converting currency:', error);
       return amount;
     }
   }

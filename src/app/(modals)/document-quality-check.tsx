@@ -12,11 +12,14 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Upload, Eye, RefreshCw } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useCustomAlert } from '../../components/CustomAlert';
 import { getContrastTextColor } from '../../utils/colorUtils';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -215,7 +218,8 @@ export default function DocumentQualityCheckScreen() {
       setShowQualityModal(true);
 
     } catch (error) {
-      console.error('Error uploading document:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error uploading document:', error);
       showAlert(
         'Upload Error',
         'Failed to upload document. Please try again.',

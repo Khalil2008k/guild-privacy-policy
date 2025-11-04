@@ -109,3 +109,12 @@ Animated.sequence([
 
 **The animation creates a subtle but engaging effect that draws attention to the tagline without being distracting!**
 
+
+
+
+
+
+
+
+
+

@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Moon, Sun, Globe, Bell, Lock, User, ChevronRight, LogOut } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const FONT_FAMILY = 'Signika Negative SC';

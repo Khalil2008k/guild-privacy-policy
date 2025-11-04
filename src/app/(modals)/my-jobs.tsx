@@ -27,6 +27,8 @@ import { useI18n } from '@/contexts/I18nProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -117,7 +119,8 @@ export default function MyJobsScreen() {
         setJobs([]);
       }
     } catch (error) {
-      console.error('Error loading jobs:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading jobs:', error);
       setJobs([]);
     } finally {
       setLoading(false);

@@ -202,3 +202,12 @@ shadowRadius: 12, // Was 8
 **The chat screen is now fully modern with 2025 design standards, complete shadow system, and professional polish! 🎉**
 
 
+
+
+
+
+
+
+
+
+

@@ -137,3 +137,12 @@ The screen will now load properly in Expo Go with:
 **All systems operational!** 🎉
 
 
+
+
+
+
+
+
+
+
+

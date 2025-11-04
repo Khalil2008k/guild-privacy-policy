@@ -332,3 +332,12 @@ const compressed = await ImageCompressionService.smartCompress(imageUri);
 *Status: READY FOR INTEGRATION*
 
 
+
+
+
+
+
+
+
+
+

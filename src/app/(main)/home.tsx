@@ -16,8 +16,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nManager } from 'react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { jobService, Job } from '../../services/jobService';
+import { logger } from '../../utils/logger'; // COMMENT: FINAL STABILIZATION - Task 7 - Replace console.log with logger
 import { JobMap } from '../../components/JobMap';
-import { FakePaymentDisplay } from '../../components/FakePaymentDisplay';
+// COMMENT: PRODUCTION HARDENING - FakePaymentDisplay disabled per Task 2.1
+// import { FakePaymentDisplay } from '../../components/FakePaymentDisplay';
 import { 
   createButtonAccessibility, 
   createTextInputAccessibility, 
@@ -26,127 +28,32 @@ import {
   createListAccessibility,
   createListItemAccessibility
 } from '../../utils/accessibility';
-
-// Create a simple search screen component
-const SearchScreen = React.memo(({ visible, onClose, searchQuery, onSearchChange, jobs }: any) => {
-  const { theme } = useTheme();
-  const { t, isRTL } = useI18n();
-
-  if (!visible) return null;
-
-  const filteredJobs = jobs.filter((job: any) => {
-    const query = searchQuery.toLowerCase();
-    const matchesTitle = job.title?.toLowerCase().includes(query);
-    const matchesCompany = job.company?.toLowerCase().includes(query);
-    const matchesSkills = job.skills?.some((skill: string) => skill.toLowerCase().includes(query));
-    
-    // Issue #6 Fix: Expanded search to include location, budget, category
-    const matchesLocation = typeof job.location === 'object' 
-      ? job.location?.address?.toLowerCase().includes(query)
-      : job.location?.toLowerCase().includes(query);
-    
-    const matchesBudget = job.budget?.toString().includes(query);
-    const matchesCategory = job.category?.toLowerCase().includes(query);
-    const matchesTimeNeeded = job.timeNeeded?.toLowerCase().includes(query);
-    
-    return matchesTitle || matchesCompany || matchesSkills || matchesLocation || matchesBudget || matchesCategory || matchesTimeNeeded;
-  });
-
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.searchModal, { backgroundColor: theme.background }]}>
-        <View style={[styles.searchHeader, { borderBottomColor: theme.border }]}>
-          <TextInput
-            style={[styles.searchInput, { backgroundColor: theme.surface, color: theme.textPrimary }]}
-            placeholder={t('searchJobs')}
-            placeholderTextColor={theme.textSecondary}
-            value={searchQuery}
-            onChangeText={onSearchChange}
-            autoFocus
-            {...createSearchAccessibility(
-              t('searchJobs'),
-              searchQuery,
-              isRTL ? 'ابحث عن الوظائف بالعنوان أو الشركة أو المهارات' : 'Search jobs by title, company, or skills'
-            )}
-          />
-          <TouchableOpacity 
-            onPress={onClose} 
-            style={styles.closeButton}
-            {...createButtonAccessibility(
-              isRTL ? 'إغلاق البحث' : 'Close search',
-              isRTL ? 'اضغط لإغلاق شاشة البحث' : 'Tap to close search screen'
-            )}
-          >
-            <Ionicons name="close" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
-        </View>
-        <ScrollView 
-          style={styles.searchResults}
-          {...createListAccessibility(
-            isRTL ? 'نتائج البحث' : 'Search results',
-            filteredJobs.length
-          )}
-        >
-          {filteredJobs.map((job: any, index: number) => (
-            <TouchableOpacity
-              key={job.id}
-              style={[styles.searchResultItem, { backgroundColor: theme.surface, borderColor: theme.border }]}
-              onPress={() => {
-                onClose();
-                router.push(`/(modals)/job/${job.id}` as any);
-              }}
-              {...createListItemAccessibility(
-                `${job.title} ${isRTL ? 'في' : 'at'} ${job.company}`,
-                index + 1,
-                filteredJobs.length,
-                isRTL ? `راتب: ${job.budget}, موقع: ${typeof job.location === 'object' ? job.location?.address || 'غير محدد' : job.location}` : `Budget: ${job.budget}, Location: ${typeof job.location === 'object' ? job.location?.address || 'Not specified' : job.location}`
-              )}
-            >
-              <Text style={[styles.searchResultTitle, { color: theme.textPrimary }]}>{job.title}</Text>
-              <Text style={[styles.searchResultCompany, { color: theme.textSecondary }]}>{job.company}</Text>
-              <Text style={[styles.searchResultSalary, { color: theme.primary }]}>
-                {typeof job.budget === 'string' 
-                  ? (() => {
-                      const numbers = job.budget.match(/\d+/g);
-                      if (numbers && numbers.length > 0) {
-                        const amount = parseInt(numbers[0]);
-                        return `${roundToProperCoinValue(amount)} QR`;
-                      }
-                      return job.budget.replace(/Coins/gi, 'QR');
-                    })()
-                  : `${roundToProperCoinValue(job.budget?.min || 0)}-${roundToProperCoinValue(job.budget?.max || 0)} QR`
-                }
-              </Text>
-            </TouchableOpacity>
-          ))}
-          {filteredJobs.length === 0 && (
-            <Text style={[styles.noResults, { color: theme.textSecondary }]}>{t('noJobsFound')}</Text>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
-  );
-});
+// COMMENT: PRODUCTION HARDENING - Task 4.9 - Import OptimizedImage for image optimization
+import OptimizedImage from '../../components/OptimizedImage';
+// COMMENT: PRODUCTION HARDENING - Task 4.10 - Import responsive utilities
+import { useResponsive, getMaxContentWidth } from '../../utils/responsive';
+// COMMENT: PRIORITY 1 - File Modularization - Import extracted components (underscore prefix prevents Expo Router from treating as routes)
+import { SearchScreen } from './_components/SearchScreen';
+import { GuildMapModal } from './_components/GuildMapModal';
+import { HomeHeader } from './_components/HomeHeader';
+import { HomeHeaderCard } from './_components/HomeHeaderCard';
+import { HomeActionButtons } from './_components/HomeActionButtons';
+import { JobCard } from './_components/JobCard';
+import { roundToProperCoinValue } from '../../utils/coinUtils';
+// COMMENT: PRIORITY 1 - File Modularization - Import extracted hooks (underscore prefix prevents Expo Router from treating as routes)
+import { useHomeAnimations } from './_hooks/useHomeAnimations';
+import { useJobs } from './_hooks/useJobs';
+import { useAdminTestHandlers } from './_hooks/useAdminTestHandlers';
 
 const { width, height } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
 
-// Utility function to round amounts to proper coin denominations (QR values)
-const roundToProperCoinValue = (amount: number): number => {
-  // Round to proper coin denominations: 5, 10, 50, 100, 200, 500 QR
-  if (amount <= 5) return 5;
-  if (amount <= 10) return 10;
-  if (amount <= 50) return Math.ceil(amount / 5) * 5; // Round to nearest 5
-  if (amount <= 100) return Math.ceil(amount / 10) * 10; // Round to nearest 10
-  if (amount <= 200) return Math.ceil(amount / 50) * 50; // Round to nearest 50
-  if (amount <= 500) return Math.ceil(amount / 100) * 100; // Round to nearest 100
-  if (amount <= 1000) return Math.ceil(amount / 200) * 200; // Round to nearest 200
-  if (amount <= 5000) return Math.ceil(amount / 500) * 500; // Round to nearest 500
-  return Math.ceil(amount / 1000) * 1000; // Round to nearest 1000
-};
+// COMMENT: PRIORITY 1 - File Modularization - roundToProperCoinValue utility function extracted to utils/coinUtils.ts
 
 export default function HomeScreen() {
   const { theme } = useTheme();
+  // COMMENT: PRODUCTION HARDENING - Task 4.10 - Get responsive dimensions
+  const { isTablet, isLargeDevice, width } = useResponsive();
   const { t, isRTL, changeLanguage, language } = useI18n();
   const { profile } = useUserProfile();
   const { chats } = useChat();
@@ -173,6 +80,42 @@ export default function HomeScreen() {
   });
   const scrollY = useRef(new Animated.Value(0)).current;
   
+  // COMMENT: PRIORITY 1 - File Modularization - Use extracted hooks
+  const {
+    button1Anim,
+    button2Anim,
+    headerButton1Anim,
+    headerButton2Anim,
+    headerButton3Anim,
+    headerButton4Anim,
+    jobCardAnims,
+    animateButtons,
+    animationTimeoutRef,
+  } = useHomeAnimations();
+
+  const {
+    jobs,
+    loadingJobs,
+    refreshing,
+    jobError,
+    availableJobs,
+    loadJobs,
+    onRefresh,
+  } = useJobs(animateButtons);
+
+  const {
+    handleTestNotification,
+    handleTestRules,
+    handleTestContract,
+    handleTestTerms,
+    handleTestPayment,
+  } = useAdminTestHandlers();
+
+  // Keep language state for translations
+  const stableLanguage = language || 'en';
+
+  // COMMENT: PRIORITY 1 - File Modularization - Old animation and jobs logic commented out - now in extracted hooks
+  /*
   // Animation refs for action buttons
   const button1Anim = useRef(new Animated.Value(0)).current;
   const button2Anim = useRef(new Animated.Value(0)).current;
@@ -188,20 +131,47 @@ export default function HomeScreen() {
     Array.from({ length: 10 }, () => new Animated.Value(0))
   ).current;
 
+  // COMMENT: PRODUCTION HARDENING - Task 5.1 - Animation timeout ref for cleanup (declared before useEffect)
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Firebase jobs state
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Fetch jobs from Firebase
+  // COMMENT: PRODUCTION HARDENING - Task 5.1 - Fetch jobs from Firebase with cleanup
   useEffect(() => {
-    loadJobs();
-    // Animate buttons on mount
-    animateButtons();
+    let isMounted = true; // Cleanup flag to prevent state updates on unmounted component
+    
+    // Wrap async operations in a function that checks isMounted
+    const initializeData = async () => {
+      await loadJobs();
+      if (!isMounted) return; // Early return if component unmounted
+      // Animate buttons on mount
+      animateButtons();
+    };
+    
+    initializeData();
+    
+    // Cleanup: Set flag to prevent state updates if component unmounts, clear animation timeout
+    return () => {
+      isMounted = false;
+      // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear animation timeout on unmount
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+        animationTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   // Animation function for buttons
   const animateButtons = () => {
+    // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear any existing animation timeout
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+
     // Reset animation values
     button1Anim.setValue(0);
     button2Anim.setValue(0);
@@ -249,8 +219,10 @@ export default function HomeScreen() {
       }),
     ]).start();
     
+    // COMMENT: PRODUCTION HARDENING - Task 5.1 - Store timeout ID for cleanup
     // Animate job cards with stagger (one by one, same speed)
-    setTimeout(() => {
+    animationTimeoutRef.current = setTimeout(() => {
+      animationTimeoutRef.current = null;
       Animated.stagger(100, 
         jobCardAnims.map(anim => 
           Animated.timing(anim, {
@@ -266,13 +238,21 @@ export default function HomeScreen() {
   const [jobError, setJobError] = useState<string | null>(null);
 
   const loadJobs = async () => {
+    // COMMENT: FINAL STABILIZATION - Skip loading jobs if user is not authenticated
+    if (!user) {
+      logger.debug('🔥 HOME: User not authenticated, skipping job load');
+      setLoadingJobs(false);
+      setJobs([]);
+      return;
+    }
+    
     setLoadingJobs(true);
     setJobError(null); // Clear previous errors
     try {
       const response = await jobService.getOpenJobs();
       setJobs(response.jobs || []);
     } catch (error) {
-      console.error('Error loading jobs:', error);
+      logger.error('Error loading jobs:', error);
       // Show user-friendly error message
       const errorMessage = stableLanguage === 'ar' 
         ? 'فشل تحميل الوظائف. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.'
@@ -297,6 +277,7 @@ export default function HomeScreen() {
   
   // First card = normal, Second card = special (admin-controlled)
   const availableJobs = jobs?.filter(job => job.adminStatus === 'approved') || [];
+  */
 
   const handleAddJob = useCallback(() => {
     router.push('/(modals)/add-job');
@@ -328,6 +309,9 @@ export default function HomeScreen() {
     router.push('/(main)/chat');
   }, []);
 
+  // COMMENT: PRIORITY 1 - File Modularization - Admin test handlers extracted to useAdminTestHandlers hook
+  // Old handlers commented out - now imported from _hooks/useAdminTestHandlers.ts
+  /*
   // Admin Portal Test Functions - Testing actual features from admin portal
   const handleTestNotification = useCallback(async () => {
     try {
@@ -344,7 +328,7 @@ export default function HomeScreen() {
             '📢 Latest Announcement', 
             `${latest.title}\n\n${latest.message}\n\nSent by Admin at ${new Date(latest.createdAt).toLocaleString()}`
           );
-          console.log('📢 All Announcements:', announcements);
+          logger.debug('📢 All Announcements:', announcements);
         } else {
           CustomAlertService.showAlert('No Announcements', 'No announcements have been sent by admin yet. Create one in the admin portal!');
         }
@@ -352,7 +336,7 @@ export default function HomeScreen() {
         CustomAlertService.showAlert('Error', `Failed to fetch announcements (Status: ${response.status})`);
       }
     } catch (error) {
-      console.error('Notification Test Error:', error);
+      logger.error('Notification Test Error:', error);
       CustomAlertService.showAlert('Error', 'Cannot connect to admin announcements API.');
     }
   }, []);
@@ -371,7 +355,7 @@ export default function HomeScreen() {
             `${index + 1}. ${rule.text}`
           ).join('\n\n');
           CustomAlertService.showAlert('📜 Platform Rules', rulesList);
-          console.log('📜 All Platform Rules:', rules);
+          logger.debug('📜 All Platform Rules:', rules);
         } else {
           CustomAlertService.showAlert('No Rules', 'No platform rules have been set. Add rules in the admin portal!');
         }
@@ -379,7 +363,7 @@ export default function HomeScreen() {
         CustomAlertService.showAlert('Error', `Failed to fetch rules (Status: ${response.status})`);
       }
     } catch (error) {
-      console.error('Rules Test Error:', error);
+      logger.error('Rules Test Error:', error);
       CustomAlertService.showAlert('Error', 'Cannot connect to platform rules API.');
     }
   }, []);
@@ -424,12 +408,12 @@ Check console for full contract details.
         `.trim();
         
         CustomAlertService.showAlert('Contract Preview', contractSummary);
-        console.log('📄 Full Contract:', contract);
+        logger.debug('📄 Full Contract:', contract);
       } else {
         CustomAlertService.showAlert('Error', 'Failed to generate contract. Check if rules and guidelines are set in admin portal.');
       }
     } catch (error) {
-      console.error('Contract Test Error:', error);
+      logger.error('Contract Test Error:', error);
       CustomAlertService.showAlert('Error', 'Cannot generate contract from admin portal data.');
     }
   }, []);
@@ -461,11 +445,11 @@ Check console for full details.
       
       CustomAlertService.showAlert('Terms & Guidelines', termsSummary);
       
-      console.log('📜 Platform Rules:', rules);
-      console.log('📋 Guidelines:', guidelines);
-      console.log('📢 Announcements:', announcements);
+      logger.debug('📜 Platform Rules:', rules);
+      logger.debug('📋 Guidelines:', guidelines);
+      logger.debug('📢 Announcements:', announcements);
     } catch (error) {
-      console.error('Terms Test Error:', error);
+      logger.error('Terms Test Error:', error);
       CustomAlertService.showAlert('Error', 'Cannot fetch terms and guidelines from admin portal.');
     }
   }, []);
@@ -483,23 +467,24 @@ Check console for full details.
       }
     });
   }, []);
+  */
 
   // Development function to toggle language (no restart needed!)
   const toggleLanguage = useCallback(async () => {
-    console.log('Home screen language toggle requested');
-    console.log('Current language:', language, 'isRTL:', isRTL);
+    logger.debug('Home screen language toggle requested');
+    logger.debug('Current language:', language, 'isRTL:', isRTL);
     try {
       const newLang = isRTL ? 'en' : 'ar';
-      console.log('Switching to:', newLang);
+      logger.debug('Switching to:', newLang);
       await changeLanguage(newLang);
-      console.log('Home screen language change completed');
+      logger.debug('Home screen language change completed');
       CustomAlertService.showSuccess(
         'Language Changed',
         `Language switched to ${newLang === 'en' ? 'English' : 'Arabic'}`,
         [{ text: 'OK', style: 'default' }]
       );
     } catch (error) {
-      console.error('Error changing language:', error);
+      logger.error('Error changing language:', error);
     }
   }, [isRTL, changeLanguage, language]);
 
@@ -523,143 +508,18 @@ Check console for full details.
       />
 
       {/* Main Header Card */}
-      <View style={[styles.mainHeaderCard, { paddingTop: insets.top + 14, marginHorizontal: 3 }]}>
-        <View style={[styles.headerTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={[styles.headerCenter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Shield size={24} color={theme.buttonText} />
-            <TouchableOpacity onPress={toggleLanguage}>
-              <Text style={[styles.headerTitle, { color: theme.buttonText, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
-                GUILD
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={[styles.headerRight, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Animated.View
-              style={{
-                opacity: headerButton1Anim,
-                transform: [
-                  {
-                    scale: headerButton1Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={handleNotifications}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="notifications-outline" size={20} color={theme.primary} />
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View
-              style={{
-                opacity: headerButton2Anim,
-                transform: [
-                  {
-                    scale: headerButton2Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={handleChat}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="chatbubble-outline" size={20} color={theme.primary} />
-                {totalUnread > 0 && (
-                  <View style={[styles.notificationDot, { backgroundColor: theme.primary }]}>
-                    {totalUnread > 9 && (
-                      <Text style={styles.notificationDotText}>9+</Text>
-                    )}
-                  </View>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View
-              style={{
-                opacity: headerButton3Anim,
-                transform: [
-                  {
-                    scale: headerButton3Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={() => router.push('/(main)/search')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="search-outline" size={20} color={theme.primary} />
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View
-              style={{
-                opacity: headerButton4Anim,
-                transform: [
-                  {
-                    scale: headerButton4Anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={handleSettings}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="menu-outline" size={20} color={theme.primary} />
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Beta Tester Badge - REMOVED FOR PRODUCTION */}
-
-        <View style={[styles.headerBottom, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <TouchableOpacity 
-            style={[styles.userAvatar, { marginRight: isRTL ? 0 : 12, marginLeft: isRTL ? 12 : 0 }]}
-            onPress={() => router.push('/(main)/profile')}
-          >
-            {profile?.profileImage ? (
-              <Image 
-                source={{ uri: profile.profileImage }} 
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>👤</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.userGreeting}>
-            <Text style={[styles.greetingText, { color: theme.buttonText, textAlign: isRTL ? 'right' : 'left' }]}>
-              {profile.fullName 
-                ? (isRTL ? `هلا، ${profile.fullName.split(' ')[0]}!` : `Hi, ${profile.fullName.split(' ')[0]}!`)
-                : (isRTL ? 'هلا!' : 'Hi!')
-              }
-            </Text>
-          </View>
-        </View>
-      </View>
+      <HomeHeaderCard
+        totalUnread={totalUnread}
+        headerButton1Anim={headerButton1Anim}
+        headerButton2Anim={headerButton2Anim}
+        headerButton3Anim={headerButton3Anim}
+        headerButton4Anim={headerButton4Anim}
+        onToggleLanguage={toggleLanguage}
+        onNotificationsPress={handleNotifications}
+        onChatPress={handleChat}
+        onSearchPress={() => router.push('/(main)/search')}
+        onSettingsPress={handleSettings}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -703,69 +563,12 @@ Check console for full details.
         </View>
 
         {/* Action Buttons */}
-        <View style={[styles.actionsContainer, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
-          <Animated.View
-            style={{
-              flex: 1,
-              opacity: button1Anim,
-              transform: [
-                {
-                  translateY: button1Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-                {
-                  scale: button1Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.9, 1],
-                  }),
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
-              onPress={handleAddJob}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add-circle" size={20} color={theme.primary} />
-              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('addJob')}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View
-            style={{
-              flex: 1,
-              opacity: button2Anim,
-              transform: [
-                {
-                  translateY: button2Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-                {
-                  scale: button2Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.9, 1],
-                  }),
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border, borderWidth: 1 }]}
-              onPress={handleGuildMap}
-              activeOpacity={0.7}
-            >
-              <Feather name="map" size={20} color={theme.primary} />
-              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('guildMap')}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Test Payment Button - REMOVED FOR PRODUCTION */}
-        </View>
+        <HomeActionButtons
+          button1Anim={button1Anim}
+          button2Anim={button2Anim}
+          onCreateJobPress={handleAddJob}
+          onGuildMapPress={handleGuildMap}
+        />
 
         {/* Admin Portal Test Buttons - REMOVED FOR PRODUCTION */}
 
@@ -787,154 +590,13 @@ Check console for full details.
             </View>
           ) : availableJobs.length > 0 ? (
             availableJobs.map((job: any, index: number) => (
-              <Animated.View
+              <JobCard
                 key={job.id}
-                style={{
-                  opacity: jobCardAnims[index] || 1,
-                  transform: [
-                    {
-                      translateY: (jobCardAnims[index] || new Animated.Value(1)).interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20, 0],
-                      }),
-                    },
-                    {
-                      scale: (jobCardAnims[index] || new Animated.Value(1)).interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.95, 1],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <TouchableOpacity
-                style={[
-                  styles.jobCard,
-                  { backgroundColor: theme.surface },
-                  index === 1 && {
-                    shadowColor: theme.primary,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 16,
-                    elevation: 6,
-                    borderWidth: 1,
-                    borderColor: theme.primary + '30',
-                  }
-                ]}
-                onPress={() => router.push(`/(modals)/job/${job.id}`)}
-                activeOpacity={0.7}
-              >
-              {/* Job Info */}
-              <View style={styles.jobInfoContainer}>
-                {/* Rating in corner */}
-                <View style={styles.ratingContainer}>
-                  <Ionicons name="star" size={12} color={theme.primary} />
-                  <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-                    {job.rating || 'N/A'}
-                  </Text>
-                </View>
-
-                {/* Price tag in bottom corner - Enhanced for second card */}
-                <View style={[
-                  styles.priceTagBottom,
-                  { backgroundColor: theme.primary },
-                  index === 1 && {
-                    backgroundColor: theme.surface,
-                    paddingVertical: 6,
-                    paddingHorizontal: 10,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: theme.primary,
-                  }
-                ]}>
-                  <Text style={[
-                    styles.currentPrice,
-                    { color: '#000000' },
-                    index === 1 && {
-                      fontSize: 13,
-                      color: theme.primary,
-                      fontWeight: '700',
-                    }
-                  ]}>
-                    {typeof job.budget === 'string' 
-                      ? (() => {
-                          const numbers = job.budget.match(/\d+/g);
-                          if (numbers && numbers.length > 0) {
-                            const amount = parseInt(numbers[0]);
-                            return roundToProperCoinValue(amount);
-                          }
-                          return job.budget.replace(/Coins/gi, '').trim();
-                        })()
-                      : `${roundToProperCoinValue(job.budget?.min || 0)}-${roundToProperCoinValue(job.budget?.max || 0)}`
-                    }
-                  </Text>
-                  <Text style={[
-                    styles.currencyLabel, 
-                    { color: index === 1 ? theme.primary : '#000000' }
-                  ]}>
-                    QR
-                  </Text>
-                </View>
-                
-                {/* Header Row: Company + Salary */}
-                <View style={styles.cardHeader}>
-                  <View style={styles.companyInfo}>
-                    <View style={styles.authorAvatar}>
-                      {job.posterImage ? (
-                        <Image 
-                          source={{ uri: job.posterImage }} 
-                          style={styles.avatarImage}
-                        />
-                      ) : (
-                        <Text style={[styles.authorInitial, { color: theme.primary }]}>
-                          {job.company?.charAt(0) || 'C'}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.companyDetails}>
-                      <Text style={[styles.jobAuthor, { color: theme.textSecondary }]} numberOfLines={1}>
-                        {job.company}
-                      </Text>
-                      <Text style={[styles.posterGID, { color: theme.textSecondary }]}>
-                        GID: {job.posterGID || 'N/A'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Job Title */}
-                <Text style={[styles.jobTitle, { color: theme.textPrimary }]} numberOfLines={2}>
-                  {job.title}
-                </Text>
-
-                {/* Job Description */}
-                <Text style={[styles.jobDescription, { color: theme.textSecondary }]} numberOfLines={2}>
-                  {job.description}
-                </Text>
-
-                {/* Job Meta Info */}
-                <View style={styles.jobMetaRow}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="location-outline" size={12} color={theme.textSecondary} />
-                    <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-                      {typeof job.location === 'object' ? job.location?.address || 'Remote' : job.location}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Footer: Time */}
-                <View style={styles.jobFooter}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
-                    <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-                      {job.timeNeeded}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-          ))
+                job={job}
+                index={index}
+                animValue={jobCardAnims[index] || new Animated.Value(1)}
+              />
+            ))
           ) : (
             <View style={styles.emptyContainer}>
               {jobError ? (
@@ -1320,6 +982,9 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 100,
   },
+  // COMMENT: PRIORITY 1 - File Modularization - Search modal styles moved to _components/SearchScreen.tsx
+  // Old styles commented out - now in extracted component file
+  /*
   // Search Modal Styles
   searchModal: {
     flex: 1,
@@ -1368,6 +1033,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 40,
   },
+  */
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1432,6 +1098,9 @@ const styles = StyleSheet.create({
   },
 });
 
+// COMMENT: PRIORITY 1 - File Modularization - GuildMapModal component extracted to _components/GuildMapModal.tsx
+// Old component definition commented out - now imported from _components/GuildMapModal.tsx
+/*
 // Real Guild Map Modal with actual map component
 const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
   const { theme } = useTheme();
@@ -1455,7 +1124,7 @@ const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onCl
       );
       setMapJobs(jobsWithLocation);
     } catch (error) {
-      console.error('Error loading map jobs:', error);
+      logger.error('Error loading map jobs:', error);
     } finally {
       setLoading(false);
     }
@@ -1471,8 +1140,8 @@ const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onCl
 
   const handleLocationPress = (location: { latitude: number; longitude: number; address: string }) => {
     CustomAlertService.showInfo(
-      isRTL ? 'موقع' : 'Location',
-      isRTL ? `تم تحديد الموقع: ${location.address}` : `Location selected: ${location.address}`
+      t('location'),
+      `${t('location')}: ${location.address}`
     );
   };
 
@@ -1485,13 +1154,12 @@ const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onCl
       onRequestClose={onClose}
     >
       <View style={guildModalStyles.mapContainer}>
-        {/* Header */}
         <View style={[guildModalStyles.mapHeader, { backgroundColor: theme.surface }]}>
           <View style={guildModalStyles.shieldIconContainer}>
             <Shield size={24} color={theme.primary} />
           </View>
           <Text style={[guildModalStyles.mapTitle, { color: theme.textPrimary }]}>
-            {isRTL ? 'خريطة GUILD' : 'GUILD Map'}
+            {t('guildMap')}
           </Text>
           <TouchableOpacity
             onPress={onClose}
@@ -1501,13 +1169,12 @@ const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onCl
           </TouchableOpacity>
         </View>
 
-        {/* Real Map Content */}
         <View style={guildModalStyles.mapContent}>
           {loading ? (
             <View style={guildModalStyles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.primary} />
               <Text style={[guildModalStyles.loadingText, { color: theme.textSecondary }]}>
-                {isRTL ? 'جاري تحميل الخريطة...' : 'Loading map...'}
+                {t('loadingMap')}
               </Text>
             </View>
           ) : (
@@ -1522,7 +1189,11 @@ const GuildMapModal = React.memo(({ visible, onClose }: { visible: boolean; onCl
     </Modal>
   );
 });
+*/
 
+// COMMENT: PRIORITY 1 - File Modularization - guildModalStyles moved to _components/GuildMapModal.tsx
+// Old styles commented out - now in extracted component file
+/*
 const guildModalStyles = StyleSheet.create({
   mapContainer: {
     flex: 1,
@@ -1572,3 +1243,4 @@ const guildModalStyles = StyleSheet.create({
     fontSize: 16,
   },
 });
+*/

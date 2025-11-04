@@ -386,3 +386,12 @@ npm test
 **Recommendation**: Fix Firebase emulator setup first, then address integration test mocks. The app is functional despite these test failures.
 
 
+
+
+
+
+
+
+
+
+

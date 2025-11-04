@@ -4,7 +4,7 @@
  * Opens WebView for secure payment processing
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, Suspense, lazy } from 'react';
 import {
   View,
   Text,
@@ -25,10 +25,15 @@ import {
   validatePaymentAmount,
   PaymentRequest,
 } from '../../services/paymentService';
-import PaymentWebView from '../../components/PaymentWebView';
+// COMMENT: PRODUCTION HARDENING - Task 4.7 - Lazy load PaymentWebView (only shown conditionally)
+const PaymentWebView = lazy(() => import('../../components/PaymentWebView').then(m => ({ default: m.default })));
+import PaymentErrorBoundary from '../../components/PaymentErrorBoundary';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { CreditCard, Shield, Lock, ChevronLeft } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import PaymentProcessor, { usePaymentProcessor } from '../../services/PaymentProcessor';
+import type { PaymentState } from '../../services/PaymentProcessor';
+import { logger } from '../../utils/logger';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -40,6 +45,10 @@ export default function PaymentScreen() {
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [paymentId, setPaymentId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
+  
+  // COMMENT: PRODUCTION HARDENING - Task 2.6 - Use PaymentProcessor for validation
+  const paymentProcessor = usePaymentProcessor();
 
   // Parse payment details from params
   const amount = parseFloat((params.amount as string) || '0');
@@ -50,69 +59,126 @@ export default function PaymentScreen() {
 
   /**
    * Handle payment initiation
+   * COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized with useCallback
    */
-  const handlePayNow = async () => {
+  const handlePayNow = useCallback(async () => {
     try {
-      // Validate amount
-      const validation = validatePaymentAmount(amount);
-      if (!validation.valid) {
+      // COMMENT: PRODUCTION HARDENING - Task 2.6 - Validate payment state transition
+      const canStart = paymentProcessor.canTransition(paymentState, 'validating');
+      if (!canStart.allowed) {
         CustomAlertService.showError(
-          'Invalid Amount',
-          validation.error || 'Please enter a valid amount'
+          'Payment Error',
+          canStart.reason || 'Payment cannot be started in current state'
         );
         return;
       }
 
+      setPaymentState('validating');
       setLoading(true);
 
-      console.log('💳 Initiating payment:', {
-        amount,
-        orderId,
-        description,
-      });
-
-      // Step 1: Create payment checkout with backend
-      const request: PaymentRequest = {
+      // COMMENT: PRODUCTION HARDENING - Task 2.6 - Comprehensive payment validation using PaymentProcessor
+      const paymentInput = {
         amount,
         orderId,
         jobId,
         freelancerId,
         description,
+        currency: 'QAR',
+      };
+
+      // Sanitize input
+      const sanitizedInput = paymentProcessor.sanitize(paymentInput);
+
+      // Validate input
+      const validation = paymentProcessor.validate(sanitizedInput);
+      
+      if (!validation.valid) {
+        setPaymentState('idle');
+        CustomAlertService.showError(
+          'Validation Error',
+          validation.errors.join('\n')
+        );
+        if (validation.warnings && validation.warnings.length > 0) {
+          logger.warn('Payment validation warnings:', validation.warnings);
+        }
+        return;
+      }
+
+      // Log warnings if any
+      if (validation.warnings && validation.warnings.length > 0) {
+        validation.warnings.forEach(warning => {
+          logger.warn(`Payment validation warning: ${warning}`);
+        });
+      }
+
+      setPaymentState('pending');
+      logger.info('💳 Initiating payment:', {
+        amount: sanitizedInput.amount,
+        orderId: sanitizedInput.orderId,
+        description: sanitizedInput.description,
+      });
+
+      // Step 1: Create payment checkout with backend
+      const request: PaymentRequest = {
+        amount: sanitizedInput.amount,
+        orderId: sanitizedInput.orderId,
+        jobId: sanitizedInput.jobId,
+        freelancerId: sanitizedInput.freelancerId,
+        description: sanitizedInput.description,
         language: 'en', // TODO: Get from app settings
       };
 
+      setPaymentState('processing');
       const response = await initiatePayment(request);
 
       if (response.success && response.checkout_url) {
-        console.log('✅ Checkout URL received:', response.payment_id);
+        logger.info('✅ Checkout URL received:', response.payment_id);
 
         // Step 2: Open WebView with Fatora checkout URL
         setCheckoutUrl(response.checkout_url);
         setPaymentId(response.payment_id || 'unknown');
         setShowWebView(true);
+        // State remains 'processing' until success/failure callback
       } else {
-        console.error('❌ Payment initiation failed:', response.error);
+        setPaymentState('failed');
+        logger.error('❌ Payment initiation failed:', response.error);
         CustomAlertService.showError(
           'Payment Error',
-          response.error || 'Failed to initiate payment. Please try again.'
+          paymentProcessor.formatError(response) || 'Failed to initiate payment. Please try again.'
         );
       }
     } catch (error: any) {
-      console.error('❌ Payment error:', error);
+      setPaymentState('failed');
+      logger.error('❌ Payment error:', error);
       CustomAlertService.showError(
         'Payment Error',
-        error.message || 'Failed to process payment. Please try again.'
+        paymentProcessor.formatError(error) || 'Failed to process payment. Please try again.'
       );
     } finally {
       setLoading(false);
     }
-  };
+  }, [amount, orderId, jobId, freelancerId, description, paymentState, paymentProcessor, router]);
 
   /**
    * Handle payment success
+   * COMMENT: PRODUCTION HARDENING - Task 2.6 & 2.9 - Handle payment success state, optimized with useCallback
    */
-  const handlePaymentSuccess = async (transactionId: string, orderId: string) => {
-    console.log('✅ Payment completed successfully:', { transactionId, orderId });
+  const handlePaymentSuccess = useCallback(async (transactionId: string, orderId: string) => {
+    // COMMENT: PRODUCTION HARDENING - Task 2.6 - Validate state transition
+    const canComplete = paymentProcessor.canTransition(paymentState, 'completed');
+    if (!canComplete.allowed) {
+      logger.warn('Invalid state transition for payment success:', {
+        currentState: paymentState,
+        transactionId,
+        orderId,
+      });
+      // Still proceed but log warning
+    }
+
+    paymentProcessor.logStateChange(paymentState, 'completed', paymentId, 'Payment successful');
+    setPaymentState('completed');
+
+    logger.info('✅ Payment completed successfully:', { transactionId, orderId });
 
     // Close WebView
     setShowWebView(false);
@@ -121,10 +187,10 @@ export default function PaymentScreen() {
     try {
       if (paymentId && paymentId !== 'unknown') {
         const verification = await verifyPayment(paymentId);
-        console.log('🔍 Payment verification:', verification);
+        logger.info('🔍 Payment verification:', verification);
       }
     } catch (error) {
-      console.warn('Payment verification failed (non-critical):', error);
+      logger.warn('Payment verification failed (non-critical):', error);
     }
 
     // Show success message
@@ -141,47 +207,122 @@ export default function PaymentScreen() {
         router.replace('/(tabs)/home');
       }
     }, 2000);
-  };
+  }, [amount, paymentState, paymentId, paymentProcessor, router]);
 
   /**
    * Handle payment failure
+   * COMMENT: PRODUCTION HARDENING - Task 2.6 & 2.9 - Handle payment failure state with enhanced feedback, optimized with useCallback
    */
-  const handlePaymentFailure = (error: string, errorCode?: string) => {
-    console.log('❌ Payment failed:', { error, errorCode });
+  const handlePaymentFailure = useCallback((error: string, errorCode?: string) => {
+    // COMMENT: PRODUCTION HARDENING - Task 2.6 - Validate state transition
+    const canFail = paymentProcessor.canTransition(paymentState, 'failed');
+    if (!canFail.allowed) {
+      logger.warn('Invalid state transition for payment failure:', {
+        currentState: paymentState,
+        error,
+        errorCode,
+      });
+      // Still proceed but log warning
+    }
+
+    paymentProcessor.logStateChange(paymentState, 'failed', paymentId, error);
+    setPaymentState('failed');
+
+    logger.error('❌ Payment failed:', { error, errorCode, paymentId });
 
     // Close WebView
     setShowWebView(false);
 
+    // Format error message
+    const errorMessage = paymentProcessor.formatError({ error, errorCode });
+
     // Show error message
     CustomAlertService.showError(
       'Payment Failed',
-      error || 'Payment could not be completed. Please try again.'
+      errorMessage || 'Payment could not be completed. Please try again.'
     );
-  };
+  }, [paymentState, paymentId, paymentProcessor]);
 
   /**
    * Handle WebView close
+   * COMMENT: PRODUCTION HARDENING - Task 2.6 & 2.9 - Handle payment cancellation, optimized with useCallback
    */
-  const handleWebViewClose = () => {
+  const handleWebViewClose = useCallback(() => {
+    // COMMENT: PRODUCTION HARDENING - Task 2.6 - Handle cancellation state
+    if (paymentState === 'processing' || paymentState === 'pending') {
+      const canCancel = paymentProcessor.canTransition(paymentState, 'cancelled');
+      if (canCancel.allowed) {
+        paymentProcessor.logStateChange(paymentState, 'cancelled', paymentId, 'User closed WebView');
+        setPaymentState('cancelled');
+      }
+    }
+
     setShowWebView(false);
-    console.log('💳 Payment WebView closed by user');
-  };
+    logger.info('💳 Payment WebView closed by user', { paymentState, paymentId });
+  }, [paymentState, paymentId, paymentProcessor]);
 
   // If WebView is shown, render only WebView
+  // COMMENT: PRODUCTION HARDENING - Task 4.7 - Wrap lazy-loaded PaymentWebView in Suspense
   if (showWebView && checkoutUrl) {
     return (
-      <PaymentWebView
-        checkoutUrl={checkoutUrl}
-        onSuccess={handlePaymentSuccess}
-        onFailure={handlePaymentFailure}
-        onClose={handleWebViewClose}
-      />
+      <PaymentErrorBoundary
+        fallbackRoute="/(main)/home"
+        onError={(error, errorInfo) => {
+          logger.error('PaymentWebView error:', {
+            error: error.message,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack,
+          });
+        }}
+        onRetry={() => {
+          setShowWebView(false);
+          setCheckoutUrl('');
+          setPaymentId('');
+        }}
+      >
+        <Suspense
+          fallback={
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                Loading payment...
+              </Text>
+            </View>
+          }
+        >
+          <PaymentWebView
+            checkoutUrl={checkoutUrl}
+            onSuccess={handlePaymentSuccess}
+            onFailure={handlePaymentFailure}
+            onClose={handleWebViewClose}
+          />
+        </Suspense>
+      </PaymentErrorBoundary>
     );
   }
 
   // Render payment details and confirmation screen
+  // COMMENT: PRODUCTION HARDENING - Task 2.7 - Wrap payment screen in error boundary
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <PaymentErrorBoundary
+      fallbackRoute="/(main)/home"
+      onError={(error, errorInfo) => {
+        logger.error('Payment screen error:', {
+          error: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+        });
+      }}
+      onRetry={() => {
+        // Reset payment state on retry
+        setPaymentState('idle');
+        setLoading(false);
+        setShowWebView(false);
+        setCheckoutUrl('');
+        setPaymentId('');
+      }}
+    >
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar barStyle="light-content" backgroundColor={theme.background} />
 
       {/* Header */}
@@ -304,6 +445,7 @@ export default function PaymentScreen() {
         </Text>
       </View>
     </View>
+    </PaymentErrorBoundary>
   );
 }
 
@@ -435,6 +577,17 @@ const styles = StyleSheet.create({
   footerNote: {
     fontSize: 11,
     textAlign: 'center',
+  },
+  // COMMENT: PRODUCTION HARDENING - Task 4.7 - Loading container for lazy-loaded PaymentWebView
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
 });
 

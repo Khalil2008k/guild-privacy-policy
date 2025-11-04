@@ -27,6 +27,8 @@ import { db } from '@/config/firebase';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/config/firebase';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -107,7 +109,8 @@ export default function ProfileSettingsScreen() {
         setOriginalProfile(profileData);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading profile:', error);
       CustomAlertService.showError(
         isRTL ? 'فشل تحميل الملف الشخصي' : 'Failed to load profile',
         isRTL ? 'تعذر تحميل بيانات ملفك الشخصي. يرجى المحاولة مرة أخرى.' : 'Could not load your profile data. Please try again.'
@@ -227,7 +230,8 @@ export default function ProfileSettingsScreen() {
         isRTL ? 'تم حفظ ملفك الشخصي بنجاح.' : 'Your profile has been saved successfully.'
       );
     } catch (error) {
-      console.error('Error saving profile:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving profile:', error);
       CustomAlertService.showError(
         isRTL ? 'فشل الحفظ' : 'Save Failed',
         isRTL ? 'تعذر حفظ ملفك الشخصي. يرجى المحاولة مرة أخرى.' : 'Could not save your profile. Please try again.'
@@ -256,7 +260,7 @@ export default function ProfileSettingsScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -266,7 +270,8 @@ export default function ProfileSettingsScreen() {
         await uploadProfileImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error picking image:', error);
       CustomAlertService.showError(
         isRTL ? 'فشل اختيار الصورة' : 'Image Selection Failed',
         isRTL ? 'تعذر اختيار الصورة. يرجى المحاولة مرة أخرى.' : 'Could not select image. Please try again.'
@@ -306,7 +311,8 @@ export default function ProfileSettingsScreen() {
         isRTL ? 'تم تحديث صورة ملفك الشخصي.' : 'Your profile photo has been updated.'
       );
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error uploading image:', error);
       CustomAlertService.showError(
         isRTL ? 'فشل التحميل' : 'Upload Failed',
         isRTL ? 'تعذر تحميل الصورة. يرجى المحاولة مرة أخرى.' : 'Could not upload image. Please try again.'

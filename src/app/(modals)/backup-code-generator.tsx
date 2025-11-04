@@ -11,11 +11,14 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { ArrowLeft, Key, Copy, Download, RefreshCw, Check, Shield } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useCustomAlert } from '../../components/CustomAlert';
 import { getContrastTextColor } from '../../utils/colorUtils';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -99,7 +102,8 @@ export default function BackupCodeGeneratorScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error generating codes:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error generating codes:', error);
       showAlert('Error', 'Failed to generate backup codes. Please try again.', 'error');
     } finally {
       setGeneratingCodes(false);
@@ -136,7 +140,8 @@ export default function BackupCodeGeneratorScreen() {
         'success'
       );
     } catch (error) {
-      console.error('Error sending SMS:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending SMS:', error);
       showAlert(t('backupCodeGenerator.error'), t('backupCodeGenerator.sendSMSError'), 'error');
     } finally {
       setSendingSMS(false);
@@ -173,7 +178,8 @@ export default function BackupCodeGeneratorScreen() {
         showAlert('Invalid Code', 'The verification code you entered is incorrect.', 'error');
       }
     } catch (error) {
-      console.error('Error verifying code:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error verifying code:', error);
       showAlert('Error', 'Failed to verify code. Please try again.', 'error');
     } finally {
       setVerifyingCode(false);

@@ -1,5 +1,7 @@
 import { doc, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface ChatMuteSettings {
   isMuted: boolean;
@@ -23,7 +25,7 @@ export class ChatOptionsService {
     duration?: 'hour' | 'day' | 'week' | 'forever'
   ): Promise<void> {
     try {
-      console.log('[ChatOptionsService] Muting chat:', { chatId, userId, duration });
+      logger.debug('[ChatOptionsService] Muting chat:', { chatId, userId, duration });
       
       let mutedUntil: Date | null = null;
 
@@ -47,7 +49,7 @@ export class ChatOptionsService {
       // Check if chat exists first
       const chatSnap = await getDoc(chatRef);
       if (!chatSnap.exists()) {
-        console.error('[ChatOptionsService] Chat document does not exist!');
+        logger.warn('[ChatOptionsService] Chat document does not exist!');
         // Create the chat document with mute data
         await setDoc(chatRef, {
           participants: [],
@@ -61,7 +63,7 @@ export class ChatOptionsService {
           createdAt: serverTimestamp(),
           isActive: true,
         }, { merge: true });
-        console.log('[ChatOptionsService] Chat document created with mute data');
+        logger.debug('[ChatOptionsService] Chat document created with mute data');
       } else {
         // Update existing chat document
         const muteData: any = {};
@@ -72,10 +74,10 @@ export class ChatOptionsService {
         };
         
         await updateDoc(chatRef, muteData);
-        console.log('[ChatOptionsService] Chat muted successfully');
+        logger.info('[ChatOptionsService] Chat muted successfully');
       }
     } catch (error) {
-      console.error('[ChatOptionsService] Error muting chat:', error);
+      logger.error('[ChatOptionsService] Error muting chat:', error);
       throw error;
     }
   }
@@ -85,13 +87,13 @@ export class ChatOptionsService {
    */
   async unmuteChat(chatId: string, userId: string): Promise<void> {
     try {
-      console.log('[ChatOptionsService] Unmuting chat:', { chatId, userId });
+      logger.debug('[ChatOptionsService] Unmuting chat:', { chatId, userId });
       
       const chatRef = doc(db, 'chats', chatId);
       const chatSnap = await getDoc(chatRef);
       
       if (!chatSnap.exists()) {
-        console.log('[ChatOptionsService] Chat does not exist, nothing to unmute');
+        logger.debug('[ChatOptionsService] Chat does not exist, nothing to unmute');
         return;
       }
       
@@ -103,9 +105,9 @@ export class ChatOptionsService {
       };
       
       await updateDoc(chatRef, unmuteData);
-      console.log('[ChatOptionsService] Chat unmuted successfully');
+      logger.info('[ChatOptionsService] Chat unmuted successfully');
     } catch (error) {
-      console.error('[ChatOptionsService] Error unmuting chat:', error);
+      logger.error('[ChatOptionsService] Error unmuting chat:', error);
       throw error;
     }
   }
@@ -137,7 +139,7 @@ export class ChatOptionsService {
 
       return true;
     } catch (error) {
-      console.error('Error checking mute status:', error);
+      logger.error('Error checking mute status:', error);
       return false;
     }
   }
@@ -147,7 +149,7 @@ export class ChatOptionsService {
    */
   async blockUser(blockerId: string, blockedUserId: string, reason?: string): Promise<void> {
     try {
-      console.log('[ChatOptionsService] Blocking user:', { blockerId, blockedUserId, reason });
+      logger.debug('[ChatOptionsService] Blocking user:', { blockerId, blockedUserId, reason });
       
       const blockRef = doc(db, 'users', blockerId, 'blockedUsers', blockedUserId);
       await setDoc(blockRef, {
@@ -156,7 +158,7 @@ export class ChatOptionsService {
         reason: reason || '',
       });
 
-      console.log('[ChatOptionsService] Block record created in subcollection');
+      logger.debug('[ChatOptionsService] Block record created in subcollection');
 
       // Also update user's blocked list
       const userRef = doc(db, 'users', blockerId);
@@ -168,18 +170,18 @@ export class ChatOptionsService {
           blockedUsers: [...currentBlocked, blockedUserId],
           updatedAt: serverTimestamp(),
         });
-        console.log('[ChatOptionsService] User blocked list updated');
+        logger.debug('[ChatOptionsService] User blocked list updated');
       } else {
-        console.log('[ChatOptionsService] User document does not exist, creating it');
+        logger.debug('[ChatOptionsService] User document does not exist, creating it');
         await setDoc(userRef, {
           blockedUsers: [blockedUserId],
           updatedAt: serverTimestamp(),
         }, { merge: true });
       }
       
-      console.log('[ChatOptionsService] User blocked successfully');
+      logger.info('[ChatOptionsService] User blocked successfully');
     } catch (error) {
-      console.error('[ChatOptionsService] Error blocking user:', error);
+      logger.error('[ChatOptionsService] Error blocking user:', error);
       throw error;
     }
   }
@@ -204,7 +206,7 @@ export class ChatOptionsService {
         });
       }
     } catch (error) {
-      console.error('Error unblocking user:', error);
+      logger.error('Error unblocking user:', error);
       throw error;
     }
   }
@@ -218,7 +220,7 @@ export class ChatOptionsService {
       const blockSnap = await getDoc(blockRef);
       return blockSnap.exists();
     } catch (error) {
-      console.error('Error checking block status:', error);
+      logger.error('Error checking block status:', error);
       return false;
     }
   }
@@ -228,14 +230,14 @@ export class ChatOptionsService {
    */
   async deleteChat(chatId: string, userId: string): Promise<void> {
     try {
-      console.log('[ChatOptionsService] Deleting chat:', { chatId, userId });
+      logger.debug('[ChatOptionsService] Deleting chat:', { chatId, userId });
       
       const chatRef = doc(db, 'chats', chatId);
       
       // Check if chat exists first
       const chatSnap = await getDoc(chatRef);
       if (!chatSnap.exists()) {
-        console.log('[ChatOptionsService] Chat does not exist, creating soft delete record');
+        logger.debug('[ChatOptionsService] Chat does not exist, creating soft delete record');
         await setDoc(chatRef, {
           deletedBy: {
             [userId]: serverTimestamp()
@@ -243,7 +245,7 @@ export class ChatOptionsService {
           isActive: false,
           createdAt: serverTimestamp(),
         }, { merge: true });
-        console.log('[ChatOptionsService] Soft delete record created');
+        logger.debug('[ChatOptionsService] Soft delete record created');
         return;
       }
       
@@ -253,9 +255,9 @@ export class ChatOptionsService {
       
       await updateDoc(chatRef, deleteData);
       
-      console.log('[ChatOptionsService] Chat deleted successfully');
+      logger.info('[ChatOptionsService] Chat deleted successfully');
     } catch (error) {
-      console.error('[ChatOptionsService] Error deleting chat:', error);
+      logger.error('[ChatOptionsService] Error deleting chat:', error);
       throw error;
     }
   }
@@ -270,7 +272,7 @@ export class ChatOptionsService {
         [`clearedBy.${userId}`]: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error clearing chat history:', error);
+      logger.error('Error clearing chat history:', error);
       throw error;
     }
   }
@@ -285,7 +287,7 @@ export class ChatOptionsService {
         [`pinnedBy.${userId}`]: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error pinning chat:', error);
+      logger.error('Error pinning chat:', error);
       throw error;
     }
   }
@@ -300,7 +302,7 @@ export class ChatOptionsService {
         [`pinnedBy.${userId}`]: null,
       });
     } catch (error) {
-      console.error('Error unpinning chat:', error);
+      logger.error('Error unpinning chat:', error);
       throw error;
     }
   }
@@ -315,7 +317,7 @@ export class ChatOptionsService {
         [`archivedBy.${userId}`]: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error archiving chat:', error);
+      logger.error('Error archiving chat:', error);
       throw error;
     }
   }
@@ -330,7 +332,7 @@ export class ChatOptionsService {
         [`archivedBy.${userId}`]: null,
       });
     } catch (error) {
-      console.error('Error unarchiving chat:', error);
+      logger.error('Error unarchiving chat:', error);
       throw error;
     }
   }
@@ -344,7 +346,7 @@ export class ChatOptionsService {
       // For now, return a placeholder
       return `Chat history for ${chatId} exported successfully`;
     } catch (error) {
-      console.error('Error exporting chat history:', error);
+      logger.error('Error exporting chat history:', error);
       throw error;
     }
   }

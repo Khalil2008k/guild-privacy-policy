@@ -15,6 +15,8 @@ import { useI18n } from '../contexts/I18nProvider';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import QRCode from 'react-native-qrcode-svg';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -114,7 +116,8 @@ export default function QRCodeDisplay({
         });
       }
     } catch (error) {
-      console.error('Error sharing QR code:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sharing QR code:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في مشاركة رمز QR' : 'Failed to share QR code'

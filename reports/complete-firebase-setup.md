@@ -166,3 +166,12 @@ expo start -c
 
 **Next:** Test the app with these new rules and verify all permissions work correctly.
 
+
+
+
+
+
+
+
+
+

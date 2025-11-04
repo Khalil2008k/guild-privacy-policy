@@ -59,3 +59,12 @@ interface ThemeColors {
 
 **All theme text property errors have been fixed!** 🎨✨
 
+
+
+
+
+
+
+
+
+

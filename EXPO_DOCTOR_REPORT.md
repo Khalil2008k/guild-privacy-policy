@@ -238,3 +238,12 @@ eas build --platform android --profile production
 You can proceed with the build!
 
 
+
+
+
+
+
+
+
+
+

@@ -5,6 +5,8 @@
 
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface CompressionOptions {
   maxWidth?: number;
@@ -38,7 +40,7 @@ class ImageCompressionServiceClass {
     options: CompressionOptions = {}
   ): Promise<CompressionResult> {
     try {
-      console.log('🖼️ Compressing image:', uri);
+      logger.debug('🖼️ Compressing image:', uri);
 
       // Get original file size
       const fileInfo = await FileSystem.getInfoAsync(uri);
@@ -76,7 +78,7 @@ class ImageCompressionServiceClass {
         ? ((originalSize - compressedSize) / originalSize) * 100
         : 0;
 
-      console.log(`✅ Compressed: ${this.formatBytes(originalSize)} → ${this.formatBytes(compressedSize)} (${compressionRatio.toFixed(1)}% reduction)`);
+      logger.debug(`✅ Compressed: ${this.formatBytes(originalSize)} → ${this.formatBytes(compressedSize)} (${compressionRatio.toFixed(1)}% reduction)`);
 
       return {
         uri: manipResult.uri,
@@ -87,7 +89,7 @@ class ImageCompressionServiceClass {
         compressionRatio,
       };
     } catch (error) {
-      console.error('Error compressing image:', error);
+      logger.error('Error compressing image:', error);
       throw error;
     }
   }
@@ -100,7 +102,7 @@ class ImageCompressionServiceClass {
     options: CompressionOptions = {}
   ): Promise<CompressionResult[]> {
     try {
-      console.log(`🖼️ Compressing ${uris.length} images...`);
+      logger.debug(`🖼️ Compressing ${uris.length} images...`);
 
       const promises = uris.map(uri => this.compressImage(uri, options));
       const results = await Promise.all(promises);
@@ -109,11 +111,11 @@ class ImageCompressionServiceClass {
       const totalCompressed = results.reduce((sum, r) => sum + r.size, 0);
       const totalRatio = ((totalOriginal - totalCompressed) / totalOriginal) * 100;
 
-      console.log(`✅ Compressed ${uris.length} images: ${this.formatBytes(totalOriginal)} → ${this.formatBytes(totalCompressed)} (${totalRatio.toFixed(1)}% reduction)`);
+      logger.debug(`✅ Compressed ${uris.length} images: ${this.formatBytes(totalOriginal)} → ${this.formatBytes(totalCompressed)} (${totalRatio.toFixed(1)}% reduction)`);
 
       return results;
     } catch (error) {
-      console.error('Error compressing images:', error);
+      logger.error('Error compressing images:', error);
       throw error;
     }
   }
@@ -145,7 +147,7 @@ class ImageCompressionServiceClass {
       if (!fileInfo.exists || !('size' in fileInfo)) return false;
       return fileInfo.size > maxSize;
     } catch (error) {
-      console.error('Error checking file size:', error);
+      logger.error('Error checking file size:', error);
       return false;
     }
   }
@@ -196,7 +198,7 @@ class ImageCompressionServiceClass {
         };
       }
     } catch (error) {
-      console.error('Error getting optimal settings:', error);
+      logger.error('Error getting optimal settings:', error);
       return this.DEFAULT_OPTIONS;
     }
   }
@@ -208,7 +210,7 @@ class ImageCompressionServiceClass {
     const needsCompression = await this.needsCompression(uri);
     
     if (!needsCompression) {
-      console.log('✅ Image is small enough, skipping compression');
+      logger.debug('✅ Image is small enough, skipping compression');
       const fileInfo = await FileSystem.getInfoAsync(uri);
       const size = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
       
@@ -228,8 +230,9 @@ class ImageCompressionServiceClass {
 
   /**
    * Format bytes to human-readable string
+   * COMMENT: PRODUCTION HARDENING - Task 4.9 - Made public for external use
    */
-  private formatBytes(bytes: number): string {
+  formatBytes(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
 
     const k = 1024;
@@ -261,5 +264,11 @@ class ImageCompressionServiceClass {
 
 export const ImageCompressionService = new ImageCompressionServiceClass();
 export default ImageCompressionService;
+
+
+
+
+
+
 
 

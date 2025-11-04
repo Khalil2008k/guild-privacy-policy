@@ -8,6 +8,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { realPaymentService, Wallet, Transaction } from '../services/realPaymentService';
 import { useAuth } from './AuthContext';
 import { CustomAlertService } from '../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 interface RealPaymentContextType {
   wallet: Wallet | null;
@@ -55,7 +57,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       const userWallet = await realPaymentService.getWallet(user.uid);
       setWallet(userWallet);
     } catch (error) {
-      console.warn('Error loading wallet (using offline mode):', error);
+      // COMMENT: PRIORITY 1 - Replace console.warn with logger
+      logger.warn('Error loading wallet (using offline mode):', error);
       // Don't show error alert for authentication issues - just use offline mode
       if (!error.message?.includes('HTTP 401')) {
         CustomAlertService.showError(
@@ -73,7 +76,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       const demoMode = await realPaymentService.isDemoModeEnabled();
       setIsDemoMode(demoMode);
     } catch (error) {
-      console.error('Error checking demo mode:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error checking demo mode:', error);
       setIsDemoMode(false); // Default to production mode
     }
   };
@@ -115,7 +119,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       
       throw new Error(result.message || 'Payment failed');
     } catch (error) {
-      console.error('Error processing payment:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error processing payment:', error);
       CustomAlertService.showError(
         'Payment Failed',
         error.message || 'Payment processing failed'
@@ -148,7 +153,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       
       throw new Error(result.message || 'Withdrawal request failed');
     } catch (error) {
-      console.error('Error requesting withdrawal:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error requesting withdrawal:', error);
       CustomAlertService.showError(
         'Withdrawal Failed',
         error.message || 'Withdrawal request failed'
@@ -190,7 +196,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       
       throw new Error(result.message || 'Deposit failed');
     } catch (error) {
-      console.error('Error processing deposit:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error processing deposit:', error);
       CustomAlertService.showError(
         'Deposit Failed',
         error.message || 'Deposit processing failed'
@@ -206,7 +213,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
       const transactions = await realPaymentService.getTransactionHistory(user.uid, limit);
       return transactions;
     } catch (error) {
-      console.error('Error getting transaction history:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting transaction history:', error);
       return [];
     }
   };
@@ -219,7 +227,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
     try {
       return await realPaymentService.getSupportedPaymentMethods();
     } catch (error) {
-      console.error('Error getting payment methods:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting payment methods:', error);
       return ['card', 'bank_transfer'];
     }
   };
@@ -228,7 +237,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
     try {
       return await realPaymentService.getSupportedCurrencies();
     } catch (error) {
-      console.error('Error getting currencies:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting currencies:', error);
       return ['Guild Coins', 'USD', 'EUR', 'QR'];
     }
   };
@@ -241,7 +251,8 @@ export const RealPaymentProvider: React.FC<RealPaymentProviderProps> = ({ childr
     try {
       return await realPaymentService.convertCurrency(amount, fromCurrency, toCurrency);
     } catch (error) {
-      console.error('Error converting currency:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error converting currency:', error);
       return amount; // Return original amount as fallback
     }
   };

@@ -17,6 +17,7 @@ import { useGuildJobs } from '../../contexts/GuildJobContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Shield, Users, Briefcase, Award, TrendingUp, Star, DollarSign } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import ModalHeader from '../components/ModalHeader';
 import * as Haptics from 'expo-haptics';
 import { Animated, Easing } from 'react-native';

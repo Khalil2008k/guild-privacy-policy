@@ -47,6 +47,8 @@ import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { jobService, Job } from '../../services/jobService';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'SignikaNegative_400Regular';
@@ -108,7 +110,8 @@ export default function SearchScreen() {
       ];
       setCategories(transformedCategories);
     } catch (error) {
-      console.error('Error loading categories:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading categories:', error);
       // Fallback to basic categories
       setCategories([
         { id: 'all', name: isRTL ? 'جميع الوظائف' : 'All Jobs', icon: '📋', count: 0 }
@@ -177,7 +180,8 @@ export default function SearchScreen() {
       setJobs(jobsData);
       setFilteredJobs(jobsData);
     } catch (error) {
-      console.error('Error loading jobs:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading jobs:', error);
       CustomAlertService.showError('Error', 'Failed to load jobs');
     }
   };
@@ -207,7 +211,8 @@ export default function SearchScreen() {
         loadJobs()
       ]);
     } catch (error) {
-      console.error('Error loading data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading data:', error);
       CustomAlertService.showError('Error', 'Failed to load data');
     } finally {
       setLoading(false);
@@ -283,16 +288,19 @@ export default function SearchScreen() {
         if (newFavorites.has(job.id)) {
           newFavorites.delete(job.id);
           // Show success message
-          console.log('Job removed from favorites');
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('Job removed from favorites');
         } else {
           newFavorites.add(job.id);
           // Show success message
-          console.log('Job added to favorites');
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('Job added to favorites');
         }
         return newFavorites;
       });
     } catch (error) {
-      console.error('Error handling heart press:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error handling heart press:', error);
     }
   };
 

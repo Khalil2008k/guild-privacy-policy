@@ -1,14 +1,24 @@
 /**
- * Fake Payment Display Component
- * Shows user's Guild Coins balance in the header
+ * COMMENT: PRODUCTION HARDENING - Fake Payment Display Component DISABLED per Task 2.1
+ * This component is deprecated and should not be used in production
+ * Use RealPaymentContext instead for all payment operations
+ * 
+ * REMOVED: All imports and functionality commented out
+ * MIGRATION: Replace FakePaymentDisplay with RealPaymentContext-based components
  */
 
+// COMMENT: DISABLED - Fake Payment Display Component per Production Hardening Task 2.1
 import React from 'react';
+// All other imports commented out as component is disabled
+/*
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFakePayment } from '../contexts/FakePaymentContext';
 import { useTheme } from '../contexts/ThemeContext';
+*/
 
+// COMMENT: DISABLED - Component implementation per Production Hardening Task 2.1
+/*
 interface FakePaymentDisplayProps {
   onPress?: () => void;
   showIcon?: boolean;
@@ -61,7 +71,16 @@ export const FakePaymentDisplay: React.FC<FakePaymentDisplayProps> = ({
     </TouchableOpacity>
   );
 };
+*/
 
+// COMMENT: Placeholder export to prevent import errors - Component disabled per Task 2.1
+export const FakePaymentDisplay: React.FC<any> = () => {
+  // COMMENT: Component disabled - Use RealPaymentContext instead
+  return null;
+};
+
+// COMMENT: DISABLED - Styles per Production Hardening Task 2.1
+/*
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
@@ -88,6 +107,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
+*/
 
 export default FakePaymentDisplay;
 

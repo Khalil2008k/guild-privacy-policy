@@ -23,6 +23,8 @@ import { useFormValidation } from '../../hooks/useFormValidation';
 import { ValidationRules } from '../../utils/validation';
 import { auth } from '../../config/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -78,8 +80,9 @@ export default function AccountRecoveryScreen() {
 
   // Debug and animate on step change
   useEffect(() => {
-    console.log('🔑 AccountRecovery: Step changed to:', currentStep);
-    console.log('🔑 AccountRecovery: Theme background:', theme.background);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🔑 AccountRecovery: Step changed to:', currentStep);
+    logger.debug('🔑 AccountRecovery: Theme background:', theme.background);
     
     Animated.parallel([
       Animated.timing(slideAnimation, {
@@ -122,7 +125,8 @@ export default function AccountRecoveryScreen() {
     setIsLoading(true);
 
     try {
-      console.log('🔑 Sending verification code to:', email);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔑 Sending verification code to:', email);
       
       // Try backend first for code-based recovery
       try {
@@ -131,7 +135,8 @@ export default function AccountRecoveryScreen() {
         });
         
         if (response && response.success) {
-          console.log('✅ Verification code sent via backend');
+          // COMMENT: PRIORITY 1 - Replace console.log with logger
+          logger.debug('✅ Verification code sent via backend');
           
           setCurrentStep('verification');
           setResendTimer(60);
@@ -145,11 +150,13 @@ export default function AccountRecoveryScreen() {
           return;
         }
       } catch (backendError) {
-        console.log('⚠️ Backend unavailable, falling back to Firebase link method');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.warn('⚠️ Backend unavailable, falling back to Firebase link method');
       }
       
       // Fallback to Firebase if backend is unavailable
-      console.log('🔑 Using Firebase password reset link as fallback');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔑 Using Firebase password reset link as fallback');
       await sendPasswordResetEmail(auth, email.trim());
       
       CustomAlertService.showSuccess(
@@ -164,7 +171,8 @@ export default function AccountRecoveryScreen() {
       }, 4000);
       
     } catch (error: any) {
-      console.error('🔑 Error sending recovery email:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔑 Error sending recovery email:', error);
       
       let errorMessage = t('failedToSendRecoveryEmail');
       
@@ -219,7 +227,8 @@ export default function AccountRecoveryScreen() {
     setAttempts(attempts + 1);
 
     try {
-      console.log('🔑 Verifying recovery code:', codeToVerify);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔑 Verifying recovery code:', codeToVerify);
       
       // Verify code with backend
       const response = await BackendAPI.post('/auth/password-reset/verify', {
@@ -228,7 +237,8 @@ export default function AccountRecoveryScreen() {
       });
       
       if (response && response.success) {
-        console.log('✅ Recovery code verified successfully');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Recovery code verified successfully');
         setCurrentStep('newPassword');
         
         CustomAlertService.showSuccess(
@@ -241,7 +251,8 @@ export default function AccountRecoveryScreen() {
       throw new Error('Invalid verification code');
       
     } catch (error: any) {
-      console.error('🔑 Error verifying recovery code:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔑 Error verifying recovery code:', error);
       
       if (attempts >= 2) {
         CustomAlertService.showError(
@@ -284,7 +295,8 @@ export default function AccountRecoveryScreen() {
     setIsLoading(true);
 
     try {
-      console.log('🔑 Resetting password...');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔑 Resetting password...');
       
       // Reset password via backend
       const response = await BackendAPI.post('/auth/password-reset/reset', {
@@ -294,7 +306,8 @@ export default function AccountRecoveryScreen() {
       });
       
       if (response && response.success) {
-        console.log('✅ Password reset successfully');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Password reset successfully');
         setCurrentStep('success');
         
         CustomAlertService.showSuccess(
@@ -307,7 +320,8 @@ export default function AccountRecoveryScreen() {
       throw new Error('Failed to reset password');
       
     } catch (error: any) {
-      console.error('🔑 Error resetting password:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔑 Error resetting password:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في إعادة تعيين كلمة المرور' : 'Failed to reset password. Please try again.'
@@ -325,7 +339,8 @@ export default function AccountRecoveryScreen() {
     setResendTimer(60);
 
     try {
-      console.log('🔑 Resending recovery code to:', email);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔑 Resending recovery code to:', email);
       
       // Resend verification code via backend
       const response = await BackendAPI.post('/auth/password-reset/request', {
@@ -333,7 +348,8 @@ export default function AccountRecoveryScreen() {
       });
       
       if (response && response.success) {
-        console.log('✅ Recovery code resent successfully');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('✅ Recovery code resent successfully');
         CustomAlertService.showSuccess(
           isRTL ? 'تم الإرسال' : 'Code Sent',
           isRTL ? `تم إرسال رمز جديد إلى ${email}` : `A new code has been sent to ${email}`
@@ -344,7 +360,8 @@ export default function AccountRecoveryScreen() {
       throw new Error('Failed to resend code');
       
     } catch (error) {
-      console.error('🔑 Error resending recovery code:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('🔑 Error resending recovery code:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في إرسال الرمز' : 'Failed to send code. Please try again.'

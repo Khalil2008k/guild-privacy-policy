@@ -44,7 +44,7 @@ export default function QRScannerScreen() {
       if (parsedData.gid || parsedData.name) {
         // Navigate to scanned user profile screen
         router.push({
-          pathname: '/scanned-user-profile',
+          pathname: '/(modals)/scanned-user-profile',
           params: {
             userData: data
           }

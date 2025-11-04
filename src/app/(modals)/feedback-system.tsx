@@ -41,6 +41,8 @@ import { db, storage } from '@/config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { CustomAlertService } from '@/services/CustomAlertService';
 import * as ImagePicker from 'expo-image-picker';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -109,7 +111,8 @@ export default function FeedbackSystemScreen() {
       
       setFeedbackHistory(history);
     } catch (error) {
-      console.log('Error loading feedback history:', error);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.error('Error loading feedback history:', error);
     } finally {
       setLoadingHistory(false);
     }
@@ -167,7 +170,7 @@ export default function FeedbackSystemScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: ['images'],
         allowsMultipleSelection: false,
         quality: 0.7,
       });
@@ -176,7 +179,8 @@ export default function FeedbackSystemScreen() {
         setSelectedImages([...selectedImages, result.assets[0].uri]);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error picking image:', error);
     }
   };
 
@@ -199,7 +203,8 @@ export default function FeedbackSystemScreen() {
 
       return await Promise.all(uploadPromises);
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error uploading images:', error);
       return [];
     } finally {
       setUploadingImage(false);
@@ -273,7 +278,8 @@ export default function FeedbackSystemScreen() {
       setActiveTab('history');
       loadFeedbackHistory();
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error submitting feedback:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل إرسال الملاحظات. حاول مرة أخرى.' : 'Failed to submit feedback. Please try again.'

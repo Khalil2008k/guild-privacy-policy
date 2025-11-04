@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface OnboardingStep {
   id: string;
@@ -147,7 +149,8 @@ export class OnboardingService {
 
     this.sessions.set(sessionId, session);
 
-    console.log('Onboarding session started', { sessionId, userId, flowId });
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('Onboarding session started', { sessionId, userId, flowId });
     return sessionId;
   }
 
@@ -173,7 +176,8 @@ export class OnboardingService {
       // Update analytics
       this.updateStepAnalytics(flow!.id, stepId, metadata);
 
-      console.log('Onboarding step completed', { sessionId, stepId, timeSpent: session.timeSpent });
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('Onboarding step completed', { sessionId, stepId, timeSpent: session.timeSpent });
     }
   }
 
@@ -188,7 +192,8 @@ export class OnboardingService {
     // Update analytics for skip
     this.updateSkipAnalytics(session.flowId, stepId, reason);
 
-    console.log('Onboarding step skipped', { sessionId, stepId, reason });
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('Onboarding step skipped', { sessionId, stepId, reason });
   }
 
   // Complete onboarding
@@ -205,7 +210,8 @@ export class OnboardingService {
     // Update flow analytics
     this.updateFlowAnalytics(session.flowId, session.timeSpent, feedback);
 
-    console.log('Onboarding completed', { sessionId, timeSpent: session.timeSpent, feedback });
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('Onboarding completed', { sessionId, timeSpent: session.timeSpent, feedback });
   }
 
   private updateStepAnalytics(flowId: string, stepId: string, metadata?: Record<string, any>) {

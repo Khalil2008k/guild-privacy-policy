@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,25 @@ import jobService from '../../services/jobService';
 import { CoinWalletAPIClient } from '../../services/CoinWalletAPIClient';
 import { db } from '../../config/firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import ErrorBoundary from '../../components/ErrorBoundary'; // COMMENT: PRODUCTION HARDENING - Task 4.5 - Add error boundary for add job screen
+import { logger } from '../../utils/logger';
+// COMMENT: PRIORITY 1 - File Modularization - Import extracted components (underscore prefix prevents Expo Router from treating as routes)
+import { StepIndicator } from './_components/StepIndicator';
+import { LanguageSelector } from './_components/LanguageSelector';
+import { Step1BasicInfo } from './_components/Step1BasicInfo';
+import { Step2BudgetTimeline } from './_components/Step2BudgetTimeline';
+import { Step3LocationRequirements } from './_components/Step3LocationRequirements';
+import { Step4VisibilitySummary } from './_components/Step4VisibilitySummary';
+import { AddJobHeader } from './_components/AddJobHeader';
+import { AddJobFooter } from './_components/AddJobFooter';
+// COMMENT: PRIORITY 1 - File Modularization - Import extracted hooks (underscore prefix prevents Expo Router from treating as routes)
+import { useWalletBalance } from './_hooks/useWalletBalance';
+import { useLocation } from './_hooks/useLocation';
+import { useJobForm } from './_hooks/useJobForm';
+import { useAdminNotifications } from './_hooks/useAdminNotifications';
+import { usePromotionLogic } from './_hooks/usePromotionLogic';
+// COMMENT: PRIORITY 1 - File Modularization - Import constants
+import { getCategories, getBudgetTypes, getExperienceLevels } from './_constants/jobFormConstants';
 import { 
   X, Plus, Globe, MapPin, Clock, DollarSign, Users, Star,
   Zap, Shield, Award, Target, Briefcase, Palette, Code,
@@ -92,40 +111,43 @@ export default function ModernAddJobScreen() {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
+  // COMMENT: PRIORITY 1 - File Modularization - Use extracted hooks
+  const {
+    walletBalance,
+    balanceLoading,
+    balanceError,
+    loadBalance,
+    calculateWalletValue: calculateWalletValueFromHook,
+  } = useWalletBalance();
+
+  const {
+    formData,
+    currentStep,
+    isSubmitting,
+    focusedField,
+    showLanguageSelector,
+    handleInputChange,
+    handleNextStep,
+    handlePrevStep,
+    setFocusedField,
+    setShowLanguageSelector,
+    handleSubmit: handleSubmitForm,
+  } = useJobForm();
+
+  const { notifyAdmins } = useAdminNotifications();
+
+  const {
+    calculatePromotionCost,
+    calculateWalletValue: calculateWalletValueForPromotion,
+    validatePromotionBalance,
+    handlePromotionToggle: handlePromotionToggleFromHook,
+  } = usePromotionLogic();
+
+  // COMMENT: PRIORITY 1 - File Modularization - Wallet balance logic extracted to useWalletBalance hook
+  // Old code commented out - now using extracted hook
+  /*
   const [walletBalance, setWalletBalance] = useState<any>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
-
-  const [formData, setFormData] = useState<JobFormData>({
-    title: '',
-    titleAr: '',
-    description: '',
-    descriptionAr: '',
-    category: '',
-    budget: '',
-    budgetType: 'fixed',
-    duration: '',
-    isUrgent: false,
-    location: '',
-    locationAr: '',
-    isRemote: false,
-    showOnMap: false,
-    experienceLevel: 'intermediate',
-    skills: [],
-    requirements: '',
-    requirementsAr: '',
-    deliverables: '',
-    deliverablesAr: '',
-    visibility: 'public',
-    featured: false,
-    boost: false,
-    primaryLanguage: 'both',
-  });
-
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
   // Load wallet balance function
@@ -136,7 +158,8 @@ export default function ModernAddJobScreen() {
       const balance = await CoinWalletAPIClient.getBalance();
       setWalletBalance(balance);
     } catch (error) {
-      console.error('Error loading wallet balance:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading wallet balance:', error);
       const errorMessage = isRTL 
         ? 'فشل تحميل رصيد المحفظة'
         : 'Failed to load wallet balance';
@@ -150,6 +173,7 @@ export default function ModernAddJobScreen() {
   useEffect(() => {
     loadBalance();
   }, []);
+  */
 
   // Animate on mount
   useEffect(() => {
@@ -172,46 +196,39 @@ export default function ModernAddJobScreen() {
     ]).start();
   }, []);
 
-  const categories = [
-    { key: 'technology', label: isRTL ? 'التكنولوجيا' : 'Technology', icon: Code, color: '#3B82F6' },
-    { key: 'design', label: isRTL ? 'التصميم' : 'Design', icon: Palette, color: '#8B5CF6' },
-    { key: 'marketing', label: isRTL ? 'التسويق' : 'Marketing', icon: Megaphone, color: '#F59E0B' },
-    { key: 'writing', label: isRTL ? 'الكتابة' : 'Writing', icon: PenTool, color: '#10B981' },
-    { key: 'video', label: isRTL ? 'الفيديو' : 'Video & Audio', icon: Video, color: '#EF4444' },
-    { key: 'business', label: isRTL ? 'الأعمال' : 'Business', icon: Briefcase, color: '#6366F1' },
-    { key: 'lifestyle', label: isRTL ? 'نمط الحياة' : 'Lifestyle', icon: Heart, color: '#EC4899' },
-    { key: 'education', label: isRTL ? 'التعليم' : 'Education', icon: GraduationCap, color: '#06B6D4' },
-    { key: 'other', label: isRTL ? 'أخرى' : 'Other', icon: Star, color: '#6B7280' },
-  ];
+  // COMMENT: PRIORITY 1 - File Modularization - Constants extracted to _constants/jobFormConstants.ts
+  const categories = getCategories(isRTL);
+  const experienceLevels = getExperienceLevels(isRTL, theme.primary);
+  const budgetTypes = getBudgetTypes(isRTL);
 
-  const experienceLevels = [
-    { key: 'beginner', label: isRTL ? 'مبتدئ' : 'Beginner', icon: User, color: theme.primary },
-    { key: 'intermediate', label: isRTL ? 'متوسط' : 'Intermediate', icon: Users, color: theme.primary },
-    { key: 'expert', label: isRTL ? 'خبير' : 'Expert', icon: Trophy, color: theme.primary },
-  ];
-
-  const budgetTypes = [
-    { key: 'fixed', label: isRTL ? 'مبلغ ثابت' : 'Fixed Price', icon: DollarSign },
-    { key: 'hourly', label: isRTL ? 'ساعي' : 'Hourly Rate', icon: Clock },
-    { key: 'negotiable', label: isRTL ? 'قابل للتفاوض' : 'Negotiable', icon: Users },
-  ];
-
+  // COMMENT: PRIORITY 1 - File Modularization - handleInputChange extracted to useJobForm hook
+  // Old function commented out - now using extracted hook
+  /*
   const handleInputChange = (field: keyof JobFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+  */
 
-  const handleNextStep = () => {
-    if (currentStep < 4) {
-      setCurrentStep(prev => prev + 1);
+  // COMMENT: PRIORITY 1 - File Modularization - Use useLocation hook after handleInputChange is defined
+  const {
+    locationLoading,
+    getCurrentLocation,
+    openMapSelector,
+  } = useLocation((location, locationAr, coordinates) => {
+    handleInputChange('location', location);
+    handleInputChange('locationAr', locationAr);
+    if (coordinates) {
+      handleInputChange('coordinates', coordinates);
+      handleInputChange('showOnMap', true);
     }
-  };
+  });
 
-  const handlePrevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
+  // COMMENT: PRIORITY 1 - File Modularization - handleNextStep and handlePrevStep extracted to useJobForm hook
+  // Old functions commented out - now using extracted hook
 
+  // COMMENT: PRIORITY 1 - File Modularization - Location logic extracted to useLocation hook
+  // Old code commented out - now using extracted hook
+  /*
   // Location functions
   const getCurrentLocation = async () => {
     try {
@@ -252,7 +269,8 @@ export default function ModernAddJobScreen() {
         );
       }
     } catch (error) {
-      console.error('Error getting location:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting location:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ في الموقع' : 'Location Error',
         isRTL ? 'فشل في تحديد موقعك الحالي' : 'Failed to get your current location'
@@ -285,7 +303,11 @@ export default function ModernAddJobScreen() {
       ]
     );
   };
+  */
 
+  // COMMENT: PRIORITY 1 - File Modularization - Promotion logic extracted to usePromotionLogic hook
+  // Old functions commented out - now using extracted hooks
+  /*
   // Helper function to calculate total promotion cost
   // DISABLED: Promotions will be managed by admin via admin portal
   const calculatePromotionCost = (): number => {
@@ -378,7 +400,8 @@ export default function ModernAddJobScreen() {
       const adminsSnapshot = await getDocs(adminsQuery);
       
       if (adminsSnapshot.empty) {
-        console.log('No admin users found');
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('No admin users found');
         return;
       }
 
@@ -402,9 +425,11 @@ export default function ModernAddJobScreen() {
       });
 
       await Promise.all(notificationPromises);
-      console.log(`✅ Notified ${adminsSnapshot.size} admin(s) about new job`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Notified ${adminsSnapshot.size} admin(s) about new job`);
     } catch (error) {
-      console.error('Error notifying admins:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error notifying admins:', error);
       // Don't throw - notification failure shouldn't block job creation
     }
   };
@@ -490,7 +515,8 @@ export default function ModernAddJobScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error posting job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error posting job:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في نشر الوظيفة. يرجى المحاولة مرة أخرى.' : 'Failed to post job. Please try again.'
@@ -499,7 +525,61 @@ export default function ModernAddJobScreen() {
       setIsSubmitting(false);
     }
   };
+  */
 
+  // Wrapper functions to use hooks with formData
+  const getPromotionCost = useCallback(() => {
+    return calculatePromotionCost(formData.featured, formData.boost);
+  }, [formData.featured, formData.boost, calculatePromotionCost]);
+
+  const getWalletValue = useCallback(() => {
+    return calculateWalletValueForPromotion(walletBalance);
+  }, [walletBalance, calculateWalletValueForPromotion]);
+
+  const validateBalance = useCallback(() => {
+    return validatePromotionBalance(getPromotionCost(), getWalletValue());
+  }, [validatePromotionBalance, getPromotionCost, getWalletValue]);
+
+  const handlePromotionToggle = useCallback((type: 'featured' | 'boost', currentValue: boolean) => {
+    handlePromotionToggleFromHook(
+      type,
+      currentValue,
+      getPromotionCost(),
+      getWalletValue(),
+      (type, value) => handleInputChange(type, value)
+    );
+  }, [handlePromotionToggleFromHook, getPromotionCost, getWalletValue, handleInputChange]);
+
+  // Wrapper to handle submit with current hooks
+  const handleSubmit = useCallback(async () => {
+    const balanceValidation = validateBalance();
+    if (!balanceValidation.valid) {
+      CustomAlertService.showError(
+        t('insufficientBalance'),
+        balanceValidation.message,
+        [
+          {
+            text: t('cancel'),
+            style: 'cancel',
+          },
+          {
+            text: t('buyCoins'),
+            onPress: () => router.push('/(modals)/coin-store'),
+          },
+        ]
+      );
+      return;
+    }
+
+    await handleSubmitForm(
+      getPromotionCost,
+      notifyAdmins
+    );
+  }, [validateBalance, handleSubmitForm, getPromotionCost, notifyAdmins, isRTL]);
+
+  // COMMENT: PRIORITY 1 - File Modularization - StepIndicator component extracted to _components/StepIndicator.tsx
+  // Old render function commented out - now using extracted component
+  /*
   const renderStepIndicator = () => (
     <View style={[styles.stepIndicator, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       {[1, 2, 3, 4].map((step) => (
@@ -526,7 +606,11 @@ export default function ModernAddJobScreen() {
           </Text>
         </View>
   );
+  */
 
+  // COMMENT: PRIORITY 1 - File Modularization - LanguageSelector component extracted to _components/LanguageSelector.tsx
+  // Old render function commented out - now using extracted component
+  /*
   const renderLanguageSelector = () => (
     <View style={styles.languageSelector}>
       <Text style={[styles.languageLabel, { 
@@ -571,203 +655,54 @@ export default function ModernAddJobScreen() {
             </View>
           </View>
   );
+  */
+
+  // COMMENT: PRIORITY 1 - File Modularization - renderStep1 extracted to Step1BasicInfo component
+  // Old render function commented out - now using extracted component
+  /*
+  const renderStep1 = () => (
+    ... old code ...
+  );
+  */
 
   const renderStep1 = () => (
-    <Animated.View
-      style={[
-        styles.stepContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
-        },
-      ]}
-    >
-      <Text style={[styles.stepTitle, { 
-        color: theme.textPrimary,
-        textAlign: isRTL ? 'right' : 'left',
-      }]}>
-        {isRTL ? 'معلومات أساسية' : 'Basic Information'}
-      </Text>
-      
-      {renderLanguageSelector()}
-      
-      {/* Job Title */}
-      <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { 
-          color: theme.textPrimary,
-          textAlign: isRTL ? 'right' : 'left',
-        }]}>
-          {isRTL ? 'عنوان الوظيفة' : 'Job Title'} *
-        </Text>
-        {formData.primaryLanguage === 'en' || formData.primaryLanguage === 'both' ? (
-            <TextInput
-              style={[
-              styles.textInput,
-                {
-                backgroundColor: theme.surface,
-                borderColor: focusedField === 'title' ? theme.primary : theme.border,
-                  color: theme.textPrimary,
-                  textAlign: isRTL ? 'right' : 'left',
-              },
-              ]}
-            placeholder={isRTL ? 'مثال: مطور تطبيقات جوال' : 'e.g. Mobile App Developer'}
-              placeholderTextColor={theme.textSecondary}
-              value={formData.title}
-            onChangeText={(value) => handleInputChange('title', value)}
-              onFocus={() => setFocusedField('title')}
-          />
-        ) : null}
-        
-        {formData.primaryLanguage === 'ar' || formData.primaryLanguage === 'both' ? (
-            <TextInput
-              style={[
-              styles.textInput,
-                {
-                backgroundColor: theme.surface,
-                borderColor: focusedField === 'titleAr' ? theme.primary : theme.border,
-                  color: theme.textPrimary,
-                  textAlign: isRTL ? 'right' : 'left',
-                marginTop: formData.primaryLanguage === 'both' ? 12 : 0,
-              },
-              ]}
-            placeholder={isRTL ? 'مثال: مطور تطبيقات جوال' : 'مثال: مطور تطبيقات جوال'}
-              placeholderTextColor={theme.textSecondary}
-            value={formData.titleAr}
-            onChangeText={(value) => handleInputChange('titleAr', value)}
-            onFocus={() => setFocusedField('titleAr')}
-            />
-        ) : null}
-        </View>
-
-      {/* Category Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { 
-          color: theme.textPrimary,
-          textAlign: isRTL ? 'right' : 'left',
-        }]}>
-          {isRTL ? 'التصنيف' : 'Category'} *
-        </Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-          contentContainerStyle={{ 
-            flexDirection: isRTL ? 'row-reverse' : 'row',
-            gap: 12,
-          }}
-          >
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <TouchableOpacity
-                  key={category.key}
-                  style={[
-                    styles.categoryCard,
-                    {
-                    backgroundColor: formData.category === category.key ? category.color : theme.surface,
-                    borderColor: formData.category === category.key ? category.color : theme.border,
-                  },
-                  ]}
-                  onPress={() => handleInputChange('category', category.key)}
-                >
-                  <IconComponent 
-                  size={24}
-                  color={formData.category === category.key ? '#FFFFFF' : theme.textPrimary}
-                  />
-                  <Text
-                    style={[
-                    styles.categoryText,
-                    {
-                      color: formData.category === category.key ? '#FFFFFF' : theme.textPrimary,
-                    },
-                    ]}
-                  >
-                    {category.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-      {/* Description */}
-      <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { 
-          color: theme.textPrimary,
-          textAlign: isRTL ? 'right' : 'left',
-        }]}>
-          {isRTL ? 'الوصف' : 'Description'} *
-            </Text>
-        {formData.primaryLanguage === 'en' || formData.primaryLanguage === 'both' ? (
-          <TextInput
-            style={[
-              styles.textArea,
-              {
-                backgroundColor: theme.surface,
-                borderColor: focusedField === 'description' ? theme.primary : theme.border,
-                color: theme.textPrimary,
-                textAlign: isRTL ? 'right' : 'left',
-              },
-            ]}
-            placeholder={isRTL ? 'اكتب وصفاً مفصلاً للوظيفة...' : 'Write a detailed description of the job...'}
-            placeholderTextColor={theme.textSecondary}
-            value={formData.description}
-            onChangeText={(value) => handleInputChange('description', value)}
-            onFocus={() => setFocusedField('description')}
-            multiline
-            numberOfLines={4}
-          />
-        ) : null}
-        
-        {formData.primaryLanguage === 'ar' || formData.primaryLanguage === 'both' ? (
-          <TextInput
-            style={[
-              styles.textArea,
-              {
-                backgroundColor: theme.surface,
-                borderColor: focusedField === 'descriptionAr' ? theme.primary : theme.border,
-                color: theme.textPrimary,
-                textAlign: isRTL ? 'right' : 'left',
-                marginTop: formData.primaryLanguage === 'both' ? 12 : 0,
-              },
-            ]}
-            placeholder={isRTL ? 'اكتب وصفاً مفصلاً للوظيفة...' : 'اكتب وصفاً مفصلاً للوظيفة...'}
-            placeholderTextColor={theme.textSecondary}
-            value={formData.descriptionAr}
-            onChangeText={(value) => handleInputChange('descriptionAr', value)}
-            onFocus={() => setFocusedField('descriptionAr')}
-            multiline
-            numberOfLines={4}
-          />
-        ) : null}
-      </View>
-    </Animated.View>
+    <Step1BasicInfo
+      formData={formData}
+      focusedField={focusedField}
+      fadeAnim={fadeAnim}
+      slideAnim={slideAnim}
+      scaleAnim={scaleAnim}
+      onInputChange={handleInputChange}
+      onFocusChange={setFocusedField}
+      onLanguageChange={(language) => handleInputChange('primaryLanguage', language)}
+    />
   );
 
-  const renderStep2 = () => (
-    <Animated.View
-      style={[
-        styles.stepContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
-        },
-      ]}
-    >
-      <Text style={[styles.stepTitle, { 
-        color: theme.textPrimary,
-        textAlign: isRTL ? 'right' : 'left',
-      }]}>
-        {isRTL ? 'الميزانية والجدول الزمني' : 'Budget & Timeline'}
-              </Text>
+  // COMMENT: PRIORITY 1 - File Modularization - renderStep2 extracted to Step2BudgetTimeline component
+  // Old render function commented out - now using extracted component
+  /*
+  const renderStep2_OLD = () => {
+    return (
+      <Animated.View
+        style={[
+          styles.stepContainer,
+          {
+            opacity: fadeAnim,
+            transform: [
+              { translateY: slideAnim },
+              { scale: scaleAnim },
+            ],
+          },
+        ]}
+      >
+        <Text style={[styles.stepTitle, { 
+          color: theme.textPrimary,
+          textAlign: isRTL ? 'right' : 'left',
+        }]}>
+          {isRTL ? 'الميزانية والجدول الزمني' : 'Budget & Timeline'}
+        </Text>
 
-      {/* Budget Type */}
+      // COMMENT: Budget Type section removed - now in Step2BudgetTimeline component
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'نوع الميزانية' : 'Budget Type'}
@@ -811,7 +746,7 @@ export default function ModernAddJobScreen() {
             </View>
           </View>
 
-      {/* Budget Amount */}
+      // COMMENT: Budget Amount section removed
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'المبلغ' : 'Amount'} *
@@ -845,7 +780,7 @@ export default function ModernAddJobScreen() {
           </View>
         </View>
 
-      {/* Duration */}
+      // COMMENT: Duration section removed
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'المدة المتوقعة' : 'Expected Duration'} *
@@ -868,7 +803,7 @@ export default function ModernAddJobScreen() {
         />
       </View>
 
-      {/* Experience Level */}
+      // COMMENT: Experience Level section removed
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'مستوى الخبرة المطلوب' : 'Required Experience Level'}
@@ -912,7 +847,7 @@ export default function ModernAddJobScreen() {
         </View>
       </View>
 
-      {/* Urgent Toggle */}
+      // COMMENT: Urgent Toggle section removed
       <TouchableOpacity
         style={[
           styles.urgentToggle,
@@ -942,36 +877,60 @@ export default function ModernAddJobScreen() {
           {isRTL ? 'وظيفة عاجلة' : 'Urgent Job'}
         </Text>
       </TouchableOpacity>
-    </Animated.View>
+        </Animated.View>
+      );
+    };
+    */
+
+  const renderStep2 = () => (
+    <Step2BudgetTimeline
+      formData={{
+        budget: formData.budget,
+        budgetType: formData.budgetType,
+        duration: formData.duration,
+        isUrgent: formData.isUrgent,
+      }}
+      focusedField={focusedField}
+      fadeAnim={fadeAnim}
+      slideAnim={slideAnim}
+      scaleAnim={scaleAnim}
+      onInputChange={handleInputChange}
+      onFocusChange={setFocusedField}
+    />
   );
 
-  const renderStep3 = () => (
-    <Animated.View
-      style={[
-        styles.stepContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
-        },
-      ]}
-    >
-      <Text style={[styles.stepTitle, { 
-        color: theme.textPrimary,
-        textAlign: isRTL ? 'right' : 'left',
-      }]}>
-        {isRTL ? 'الموقع والمتطلبات' : 'Location & Requirements'}
-      </Text>
+  // COMMENT: PRIORITY 1 - File Modularization - renderStep3 extracted to Step3LocationRequirements component
+  // Old render function commented out - now using extracted component
+  /*
+  const renderStep3_OLD = () => {
+    return (
+      <Animated.View
+        style={[
+          styles.stepContainer,
+          {
+            opacity: fadeAnim,
+            transform: [
+              { translateY: slideAnim },
+              { scale: scaleAnim },
+            ],
+          },
+        ]}
+      >
+        <Text style={[styles.stepTitle, { 
+          color: theme.textPrimary,
+          textAlign: isRTL ? 'right' : 'left',
+        }]}>
+          {isRTL ? 'الموقع والمتطلبات' : 'Location & Requirements'}
+        </Text>
 
-      {/* Location */}
+      // COMMENT: Location section removed - now in Step3LocationRequirements component
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'الموقع' : 'Location'} *
         </Text>
         
-        {/* Location Input Fields */}
+        COMMENT: Location Input Fields removed - now in Step3LocationRequirements component
+        COMMENT: Original location input code removed
         {formData.primaryLanguage === 'en' || formData.primaryLanguage === 'both' ? (
             <TextInput
               style={[
@@ -1011,7 +970,7 @@ export default function ModernAddJobScreen() {
           />
         ) : null}
 
-        {/* Location Actions */}
+        // COMMENT: Location Actions removed
         <View style={[styles.locationActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity
             style={[styles.locationButton, { 
@@ -1054,7 +1013,7 @@ export default function ModernAddJobScreen() {
         </View>
       </View>
 
-      {/* Remote Work Toggle */}
+      // COMMENT: Remote Work Toggle removed
           <TouchableOpacity
             style={[
           styles.remoteToggle,
@@ -1085,7 +1044,7 @@ export default function ModernAddJobScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Requirements */}
+      // COMMENT: Requirements section removed
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'المتطلبات' : 'Requirements'}
@@ -1134,7 +1093,7 @@ export default function ModernAddJobScreen() {
         ) : null}
       </View>
 
-      {/* Deliverables */}
+      // COMMENT: Deliverables section removed
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'المخرجات المتوقعة' : 'Expected Deliverables'}
@@ -1182,30 +1141,63 @@ export default function ModernAddJobScreen() {
           />
         ) : null}
       </View>
-    </Animated.View>
+      </Animated.View>
+    );
+  };
+  */
+
+  const renderStep3 = () => (
+    <Step3LocationRequirements
+      formData={{
+        location: formData.location,
+        locationAr: formData.locationAr,
+        isRemote: formData.isRemote,
+        showOnMap: formData.showOnMap,
+        experienceLevel: formData.experienceLevel,
+        skills: formData.skills,
+        requirements: formData.requirements,
+        requirementsAr: formData.requirementsAr,
+        deliverables: formData.deliverables,
+        deliverablesAr: formData.deliverablesAr,
+        primaryLanguage: formData.primaryLanguage,
+      }}
+      focusedField={focusedField}
+      locationLoading={locationLoading}
+      fadeAnim={fadeAnim}
+      slideAnim={slideAnim}
+      scaleAnim={scaleAnim}
+      onInputChange={handleInputChange}
+      onFocusChange={setFocusedField}
+      onGetCurrentLocation={getCurrentLocation}
+      onOpenMapSelector={openMapSelector}
+    />
   );
 
-  const renderStep4 = () => (
-    <Animated.View
-      style={[
-        styles.stepContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
-        },
-      ]}
-    >
-      <Text style={[styles.stepTitle, { 
-        color: theme.textPrimary,
-        textAlign: isRTL ? 'right' : 'left',
-      }]}>
-        {isRTL ? 'خيارات متقدمة' : 'Advanced Options'}
-                </Text>
+  // COMMENT: PRIORITY 1 - File Modularization - renderStep4 extracted to Step4VisibilitySummary component
+  // Old render function commented out - now using extracted component
+  /*
+  const renderStep4_OLD = () => {
+    return (
+      <Animated.View
+        style={[
+          styles.stepContainer,
+          {
+            opacity: fadeAnim,
+            transform: [
+              { translateY: slideAnim },
+              { scale: scaleAnim },
+            ],
+          },
+        ]}
+      >
+        <Text style={[styles.stepTitle, { 
+          color: theme.textPrimary,
+          textAlign: isRTL ? 'right' : 'left',
+        }]}>
+          {isRTL ? 'خيارات متقدمة' : 'Advanced Options'}
+        </Text>
 
-      {/* Visibility Options */}
+      // COMMENT: Visibility Options removed - now in Step4VisibilitySummary component
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
           {isRTL ? 'الرؤية' : 'Visibility'}
@@ -1253,13 +1245,9 @@ export default function ModernAddJobScreen() {
               </View>
             </View>
 
-      {/* Promotion Options - DISABLED: Coming Soon via Admin Portal */}
-      {/* <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
-          {isRTL ? 'خيارات الترويج (قريباً)' : 'Promotion Options (Coming Soon)'}
-        </Text> */}
-        
-        {/* DISABLED: Promotions coming soon via admin portal
+      // COMMENT: Promotion Options - DISABLED: Coming Soon via Admin Portal
+      // COMMENT: Promotion code removed - now in Step4VisibilitySummary component
+      // COMMENT: DISABLED: Promotions coming soon via admin portal
         {balanceError && (
           <View style={[styles.errorCard, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
             <Ionicons name="alert-circle" size={20} color={theme.error} />
@@ -1377,41 +1365,42 @@ export default function ModernAddJobScreen() {
             +10 coins
                 </Text>
               </TouchableOpacity>
-        </View> */}
+        COMMENT: Promotion section removed - now in Step4VisibilitySummary component
+        COMMENT: Original promotion JSX code removed - all promotion code extracted to component
 
-      {/* Summary */}
-      <View style={styles.summaryContainer}>
-        <Text style={[styles.summaryTitle, { 
-          color: theme.textPrimary,
-          textAlign: isRTL ? 'right' : 'left',
-        }]}>
-          {isRTL ? 'ملخص الوظيفة' : 'Job Summary'}
-            </Text>
-        <View style={[styles.summaryCard, { 
-          backgroundColor: theme.surface, 
-          borderColor: theme.border,
-        }]}>
-          <Text style={[styles.summaryText, { 
-            color: theme.textPrimary,
-            textAlign: isRTL ? 'right' : 'left',
-          }]}>
-            {formData.primaryLanguage === 'ar' ? formData.titleAr : formData.title}
-          </Text>
-          <Text style={[styles.summaryCategory, { 
-            color: theme.textSecondary,
-            textAlign: isRTL ? 'right' : 'left',
-          }]}>
-            {categories.find(c => c.key === formData.category)?.label}
-          </Text>
-          <Text style={[styles.summaryBudget, { 
-            color: theme.primary,
-            textAlign: isRTL ? 'right' : 'left',
-          }]}>
-            {formData.budget} coins • {formData.duration}
-          </Text>
-            </View>
-          </View>
-    </Animated.View>
+      COMMENT: Summary section removed - now in Step4VisibilitySummary component
+      COMMENT: All summary JSX removed for Step4VisibilitySummary component
+      COMMENT: Original code: summary card showing title, category, budget, duration
+      COMMENT: Closing Animated.View and function return statement
+      COMMENT: </Animated.View> JSX removed
+      COMMENT: return statement and function closing removed
+    );
+  };
+  */
+
+  const renderStep4 = () => (
+    <Step4VisibilitySummary
+      formData={{
+        visibility: formData.visibility,
+        featured: formData.featured,
+        boost: formData.boost,
+        title: formData.title,
+        titleAr: formData.titleAr,
+        category: formData.category,
+        budget: formData.budget,
+        budgetType: formData.budgetType,
+        duration: formData.duration,
+        location: formData.location,
+        locationAr: formData.locationAr,
+        primaryLanguage: formData.primaryLanguage,
+      }}
+      fadeAnim={fadeAnim}
+      slideAnim={slideAnim}
+      scaleAnim={scaleAnim}
+      onInputChange={handleInputChange}
+      onPromotionToggle={handlePromotionToggle}
+      categories={categories}
+    />
   );
 
   const renderCurrentStep = () => {
@@ -1429,60 +1418,25 @@ export default function ModernAddJobScreen() {
     }
   };
 
+  // COMMENT: PRODUCTION HARDENING - Task 4.5 - Wrap add job screen in error boundary
   return (
+    <ErrorBoundary
+      fallback={null}
+      onError={(error, errorInfo) => {
+        logger.error('Add job screen error:', {
+          error: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+        });
+      }}
+      resetOnPropsChange={true}
+    >
     <KeyboardAvoidingView 
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <LinearGradient
-        colors={[theme.primary, theme.primary + 'CC']}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
-        <View style={[styles.headerContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <TouchableOpacity
-            style={[styles.closeButton, { 
-              marginRight: isRTL ? 0 : 0,
-              marginLeft: isRTL ? 0 : 0,
-            }]}
-            onPress={() => router.back()}
-          >
-            <X size={24} color="#000000" />
-          </TouchableOpacity>
-          
-          <View style={[styles.headerTitleContainer, { 
-            marginRight: isRTL ? 0 : 20,
-            marginLeft: isRTL ? 20 : 0,
-          }]}>
-            <Text style={[styles.headerTitle, { 
-              textAlign: isRTL ? 'right' : 'left',
-              writingDirection: isRTL ? 'rtl' : 'ltr',
-            }]}>
-              {isRTL ? 'إضافة وظيفة جديدة' : 'Add New Job'}
-            </Text>
-            <Text style={[styles.headerSubtitle, { 
-              textAlign: isRTL ? 'right' : 'left',
-              writingDirection: isRTL ? 'rtl' : 'ltr',
-            }]}>
-              {isRTL ? 'أضف وظيفة واجد المواهب المناسبة' : 'Post a job and find the right talent'}
-            </Text>
-          </View>
-          
-          <View style={[styles.headerActions, { 
-            marginRight: isRTL ? 0 : 0,
-            marginLeft: isRTL ? 0 : 0,
-          }]}>
-            <TouchableOpacity 
-              style={styles.helpButton}
-              onPress={() => router.push('/(modals)/job-posting-help')}
-            >
-              <Info size={20} color="#000000" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {renderStepIndicator()}
-      </LinearGradient>
+      <AddJobHeader currentStep={currentStep} />
 
       {/* Content */}
       <ScrollView 
@@ -1494,73 +1448,15 @@ export default function ModernAddJobScreen() {
       </ScrollView>
 
       {/* Footer */}
-      <View style={[styles.footer, { 
-        backgroundColor: theme.surface, 
-        borderTopColor: theme.border,
-        borderTopWidth: 1,
-      }]}>
-        <View style={[styles.footerActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          {currentStep > 1 && (
-            <TouchableOpacity
-              style={[styles.footerButton, styles.backButton, { 
-                borderColor: theme.border,
-                backgroundColor: 'transparent',
-                marginRight: isRTL ? 0 : 12,
-                marginLeft: isRTL ? 12 : 0,
-              }]}
-              onPress={handlePrevStep}
-            >
-              <Text style={[styles.backButtonText, { 
-                color: theme.textPrimary,
-                textAlign: isRTL ? 'right' : 'left',
-              }]}>
-                {isRTL ? 'السابق' : 'Back'}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-        <TouchableOpacity
-          style={[
-              styles.footerButton,
-              styles.nextButton,
-            {
-              backgroundColor: theme.primary,
-                flexDirection: isRTL ? 'row-reverse' : 'row',
-              },
-              currentStep === 4 && { backgroundColor: theme.primary },
-          ]}
-            onPress={currentStep === 4 ? handleSubmit : handleNextStep}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <>
-                <Text style={[styles.nextButtonText, { 
-                  textAlign: isRTL ? 'right' : 'left',
-                  marginRight: isRTL ? 0 : 8,
-                  marginLeft: isRTL ? 8 : 0,
-                }]}>
-                  {currentStep === 4 
-                    ? (isRTL ? 'إرسال الوظيفة' : 'Submit Job')
-                    : (isRTL ? 'التالي' : 'Next')
-                  }
-                </Text>
-                {currentStep < 4 && (
-                  <ChevronRight 
-                    size={16} 
-                color="#000000" 
-                    style={{ 
-                      transform: isRTL ? [{ scaleX: -1 }] : [{ scaleX: 1 }] 
-                    }} 
-              />
-                )}
-            </>
-          )}
-        </TouchableOpacity>
-        </View>
-      </View>
+      <AddJobFooter
+        currentStep={currentStep}
+        isSubmitting={isSubmitting}
+        onBack={handlePrevStep}
+        onNext={handleNextStep}
+        onSubmit={handleSubmit}
+      />
     </KeyboardAvoidingView>
+    </ErrorBoundary>
   );
 }
 
@@ -1568,72 +1464,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#000000',
-    opacity: 0.7,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  headerActions: {
-    width: 40,
-    alignItems: 'flex-end',
-  },
-  helpButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  stepDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 4,
-    borderWidth: 0.5,
-  },
-  stepText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  // COMMENT: PRIORITY 1 - File Modularization - Header/footer styles moved to AddJobHeader and AddJobFooter components
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -1990,46 +1821,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-  },
-  footerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  footerButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  backButton: {
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  nextButton: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  nextButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
-  },
+  // COMMENT: PRIORITY 1 - File Modularization - Footer styles moved to AddJobFooter component
 });

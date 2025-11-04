@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { User, Star, Briefcase, MapPin, Shield, Award, Clock, MessageSquare } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,7 +46,7 @@ export default function UserProfileScreen() {
         isScannedUser: params.isScannedUser === 'true'
       });
     }
-  }, [params]);
+  }, [params.userId, params.userName, params.userGuild, params.userGid, params.isScannedUser]);
 
   const handleBack = () => {
     router.back();

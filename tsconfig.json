@@ -12,8 +12,10 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "strict": false,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
+    // COMMENT: FINAL STABILIZATION - Task 2 - Gradually enable TypeScript strict mode
+    // Phase 1: Enable null checks and implicit any detection (Week 1)
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "strictFunctionTypes": false,
     "strictBindCallApply": false,
     "strictPropertyInitialization": false,

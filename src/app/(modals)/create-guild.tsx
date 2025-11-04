@@ -16,8 +16,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRealPayment } from '@/contexts/RealPaymentContext';
 import CustomAlert from '@/app/components/CustomAlert';
 import { ArrowLeft, Shield, Users, MapPin, FileText, Lock, Globe, Check, Coins } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import AppBottomNavigation from '@/app/components/AppBottomNavigation';
 import { CustomAlertService } from '@/services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '@/utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -206,7 +209,8 @@ export default function CreateGuildScreen() {
         setShowSuccessAlert(true);
       }
     } catch (error) {
-      console.error('Error creating guild:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error creating guild:', error);
       CustomAlertService.showError(
         t('error'),
         isRTL ? 'فشل في إنشاء النقابة' : 'Failed to create guild'

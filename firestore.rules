@@ -2,98 +2,939 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // USERS
+    // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'super_admin'
+      );
+    }
+    
+    function isParticipant(chatData) {
+      return isAuthenticated() && 
+        request.auth.uid in chatData.participants;
+    }
+
+    // ==========================================
+    // USER COLLECTIONS
+    // ==========================================
+    
+    // USERS - Main user collection
     match /users/{userId} {
       // Users can read/write their own profile
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
       // Users can read other users' profiles (for sender names, presence, etc.)
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       
       // Settings subcollection (for notification preferences)
       match /settings/{settingId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
       
       // Notifications subcollection
       match /notifications/{notificationId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Contacts subcollection
+      match /contacts/{contactId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Blocked users subcollection
+      match /blockedUsers/{blockedUserId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
+    // USER PROFILES (for UserProfileContext)
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ==========================================
+    // WALLET COLLECTIONS
+    // ==========================================
+    
     // WALLETS
     match /wallets/{userId} {
-      // Users can read/write their own wallet
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // JOBS (public read)
+    // USER WALLETS (coin wallet balances)
+    match /user_wallets/{userId} {
+      allow read, write: if isOwner(userId);
+      // Admins can read any wallet for auditing
+      allow read: if isAdmin();
+    }
+
+    // ==========================================
+    // JOB COLLECTIONS
+    // ==========================================
+    
+    // JOBS (authenticated read only)
     match /jobs/{jobId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      // Require authentication for read access
+      allow read: if isAuthenticated();
+      // Only authenticated users can write, and only their own jobs
+      allow create: if isAuthenticated() && 
+        request.resource.data.clientId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.clientId == request.auth.uid ||
+         isAdmin());
     }
 
+    // OFFERS
+    match /offers/{offerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.resource.data.freelancerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.freelancerId == request.auth.uid ||
+         resource.data.clientId == request.auth.uid ||
+         isAdmin());
+    }
+
+    // CONTRACTS
+    match /contracts/{contractId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.poster.userId ||
+         request.auth.uid == resource.data.doer.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        (request.auth.uid == resource.data.poster.userId ||
+         request.auth.uid == resource.data.doer.userId ||
+         isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ESCROWS (job payments locked in escrow)
+    match /escrows/{escrowId} {
+      // Client and freelancer can read their escrow
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      // Only backend (via server) can write escrows - users cannot directly write
+      // In practice, escrows are created/updated via backend API routes only
+      allow write: if false; // COMMENT: Escrows should only be written via backend API
+    }
+
+    // ==========================================
+    // GUILD COLLECTIONS
+    // ==========================================
+    
+    // GUILDS
+    match /guilds/{guildId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.guildMasterId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.guildMasterId == request.auth.uid ||
+         request.auth.uid in resource.data.viceMasterIds ||
+         isAdmin());
+      
+      // Guild members subcollection
+      match /guildMembers/{memberId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() &&
+          (resource.data.guildMasterId == request.auth.uid ||
+           request.auth.uid in resource.data.viceMasterIds ||
+           isAdmin());
+      }
+      
+      // Guild members subcollection (alternative path)
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() &&
+          (resource.data.guildMasterId == request.auth.uid ||
+           request.auth.uid in resource.data.viceMasterIds ||
+           isAdmin());
+      }
+    }
+
+    // GUILD MEMBERS (top-level collection)
+    match /guild_members/{memberId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // ==========================================
+    // CHAT & MESSAGING COLLECTIONS
+    // ==========================================
+    
     // CHATS
     match /chats/{chatId} {
-      // Allow read/write if user is participant
-      // Use resource.data for existing documents, request.resource.data for new documents
-      allow read: if request.auth != null &&
-        (request.auth.uid in resource.data.participants || 
-         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
+      // Allow authenticated users to read chats
+      // For collection queries, the where clause filters by participants
+      // For individual document reads, check if user is participant
+      allow read: if isAuthenticated() &&
+        (request.auth.uid in resource.data.participants ||
+         isAdmin());
       
-      allow write: if request.auth != null &&
-        (request.auth.uid in resource.data.participants || 
-         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants ||
-         request.auth.uid in request.resource.data.participants);
+      // Allow write if user is participant in existing chat or new chat
+      allow create: if isAuthenticated() &&
+        request.auth.uid in request.resource.data.participants;
+      
+      allow update, delete: if isAuthenticated() &&
+        (isParticipant(resource.data) ||
+         isAdmin());
 
       // Messages under each chat
       match /messages/{messageId} {
-        allow read, write: if request.auth != null &&
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        // Allow read/write if user is participant in parent chat
+        allow read, write: if isAuthenticated() &&
+          isParticipant(get(/databases/$(database)/documents/chats/$(chatId)).data);
       }
     }
 
     // PRESENCE SERVICE
     match /presence/{uid} {
       // Users can read any presence (for presence subscriptions to other users)
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       // Users can write their own presence
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // ==========================================
+    // NOTIFICATION COLLECTIONS
+    // ==========================================
+    
     // NOTIFICATIONS (top-level collection)
     match /notifications/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
     // NOTIFICATION PREFERENCES (top-level, if used)
     match /notificationPreferences/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
     // DEVICE TOKENS
     match /deviceTokens/{tokenId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
 
-    // DISPUTE LOGS
-    match /disputeLogs/{logId} {
-      allow read, write: if request.auth != null;
+    // GLOBAL CHAT NOTIFICATIONS (admin only for write)
+    match /globalChatNotifications/{notificationId} {
+      // All authenticated users can read
+      allow read: if isAuthenticated();
+      // Only admins can write global notifications
+      allow write: if isAdmin();
+    }
+
+    // ANNOUNCEMENTS
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // DISPUTE & AUDIT COLLECTIONS
+    // ==========================================
+    
+    // DISPUTES
+    match /disputes/{disputeId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid in resource.data.participants ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        (request.auth.uid in resource.data.participants ||
+         isAdmin());
+      allow delete: if isAdmin();
+      
+      // Dispute messages subcollection
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() &&
+          (request.auth.uid in get(/databases/$(database)/documents/disputes/$(disputeId)).data.participants ||
+           isAdmin());
+      }
     }
 
     // MESSAGE AUDIT TRAIL (for dispute logging)
     match /message-audit-trail/{messageId} {
-      allow read, write: if request.auth != null;
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.senderId ||
+         request.auth.uid in resource.data.recipientIds ||
+         isAdmin());
+      allow write: if isAuthenticated();
     }
 
-    // GLOBAL CHAT NOTIFICATIONS
-    match /globalChatNotifications/{notificationId} {
-      allow read, write: if request.auth != null;
+    // ==========================================
+    // FILE & STORAGE COLLECTIONS
+    // ==========================================
+    
+    // FILE UPLOADS
+    match /file_uploads/{fileId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.uploadedBy ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.uploadedBy == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.uploadedBy == request.auth.uid ||
+         isAdmin());
     }
 
+    // ==========================================
+    // SECURITY & MONITORING COLLECTIONS
+    // ==========================================
+    
+    // SECURITY EVENTS
+    match /security_events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // SECURITY ALERTS
+    match /security_alerts/{alertId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // USER BLOCKS
+    match /user_blocks/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // ADMIN ESCALATIONS
+    match /admin_escalations/{escalationId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // PRIVACY & DATA PROTECTION COLLECTIONS
+    // ==========================================
+    
+    // PRIVACY CONSENTS
+    match /privacy_consents/{consentId} {
+      allow read, write: if isAuthenticated() &&
+        (consentId.matches('.*_' + request.auth.uid + '_.*') ||
+         isAdmin());
+    }
+
+    // DATA PROCESSING RECORDS
+    match /data_processing_records/{recordId} {
+      allow read: if isAuthenticated() &&
+        (recordId.matches('.*_' + request.auth.uid + '_.*') ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // DATA EXPORT REQUESTS
+    match /data_export_requests/{requestId} {
+      allow read, write: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // DATA DELETION REQUESTS
+    match /data_deletion_requests/{requestId} {
+      allow read, write: if isAuthenticated() &&
+        (requestId.matches('.*_' + request.auth.uid + '_.*') ||
+         isAdmin());
+    }
+
+    // ==========================================
+    // FINANCIAL COLLECTIONS
+    // ==========================================
+    
+    // TRANSACTIONS (payment/coin transaction history)
+    match /transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      // Only backend can create transactions
+      allow write: if false; // COMMENT: Transactions should only be created via backend API
+    }
+
+    // WITHDRAWALS (coin withdrawal requests)
+    match /withdrawals/{withdrawalId} {
+      // Users can read their own withdrawal requests
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      // Users can create their own withdrawal requests
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      // Only admins can update withdrawal status (approve/reject)
+      allow update: if isAdmin();
+      // Only admins can delete withdrawals
+      allow delete: if isAdmin();
+    }
+
+    // COIN INSTANCES (individual coin records)
+    match /coin_instances/{serial} {
+      // Users can read coins they own
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.currentOwner ||
+         isAdmin());
+      // Only backend can write coin instances (minting, transfers)
+      allow write: if false; // COMMENT: Coins should only be written via backend API
+    }
+
+    // MINT BATCHES (coin minting batch records)
+    match /mint_batches/{batchId} {
+      // Only admins can read mint batches
+      allow read: if isAdmin();
+      // Only backend can create mint batches
+      allow write: if false; // COMMENT: Mint batches should only be created via backend API
+    }
+
+    // QUARANTINED COINS (suspicious coin quarantine)
+    match /quarantined_coins/{serial} {
+      // Only admins can read quarantined coins
+      allow read: if isAdmin();
+      // Only backend can create/update quarantined coins
+      allow write: if false; // COMMENT: Quarantine should only be managed via backend API
+    }
+
+    // COIN LEDGER (transaction ledger for coins)
+    match /coin_ledger/{ledgerId} {
+      // Users can read ledger entries they're involved in
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      // Only backend can write ledger entries
+      allow write: if false; // COMMENT: Ledger should only be written via backend API
+    }
+
+    // ==========================================
+    // SYSTEM CONFIG COLLECTIONS
+    // ==========================================
+    
     // SETTINGS OR OTHER CONFIG
     match /config/{docId} {
+      // COMMENT: Public read - verify if this is intentional for public configs
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
+
+    // SYSTEM SETTINGS
+    match /systemSettings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // JOB APPLICATIONS & REVIEWS COLLECTIONS
+    // ==========================================
+    
+    // JOB APPLICATIONS
+    match /jobApplications/{applicationId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.freelancerId ||
+         request.auth.uid == resource.data.clientId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.freelancerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.freelancerId ||
+         request.auth.uid == resource.data.clientId ||
+         isAdmin());
+    }
+
+    // REVIEWS
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        (request.resource.data.reviewerId == request.auth.uid ||
+         request.resource.data.revieweeId == request.auth.uid);
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.reviewerId ||
+         isAdmin());
+    }
+
+    // FEEDBACK
+    match /feedback/{feedbackId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // ==========================================
+    // KNOWLEDGE BASE & FAQ COLLECTIONS
+    // ==========================================
+    
+    // KNOWLEDGE BASE
+    match /knowledgeBase/{articleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // FAQS
+    match /faqs/{faqId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // USER SKILLS & VERIFICATION COLLECTIONS
+    // ==========================================
+    
+    // USER SKILLS
+    match /userSkills/{skillId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // VERIFICATION DOCUMENTS
+    match /verificationDocuments/{docId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // VERIFICATION CODES
+    match /verification_codes/{codeId} {
+      allow read, write: if isAuthenticated() &&
+        (codeId.matches('.*_' + request.auth.uid + '.*') ||
+         isAdmin());
+    }
+
+    // ==========================================
+    // GID & QR CODE COLLECTIONS
+    // ==========================================
+    
+    // GUILD IDS
+    match /guildIds/{guildId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // QR SCANS
+    match /qrScans/{scanId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.scannerId ||
+         request.auth.uid == resource.data.scannedUserId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.scannerId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // GID SEQUENCES
+    match /gidSequences/{sequenceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // GIDS
+    match /gids/{gidId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // GID CONTAINERS
+    match /gidContainers/{containerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // GUILD ANNOUNCEMENTS & COURT COLLECTIONS
+    // ==========================================
+    
+    // GUILD ANNOUNCEMENTS
+    match /guildAnnouncements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.createdBy ||
+         isAdmin());
+    }
+
+    // COURT SESSIONS
+    match /courtSessions/{sessionId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid in resource.data.participants ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // CURRENCY & EXCHANGE COLLECTIONS
+    // ==========================================
+    
+    // CURRENCY CONVERSIONS
+    match /currencyConversions/{conversionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // EXCHANGE RATES
+    match /exchangeRates/{rateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // USER CURRENCY PREFERENCES
+    match /userCurrencyPreferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // CURRENCIES
+    match /currencies/{currencyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // LEADERBOARD & COMPETITION COLLECTIONS
+    // ==========================================
+    
+    // LEADERBOARDS
+    match /leaderboards/{leaderboardId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // LEADERBOARD ENTRIES
+    match /leaderboardEntries/{entryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // COMPETITIONS
+    match /competitions/{competitionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ACHIEVEMENTS
+    match /achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // INVOICE COLLECTIONS
+    // ==========================================
+    
+    // INVOICES
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // INVOICE SETTINGS
+    match /invoiceSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // INVOICE TEMPLATES
+    match /invoiceTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // SAVINGS & TAX COLLECTIONS
+    // ==========================================
+    
+    // SAVINGS PLANS
+    match /savingsPlans/{planId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // SAVINGS TRANSACTIONS
+    match /savingsTransactions/{transactionId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // TAX CONFIGURATIONS
+    match /taxConfigurations/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // TAX CALCULATIONS
+    match /taxCalculations/{calculationId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // TAX DOCUMENTS
+    match /taxDocuments/{docId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+    }
+
+    // USER TAX PROFILES
+    match /userTaxProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ==========================================
+    // API GATEWAY COLLECTIONS
+    // ==========================================
+    
+    // RATE LIMIT RULES
+    match /rateLimitRules/{ruleId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // API REQUESTS
+    match /apiRequests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // API ANALYTICS
+    match /apiAnalytics/{analyticsId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // API KEYS
+    match /apiKeys/{keyId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // ADDITIONAL FINANCIAL COLLECTIONS
+    // ==========================================
+    
+    // PAYMENTS
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // WALLET TRANSACTIONS
+    match /wallet_transactions/{transactionId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // COIN PURCHASES
+    match /coin_purchases/{purchaseId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // COIN WITHDRAWALS
+    match /coin_withdrawals/{withdrawalId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // COIN COUNTERS
+    match /coin_counters/{counterId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // LEDGER (coin transaction ledger)
+    match /ledger/{ledgerId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // ANALYTICS & ADMIN COLLECTIONS
+    // ==========================================
+    
+    // ANALYTICS
+    match /analytics/{analyticsId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ANALYTICS EVENTS
+    match /analyticsEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ADMIN LOGS
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // WEBHOOK RETRIES
+    match /webhook_retries/{retryId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ESCROW (alternative collection name)
+    match /escrow/{escrowId} {
+      // Client and freelancer can read their escrow
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      // Only backend (via server) can write escrows - users cannot directly write
+      allow write: if false; // COMMENT: Escrows should only be written via backend API
+    }
+
+    // ==========================================
+    // PAYMENT INTENTS COLLECTION
+    // ==========================================
+    
+    // PAYMENT INTENTS
+    match /payment_intents/{intentId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.clientId ||
+         request.auth.uid == resource.data.freelancerId ||
+         isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // GUILD VAULT COLLECTIONS
+    // ==========================================
+    
+    // GUILD VAULT DAILY
+    match /guild_vault_daily/{vaultId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // ADMIN CHAT COLLECTIONS
+    // ==========================================
+    
+    // ADMIN CHATS
+    match /admin_chats/{chatId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (request.auth.uid == resource.data.userId ||
+         isAdmin());
+      
+      // Admin chat messages subcollection
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() &&
+          (request.auth.uid == get(/databases/$(database)/documents/admin_chats/$(chatId)).data.userId ||
+           isAdmin());
+      }
+    }
+
+    // ==========================================
+    // REPORTS COLLECTION
+    // ==========================================
+    
+    // REPORTS
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.reportedBy ||
+         request.auth.uid == resource.data.userId ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.reportedBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // DEFAULT DENY (Security: Explicit deny for unknown collections)
+    // ==========================================
+    
+    // Any collection not explicitly matched above will be denied by default
+    // This ensures no unauthorized access to new collections
   }
 }

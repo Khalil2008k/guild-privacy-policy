@@ -36,6 +36,7 @@ import {
 
 import { EnhancedChat } from '../types/EnhancedChat';
 import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nProvider';
 
 interface ChatContextMenuProps {
   visible: boolean;
@@ -71,6 +72,7 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
   language = 'en',
 }) => {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const isRTL = language === 'ar';
 
   if (!chat) return null;
@@ -85,78 +87,70 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
     {
       id: 'pin',
       icon: chat.settings.isPinned ? PinOff : Pin,
-      label: chat.settings.isPinned
-        ? (isRTL ? 'إلغاء التثبيت' : 'Unpin')
-        : (isRTL ? 'تثبيت' : 'Pin'),
+      label: chat.settings.isPinned ? t('unpin') : t('pin'),
       action: onPin,
       color: theme.primary,
     },
     {
       id: 'mute',
       icon: chat.settings.isMuted ? Bell : BellOff,
-      label: chat.settings.isMuted
-        ? (isRTL ? 'إلغاء كتم الصوت' : 'Unmute')
-        : (isRTL ? 'كتم الصوت' : 'Mute'),
+      label: chat.settings.isMuted ? t('unmute') : t('mute'),
       action: onMute,
       color: theme.textPrimary,
     },
     {
       id: 'favorite',
       icon: chat.settings.isFavorite ? StarOff : Star,
-      label: chat.settings.isFavorite
-        ? (isRTL ? 'إزالة من المفضلة' : 'Remove from Favorites')
-        : (isRTL ? 'إضافة للمفضلة' : 'Add to Favorites'),
+      label: chat.settings.isFavorite ? t('removeFromFavorites') : t('addToFavorites'),
       action: onFavorite,
       color: '#FFD700',
     },
     {
       id: 'markRead',
       icon: chat.counts.unread > 0 ? Eye : EyeOff,
-      label: chat.counts.unread > 0
-        ? (isRTL ? 'وضع علامة كمقروء' : 'Mark as Read')
-        : (isRTL ? 'وضع علامة كغير مقروء' : 'Mark as Unread'),
+      label: chat.counts.unread > 0 ? t('markAsRead') : t('markAsUnread'),
       action: onMarkRead,
       color: theme.textPrimary,
     },
     {
       id: 'poke',
       icon: UserPlus,
-      label: isRTL ? 'نبّه' : 'Poke',
+      label: t('poke'),
       action: onPoke,
       color: '#FF9500',
     },
     {
       id: 'archive',
       icon: Archive,
-      label: isRTL ? 'أرشفة' : 'Archive',
+      label: t('archive'),
       action: onArchive,
       color: '#8E8E93',
     },
     {
       id: 'copyLink',
       icon: Copy,
-      label: isRTL ? 'نسخ الرابط' : 'Copy Link',
+      label: t('copyLink'),
       action: onCopyLink,
       color: theme.textPrimary,
     },
     {
       id: 'share',
       icon: Share2,
-      label: isRTL ? 'مشاركة' : 'Share',
+      label: t('share'),
       action: onShare,
       color: theme.textPrimary,
     },
     {
       id: 'info',
       icon: Info,
-      label: isRTL ? 'معلومات' : 'Info',
+      label: t('info'),
       action: onInfo,
       color: theme.textPrimary,
     },
     {
       id: 'delete',
       icon: Trash2,
-      label: isRTL ? 'حذف' : 'Delete',
+      label: t('delete'),
       action: onDelete,
       color: '#FF3B30',
     },
@@ -179,7 +173,7 @@ export const ChatContextMenu: React.FC<ChatContextMenuProps> = ({
               </Text>
               {chat.type === 'group' && chat.participantCount && (
                 <Text style={[styles.participantCount, { color: theme.textSecondary }]}>
-                  {chat.participantCount} {isRTL ? 'عضو' : 'members'}
+                  {chat.participantCount} {t('members')}
                 </Text>
               )}
             </View>
@@ -299,5 +293,11 @@ const styles = StyleSheet.create({
 });
 
 export default ChatContextMenu;
+
+
+
+
+
+
 
 

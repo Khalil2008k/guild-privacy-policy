@@ -16,6 +16,8 @@ import {
   startAt,
   endAt,
 } from 'firebase/firestore';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface UserSearchResult {
   uid: string;
@@ -36,23 +38,27 @@ class UserSearchServiceClass {
    */
   async searchByGID(gid: string): Promise<UserSearchResult | null> {
     try {
-      console.log('🔍 Searching user by GID:', gid);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Searching user by GID:', gid);
 
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('gid', '==', gid), limit(1));
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        console.log('❌ No user found with GID:', gid);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('❌ No user found with GID:', gid);
         return null;
       }
 
       const userData = snapshot.docs[0].data();
-      console.log('✅ User found:', userData.displayName);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ User found:', userData.displayName);
 
       return this.formatUserResult(snapshot.docs[0].id, userData);
     } catch (error) {
-      console.error('Error searching by GID:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error searching by GID:', error);
       return null;
     }
   }
@@ -62,7 +68,8 @@ class UserSearchServiceClass {
    */
   async searchByPhone(phoneNumber: string): Promise<UserSearchResult | null> {
     try {
-      console.log('🔍 Searching user by phone:', phoneNumber);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Searching user by phone:', phoneNumber);
 
       // Normalize phone number (remove spaces, dashes, etc.)
       const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
@@ -72,16 +79,19 @@ class UserSearchServiceClass {
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        console.log('❌ No user found with phone:', phoneNumber);
+        // COMMENT: PRIORITY 1 - Replace console.log with logger
+        logger.debug('❌ No user found with phone:', phoneNumber);
         return null;
       }
 
       const userData = snapshot.docs[0].data();
-      console.log('✅ User found:', userData.displayName);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ User found:', userData.displayName);
 
       return this.formatUserResult(snapshot.docs[0].id, userData);
     } catch (error) {
-      console.error('Error searching by phone:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error searching by phone:', error);
       return null;
     }
   }
@@ -91,7 +101,8 @@ class UserSearchServiceClass {
    */
   async searchByName(name: string): Promise<UserSearchResult[]> {
     try {
-      console.log('🔍 Searching users by name:', name);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Searching users by name:', name);
 
       if (!name || name.trim().length < 2) {
         return [];
@@ -110,11 +121,13 @@ class UserSearchServiceClass {
       );
 
       const snapshot = await getDocs(q);
-      console.log(`✅ Found ${snapshot.docs.length} users`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Found ${snapshot.docs.length} users`);
 
       return snapshot.docs.map(doc => this.formatUserResult(doc.id, doc.data()));
     } catch (error) {
-      console.error('Error searching by name:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error searching by name:', error);
       return [];
     }
   }
@@ -124,7 +137,8 @@ class UserSearchServiceClass {
    */
   async universalSearch(searchTerm: string): Promise<UserSearchResult[]> {
     try {
-      console.log('🔍 Universal search:', searchTerm);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Universal search:', searchTerm);
 
       const results: UserSearchResult[] = [];
       const trimmed = searchTerm.trim();
@@ -153,10 +167,12 @@ class UserSearchServiceClass {
       const nameResults = await this.searchByName(trimmed);
       results.push(...nameResults);
 
-      console.log(`✅ Universal search found ${results.length} results`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Universal search found ${results.length} results`);
       return results;
     } catch (error) {
-      console.error('Error in universal search:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error in universal search:', error);
       return [];
     }
   }
@@ -174,7 +190,8 @@ class UserSearchServiceClass {
 
       return this.formatUserResult(userDoc.id, userDoc.data());
     } catch (error) {
-      console.error('Error getting user by UID:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting user by UID:', error);
       return null;
     }
   }
@@ -202,7 +219,8 @@ class UserSearchServiceClass {
    */
   async getRecentContacts(currentUserId: string, limitCount: number = 10): Promise<UserSearchResult[]> {
     try {
-      console.log('🔍 Getting recent contacts for:', currentUserId);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Getting recent contacts for:', currentUserId);
 
       // Get chats where user is a participant
       const chatsRef = collection(db, 'chats');
@@ -235,10 +253,12 @@ class UserSearchServiceClass {
         }
       }
 
-      console.log(`✅ Found ${users.length} recent contacts`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Found ${users.length} recent contacts`);
       return users;
     } catch (error) {
-      console.error('Error getting recent contacts:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting recent contacts:', error);
       return [];
     }
   }
@@ -251,7 +271,8 @@ class UserSearchServiceClass {
    */
   async getSuggestedUsers(currentUserId: string, limitCount: number = 10): Promise<UserSearchResult[]> {
     try {
-      console.log('🔍 Getting suggested users');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('🔍 Getting suggested users');
 
       // TEMPORARY FIX: Get recent users instead of verified users
       // This avoids the permission error from missing isVerified index
@@ -267,10 +288,12 @@ class UserSearchServiceClass {
         .slice(0, limitCount) // Limit after filtering
         .map(doc => this.formatUserResult(doc.id, doc.data()));
 
-      console.log(`✅ Found ${users.length} suggested users`);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug(`✅ Found ${users.length} suggested users`);
       return users;
     } catch (error) {
-      console.error('Error getting suggested users:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting suggested users:', error);
       return [];
     }
   }

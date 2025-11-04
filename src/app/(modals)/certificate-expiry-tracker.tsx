@@ -17,6 +17,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useCustomAlert } from '../../components/CustomAlert';
 import { getContrastTextColor } from '../../utils/colorUtils';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'SignikaNegative_400Regular';
 
@@ -224,7 +226,8 @@ export default function CertificateExpiryTrackerScreen() {
       setEditingCertificate(null);
       setShowAddModal(false);
     } catch (error) {
-      console.error('Error saving certificate:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving certificate:', error);
       showAlert('Save Error', 'Failed to save certificate. Please try again.', 'error');
     } finally {
       setLoading(false);

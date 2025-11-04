@@ -5,6 +5,8 @@
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../utils/logger';
 
 export interface VoiceRecordingResult {
   uri: string;
@@ -37,10 +39,12 @@ export async function startVoiceRecording(): Promise<Audio.Recording> {
     );
     await recording.startAsync();
 
-    console.log('🎤 Voice recording started');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🎤 Voice recording started');
     return recording;
   } catch (error) {
-    console.error('❌ Error starting voice recording:', error);
+    // COMMENT: PRIORITY 1 - Replace console.error with logger
+    logger.error('❌ Error starting voice recording:', error);
     throw error;
   }
 }
@@ -71,14 +75,16 @@ export async function stopVoiceRecording(
     const status = await recording.getStatusAsync();
     const duration = status.isLoaded ? status.durationMillis / 1000 : 0;
 
-    console.log('✅ Voice recording stopped', { uri, size: info.size, duration });
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('✅ Voice recording stopped', { uri, size: info.size, duration });
     return {
       uri,
       size: info.size || 0,
       duration,
     };
   } catch (error) {
-    console.error('❌ Error stopping voice recording:', error);
+    // COMMENT: PRIORITY 1 - Replace console.error with logger
+    logger.error('❌ Error stopping voice recording:', error);
     throw error;
   }
 }
@@ -95,10 +101,18 @@ export async function cancelVoiceRecording(
     if (uri) {
       await FileSystem.deleteAsync(uri, { idempotent: true });
     }
-    console.log('🧹 Voice recording cancelled');
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🧹 Voice recording cancelled');
   } catch (error) {
-    console.warn('⚠️ Error cancelling recording:', error);
+    // COMMENT: PRIORITY 1 - Replace console.warn with logger
+    logger.warn('⚠️ Error cancelling recording:', error);
   }
 }
+
+
+
+
+
+
 
 

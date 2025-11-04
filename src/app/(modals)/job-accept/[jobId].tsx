@@ -20,6 +20,8 @@ import { useRealPayment } from '../../../contexts/RealPaymentContext';
 import { jobService, Job } from '../../../services/jobService';
 import CoinEscrowService from '../../../services/CoinEscrowService';
 import { CheckCircle, AlertTriangle, Clock, DollarSign, FileText, Coins, Send, ArrowLeft, Briefcase, User, Calendar, Info } from 'lucide-react-native';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../../utils/logger';
 
 export default function JobAcceptScreen() {
   const { theme, isDarkMode } = useTheme();
@@ -60,7 +62,8 @@ export default function JobAcceptScreen() {
         // Don't set default price - let user enter their own offer
       }
     } catch (error) {
-      console.error('Error loading job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job:', error);
       CustomAlertService.showError('Error', 'Failed to load job details');
     } finally {
       setLoading(false);
@@ -114,7 +117,8 @@ export default function JobAcceptScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error submitting offer:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error submitting offer:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في إرسال العرض. يرجى المحاولة مرة أخرى.' : 'Failed to submit offer. Please try again.'

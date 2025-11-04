@@ -133,3 +133,12 @@ const response = await BackendAPI.post('/api/v1/wallet/withdraw', {
 
 **Users can now actually withdraw money from their wallets!**
 
+
+
+
+
+
+
+
+
+

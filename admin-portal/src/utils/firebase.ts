@@ -32,7 +32,9 @@ if (isDevelopment && !firebaseConfig.apiKey) {
   console.warn('⚠️ Using fallback Firebase configuration for development');
   console.warn('⚠️ For production, set environment variables in .env.local');
   
-  // Fallback configuration for development
+  // COMMENT: SECURITY RISK - Hardcoded Firebase API key in development fallback
+  // This should be moved to .env.local file even for development
+  // MANUAL ACTION REQUIRED: Move this key to .env.local and remove hardcoded value
   firebaseConfig.apiKey = "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w";
   firebaseConfig.authDomain = "guild-4f46b.firebaseapp.com";
   firebaseConfig.projectId = "guild-4f46b";

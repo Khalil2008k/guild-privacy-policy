@@ -18,6 +18,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { realPaymentService } from '../../services/realPaymentService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -57,7 +59,8 @@ export default function WalletDashboardScreen() {
         setTransactions(wallet.transactions.slice(0, 10));
       }
     } catch (error) {
-      console.error('Error loading wallet data:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading wallet data:', error);
     } finally {
       setLoading(false);
     }
@@ -175,7 +178,8 @@ export default function WalletDashboardScreen() {
       await refreshWallet();
       await loadWalletData();
     } catch (error) {
-      console.error('Error refreshing wallet:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error refreshing wallet:', error);
     } finally {
       setRefreshing(false);
     }

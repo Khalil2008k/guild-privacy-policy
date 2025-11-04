@@ -68,3 +68,12 @@ This ensures EAS generates fresh native directories on each build.
 3. If needed, create a proper notification icon (96x96 PNG)
 
 
+
+
+
+
+
+
+
+
+

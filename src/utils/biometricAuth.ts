@@ -1,6 +1,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from './logger';
 
 export interface BiometricData {
   enabled: boolean;
@@ -24,11 +26,11 @@ export class BiometricAuthService {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       
-      console.log('🔒 Biometric availability check:', { hasHardware, isEnrolled });
+      logger.debug('🔒 Biometric availability check:', { hasHardware, isEnrolled });
       
       return hasHardware && isEnrolled;
     } catch (error) {
-      console.error('🔒 Error checking biometric availability:', error);
+      logger.error('🔒 Error checking biometric availability:', error);
       return false;
     }
   }
@@ -41,7 +43,7 @@ export class BiometricAuthService {
       const isEnabled = await AsyncStorage.getItem('biometricEnabled');
       return isEnabled === 'true';
     } catch (error) {
-      console.error('🔒 Error checking biometric settings:', error);
+      logger.error('🔒 Error checking biometric settings:', error);
       return false;
     }
   }
@@ -53,7 +55,7 @@ export class BiometricAuthService {
     try {
       return await AsyncStorage.getItem('biometricType');
     } catch (error) {
-      console.error('Error getting biometric type:', error);
+      logger.error('Error getting biometric type:', error);
       return null;
     }
   }
@@ -66,7 +68,7 @@ export class BiometricAuthService {
       const dataString = await AsyncStorage.getItem('biometricData');
       return dataString ? JSON.parse(dataString) : null;
     } catch (error) {
-      console.error('Error getting biometric data:', error);
+      logger.error('Error getting biometric data:', error);
       return null;
     }
   }
@@ -99,26 +101,26 @@ export class BiometricAuthService {
         requireConfirmation: true,
       };
 
-      console.log('🔒 Starting biometric authentication...');
+      logger.debug('🔒 Starting biometric authentication...');
       const result = await LocalAuthentication.authenticateAsync(authOptions);
 
-      console.log('🔒 Biometric authentication result:', result);
+      logger.debug('🔒 Biometric authentication result:', result);
 
       if (result.success) {
-        console.log('✅ Biometric authentication successful!');
+        logger.debug('✅ Biometric authentication successful!');
         return {
           success: true,
           biometricType: biometricType || 'unknown'
         };
       } else {
-        console.log('❌ Biometric authentication failed:', result.error);
+        logger.debug('❌ Biometric authentication failed:', result.error);
         return {
           success: false,
           error: result.error || 'authentication_failed'
         };
       }
     } catch (error) {
-      console.error('🔒 Biometric authentication error:', error);
+      logger.error('🔒 Biometric authentication error:', error);
       return {
         success: false,
         error: 'authentication_error'
@@ -136,7 +138,7 @@ export class BiometricAuthService {
       await AsyncStorage.removeItem('biometricData');
       return true;
     } catch (error) {
-      console.error('Error disabling biometric authentication:', error);
+      logger.error('Error disabling biometric authentication:', error);
       return false;
     }
   }
@@ -160,7 +162,7 @@ export class BiometricAuthService {
         supportedTypes
       };
     } catch (error) {
-      console.error('Error getting device capabilities:', error);
+      logger.error('Error getting device capabilities:', error);
       return {
         hasHardware: false,
         isEnrolled: false,

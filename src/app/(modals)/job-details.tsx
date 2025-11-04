@@ -25,6 +25,8 @@ import { contractService } from '../../services/contractService';
 import * as Location from 'expo-location';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 export default function JobDetailsScreen() {
   const { theme, isDarkMode } = useTheme();
@@ -72,7 +74,8 @@ export default function JobDetailsScreen() {
         setIsLiked(result.data.isLiked);
       }
     } catch (error) {
-      console.error('Error loading job status:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job status:', error);
     }
   };
 
@@ -94,7 +97,8 @@ export default function JobDetailsScreen() {
         }
       }
     } catch (error) {
-      console.error('Error loading job details:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job details:', error);
       CustomAlertService.showError('Error', 'Could not load job details');
       router.back();
     } finally {
@@ -118,7 +122,8 @@ export default function JobDetailsScreen() {
         setDistance(dist);
       }
     } catch (error) {
-      console.error('Error calculating distance:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error calculating distance:', error);
     }
   };
 
@@ -160,7 +165,8 @@ export default function JobDetailsScreen() {
         setAddress(addressParts.join(', '));
       }
     } catch (error) {
-      console.error('Error getting address:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error getting address:', error);
       setAddress('Doha, Qatar');
     }
   };
@@ -212,7 +218,8 @@ export default function JobDetailsScreen() {
             };
 
             const contractId = await contractService.createContract(contractData);
-            console.log('✅ Contract auto-generated:', contractId);
+            // COMMENT: PRIORITY 1 - Replace console.log with logger
+            logger.debug('✅ Contract auto-generated:', contractId);
 
             CustomAlertService.showSuccess(
               'Success!',
@@ -220,7 +227,8 @@ export default function JobDetailsScreen() {
               [{ text: 'OK', style: 'default', onPress: () => router.back() }]
             );
           } catch (contractError) {
-            console.error('Contract generation error:', contractError);
+            // COMMENT: PRIORITY 1 - Replace console.error with logger
+            logger.error('Contract generation error:', contractError);
             // Don't fail the job acceptance if contract fails
             CustomAlertService.showSuccess(
               'Success!',
@@ -229,7 +237,8 @@ export default function JobDetailsScreen() {
             );
           }
         } catch (error) {
-          console.error('Error taking job:', error);
+          // COMMENT: PRIORITY 1 - Replace console.error with logger
+          logger.error('Error taking job:', error);
           CustomAlertService.showError('Error', 'Could not take this job. Please try again.');
         } finally {
           setTakingJob(false);
@@ -276,7 +285,8 @@ export default function JobDetailsScreen() {
         CustomAlertService.showError('Error', result.message);
       }
     } catch (error) {
-      console.error('Error saving job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error saving job:', error);
       CustomAlertService.showError('Error', 'Could not save this job. Please try again.');
     }
   };
@@ -297,7 +307,8 @@ export default function JobDetailsScreen() {
         CustomAlertService.showError('Error', result.message);
       }
     } catch (error) {
-      console.error('Error liking job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error liking job:', error);
       CustomAlertService.showError('Error', 'Could not like this job. Please try again.');
     }
   };

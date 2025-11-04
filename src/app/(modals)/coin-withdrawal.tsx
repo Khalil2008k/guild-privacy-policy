@@ -25,6 +25,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert } from 'react-native';
 import { CoinWithdrawalService } from '../../services/CoinWithdrawalService';
 import { CoinWalletAPIClient } from '../../services/CoinWalletAPIClient';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -58,7 +60,8 @@ export default function CoinWithdrawalScreen() {
       const data = await CoinWalletAPIClient.getBalance();
       setBalance(data);
     } catch (error) {
-      console.error('Error loading balance:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading balance:', error);
     }
   };
 

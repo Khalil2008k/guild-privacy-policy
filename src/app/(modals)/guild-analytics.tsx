@@ -15,6 +15,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useGuild } from '../../contexts/GuildContext';
 import { analyticsService } from '../../services/analyticsService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 
@@ -83,7 +85,8 @@ export default function GuildAnalytics() {
         });
       }
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading analytics:', error);
     } finally {
       setLoading(false);
     }

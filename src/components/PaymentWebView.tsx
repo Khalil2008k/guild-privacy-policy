@@ -5,7 +5,7 @@
  * Reference: https://fatora.io/api/mobileIntegration.php
  */
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback, memo } from 'react';
 import { 
   View, 
   StyleSheet, 
@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WebView, { WebViewNavigation } from 'react-native-webview';
 import { X } from 'lucide-react-native';
+import { logger } from '../utils/logger';
 
 interface PaymentWebViewProps {
   checkoutUrl: string;
@@ -25,7 +26,11 @@ interface PaymentWebViewProps {
   onClose: () => void;
 }
 
-const PaymentWebView: React.FC<PaymentWebViewProps> = ({
+/**
+ * Payment WebView Component
+ * COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized with React.memo and useCallback
+ */
+const PaymentWebView = memo<PaymentWebViewProps>(({
   checkoutUrl,
   onSuccess,
   onFailure,
@@ -36,8 +41,22 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
   const [progress, setProgress] = useState(0);
   const webViewRef = useRef<WebView>(null);
 
+  // COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized load handlers with useCallback
+  const handleLoadStart = useCallback(() => {
+    logger.debug('💳 WebView loading started');
+    setLoading(true);
+    setProgress(10);
+  }, []);
+
+  const handleLoadEnd = useCallback(() => {
+    logger.debug('💳 WebView loading completed');
+    setLoading(false);
+    setProgress(100);
+  }, []);
+
   useEffect(() => {
-    console.log('💳 Payment WebView opened with URL:', checkoutUrl);
+    // COMMENT: PRODUCTION HARDENING - Task 2.7 - Use logger instead of console.log
+    logger.info('💳 Payment WebView opened', { checkoutUrl: checkoutUrl.substring(0, 50) + '...' });
   }, [checkoutUrl]);
 
   /**
@@ -49,11 +68,13 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
    * 
    * Failure URL format:
    * https://domain.com/payments/failure?order_id=XXXXX&response_code=XXX&description=XXXXX
+   * COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized with useCallback
    */
-  const handleNavigationStateChange = (navState: WebViewNavigation) => {
+  const handleNavigationStateChange = useCallback((navState: WebViewNavigation) => {
     const { url } = navState;
     
-    console.log('💳 WebView URL changed:', url);
+    // COMMENT: PRODUCTION HARDENING - Task 2.7 - Use logger instead of console.log
+    logger.debug('💳 WebView URL changed', { url: url.substring(0, 100) + '...' });
 
     // Check for success completion
     if (url.includes('/payments/success') || url.includes('success=true') || url.includes('/success')) {
@@ -69,7 +90,8 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
                        'unknown';
         const responseCode = urlObj.searchParams.get('response_code') || '000';
 
-        console.log('✅ Payment successful!', { 
+        // COMMENT: PRODUCTION HARDENING - Task 2.7 - Use logger instead of console.log
+        logger.info('✅ Payment successful!', { 
           transactionId, 
           orderId, 
           responseCode 
@@ -77,7 +99,7 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
         
         onSuccess(transactionId, orderId);
       } catch (error) {
-        console.error('Failed to parse success URL:', error);
+        logger.error('Failed to parse success URL:', error);
         onSuccess('success', 'unknown');
       }
     }
@@ -92,33 +114,75 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
                           urlObj.searchParams.get('error') ||
                           'Payment failed';
 
-        console.log('❌ Payment failed:', { responseCode, description });
+        logger.error('❌ Payment failed:', { responseCode, description });
         
         onFailure(description, responseCode);
       } catch (error) {
-        console.error('Failed to parse failure URL:', error);
+        logger.error('Failed to parse failure URL:', error);
         onFailure('Payment failed', 'unknown');
       }
     }
-  };
+  }, [onSuccess, onFailure]);
 
   /**
    * Handle WebView errors
+   * COMMENT: PRODUCTION HARDENING - Task 2.7 & 2.9 - Enhanced error handling with user feedback, optimized with useCallback
    */
-  const handleError = (syntheticEvent: any) => {
+  const handleError = useCallback((syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    console.error('❌ WebView error:', nativeEvent);
-    onFailure('Failed to load payment page. Please check your connection.');
-  };
+    logger.error('❌ WebView error:', nativeEvent);
+    
+    // Provide specific error messages based on error type
+    let errorMessage = 'Failed to load payment page. Please check your connection and try again.';
+    
+    if (nativeEvent.description) {
+      if (nativeEvent.description.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (nativeEvent.description.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please try again.';
+      } else if (nativeEvent.description.includes('SSL') || nativeEvent.description.includes('certificate')) {
+        errorMessage = 'Security error. Please contact support if this persists.';
+      }
+    }
+    
+    onFailure(errorMessage, 'WEBVIEW_ERROR');
+  }, [onFailure]);
 
   /**
    * Handle HTTP errors
+   * COMMENT: PRODUCTION HARDENING - Task 2.7 & 2.9 - Enhanced error handling with user feedback, optimized with useCallback
    */
-  const handleHttpError = (syntheticEvent: any) => {
+  const handleHttpError = useCallback((syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    console.error('❌ HTTP error:', nativeEvent.statusCode, nativeEvent.url);
-    onFailure(`Payment page returned error ${nativeEvent.statusCode}`);
-  };
+    const statusCode = nativeEvent.statusCode;
+    logger.error('❌ HTTP error:', statusCode, nativeEvent.url);
+    
+    // Provide specific error messages based on HTTP status code
+    let errorMessage = `Payment page returned error ${statusCode}. Please try again.`;
+    
+    switch (statusCode) {
+      case 400:
+        errorMessage = 'Invalid payment request. Please try again or contact support.';
+        break;
+      case 401:
+      case 403:
+        errorMessage = 'Authentication error. Please log out and log back in, then try again.';
+        break;
+      case 404:
+        errorMessage = 'Payment page not found. Please contact support.';
+        break;
+      case 500:
+      case 502:
+      case 503:
+        errorMessage = 'Payment service is temporarily unavailable. Please try again in a few moments.';
+        break;
+      case 504:
+        errorMessage = 'Connection timeout. Please check your connection and try again.';
+        break;
+    }
+    
+    onFailure(errorMessage, `HTTP_${statusCode}`);
+  }, [onFailure]);
 
   return (
     <View style={styles.container}>
@@ -157,19 +221,11 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
         ref={webViewRef}
         source={{ uri: checkoutUrl }}
         onNavigationStateChange={handleNavigationStateChange}
-        onLoadStart={() => {
-          console.log('💳 WebView loading started');
-          setLoading(true);
-          setProgress(10);
-        }}
+        onLoadStart={handleLoadStart}
         onLoadProgress={({ nativeEvent }) => {
           setProgress(nativeEvent.progress * 100);
         }}
-        onLoadEnd={() => {
-          console.log('💳 WebView loading completed');
-          setLoading(false);
-          setProgress(100);
-        }}
+        onLoadEnd={handleLoadEnd}
         onError={handleError}
         onHttpError={handleHttpError}
         style={styles.webview}
@@ -195,7 +251,7 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -264,6 +320,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+PaymentWebView.displayName = 'PaymentWebView';
 
 export default PaymentWebView;
 

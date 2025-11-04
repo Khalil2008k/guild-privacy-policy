@@ -12,7 +12,7 @@
  * - Modern color system
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -37,11 +37,14 @@ import { useI18n } from '../../contexts/I18nProvider';
 import { useGuild } from '../../contexts/GuildContext';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 import * as Haptics from 'expo-haptics';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import AdminChatService from '../../services/AdminChatService';
 import PresenceService from '../../services/PresenceService';
 import MessageAnalyticsService from '../../services/MessageAnalyticsService';
+import { chatService } from '../../services/chatService';
 import { formatChatTime, formatDuration } from '../../utils/timeFormatter';
 import {
   Search,
@@ -101,7 +104,7 @@ const PREMIUM_COLORS = {
 };
 
 // 🎯 Date Separator Component
-function DateSeparator({ date, theme, isRTL }: any) {
+function DateSeparator({ date, theme, isRTL, t }: any) {
   const getDateLabel = (dateStr: string) => {
     const today = new Date();
     const chatDate = new Date(dateStr);
@@ -111,8 +114,8 @@ function DateSeparator({ date, theme, isRTL }: any) {
     yesterday.setDate(yesterday.getDate() - 1);
     const isYesterday = chatDate.toDateString() === yesterday.toDateString();
     
-    if (isToday) return isRTL ? 'اليوم' : 'Today';
-    if (isYesterday) return isRTL ? 'أمس' : 'Yesterday';
+    if (isToday) return t('today');
+    if (isYesterday) return t('yesterday');
     
     return chatDate.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
       month: 'short',
@@ -139,7 +142,9 @@ function PremiumChatItem({
   onLongPress,
   theme,
   isRTL,
+  t,
 }: any) {
+  const { user } = useAuth();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -150,19 +155,41 @@ function PremiumChatItem({
 
   // Subscribe to real-time presence
   useEffect(() => {
-    if (!chat.participants || chat.participants.length === 0) return;
+    if (!chat.participants || chat.participants.length === 0 || !user) return;
 
     // Get the other user's ID (for direct chats)
-    const otherUserId = chat.participants.find((p: string) => p !== chat.currentUserId);
+    const otherUserId = chat.participants.find((p: string) => p !== user.uid);
     if (!otherUserId) return;
 
-    const unsubscribe = PresenceService.subscribeToPresence(otherUserId, (presenceData) => {
+    const unsubscribePresence = PresenceService.subscribeToPresence(otherUserId, (presenceData) => {
       setPresenceStatus(presenceData.status);
-      setIsTypingNow(presenceData.isTyping);
     });
 
-    return () => unsubscribe();
-  }, [chat.id, chat.participants]);
+    return () => unsubscribePresence();
+  }, [chat.id, chat.participants, user?.uid]);
+
+  // Subscribe to typing indicator from chat document (with TTL check)
+  useEffect(() => {
+    if (!chat.id || !chat.participants || chat.participants.length === 0 || !user) return;
+
+    // Get the other user's ID (for direct chats)
+    const otherUserId = chat.participants.find((p: string) => p !== user.uid);
+    if (!otherUserId) return;
+
+    // Subscribe to chat's typing field with TTL check
+    const unsubscribeTyping = PresenceService.subscribeTyping(chat.id, (typingUids) => {
+      // Check if the other user is in the typing list
+      const otherUserIsTyping = typingUids.includes(otherUserId);
+      setIsTypingNow(otherUserIsTyping);
+      
+      // Clear typing state if it becomes false (safety check)
+      if (!otherUserIsTyping) {
+        setIsTypingNow(false);
+      }
+    });
+
+    return () => unsubscribeTyping();
+  }, [chat.id, chat.participants, user?.uid]);
 
   useEffect(() => {
     // Subtle glow animation for unread messages
@@ -411,13 +438,13 @@ function PremiumChatItem({
                   ]}
                   numberOfLines={2}
                 >
-                  {chat.typing || isTypingNow
-                    ? (isRTL ? 'يكتب...' : 'Typing...')
+                  {isTypingNow
+                    ? t('typing')
                     : chat.draft
-                    ? `${isRTL ? 'مسودة: ' : 'Draft: '}${chat.lastMessage}`
+                    ? `${t('draftPrefix')}${chat.lastMessage}`
                     : (typeof chat.lastMessage === 'string' 
                         ? chat.lastMessage 
-                        : chat.lastMessage?.text || (isRTL ? 'لا توجد رسائل' : 'No messages'))}
+                        : chat.lastMessage?.text || t('noMessages'))}
                 </Text>
                 
                 {/* Sentiment indicator */}
@@ -433,14 +460,16 @@ function PremiumChatItem({
               <View style={styles.rightColumn}>
                 {chat.unread > 0 ? (
                   <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
-                    <Text style={styles.unreadText}>
+                    <Text style={[styles.unreadText, { color: '#FFFFFF' }]}>
                       {chat.unread > 99 ? '99+' : chat.unread}
                     </Text>
                   </View>
                 ) : chat.totalMessages ? (
-                  <Text style={styles.messageCount}>
-                    {chat.totalMessages > 999 ? '999+' : chat.totalMessages}
-                  </Text>
+                  <View style={[styles.messageCountBadge, { backgroundColor: theme.primary }]}>
+                    <Text style={[styles.messageCountText, { color: '#000000' }]}>
+                      {chat.totalMessages > 999 ? '999+' : chat.totalMessages}
+                    </Text>
+                  </View>
                 ) : null}
               </View>
             </View>
@@ -452,7 +481,7 @@ function PremiumChatItem({
 }
 
 // 🎨 Premium Header Component
-function PremiumHeader({ theme, isRTL, onSearch, onMenu }: any) {
+function PremiumHeader({ theme, isRTL, onSearch, onMenu, onToggleArchive, showArchived, t }: any) {
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -491,7 +520,7 @@ function PremiumHeader({ theme, isRTL, onSearch, onMenu }: any) {
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: '#000000' }]}>
-              {isRTL ? 'المحادثات' : 'Chats'}
+              {t('chats')}
             </Text>
           </View>
 
@@ -505,6 +534,18 @@ function PremiumHeader({ theme, isRTL, onSearch, onMenu }: any) {
                 <Search size={20} color="#000000" />
               </View>
             </TouchableOpacity>
+
+            {onToggleArchive && (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={onToggleArchive}
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <View style={[styles.headerButtonInner, { backgroundColor: showArchived ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.1)' }]}>
+                  <Archive size={20} color="#000000" />
+                </View>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.headerButton}
@@ -538,6 +579,7 @@ export default function PremiumChatScreen() {
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     loadChats();
@@ -550,7 +592,8 @@ export default function PremiumChatScreen() {
       // Just simulate a small delay for UX
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      console.error('Error loading chats:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading chats:', error);
     } finally {
       setLoading(false);
     }
@@ -562,11 +605,45 @@ export default function PremiumChatScreen() {
     try {
       await loadChats();
     } catch (error) {
-      console.error('Error refreshing chats:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error refreshing chats:', error);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // COMMENT: PRODUCTION HARDENING - Task 5.2 - Memoized chat item renderer with useCallback
+  const memoizedRenderItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    // Show date separator if it's a new day
+    const showDateSeparator = index === 0 || 
+      (filteredChats[index - 1]?.date !== item.date);
+    
+    return (
+      <>
+        {showDateSeparator && item.date && (
+          <DateSeparator date={item.date} theme={theme} isRTL={isRTL} t={t} />
+        )}
+        <PremiumChatItem
+          chat={item}
+          onPress={() => handleChatPress(item)}
+          onLongPress={() => handleChatLongPress(item)}
+          theme={theme}
+          isRTL={isRTL}
+          t={t}
+        />
+      </>
+    );
+  }, [filteredChats, theme, isRTL, t]);
+
+  // COMMENT: PRODUCTION HARDENING - Task 5.2 - getItemLayout for fixed height items (estimated ~100px per chat item including separator)
+  const getItemLayout = useCallback((_: any, index: number) => {
+    const ITEM_HEIGHT = 85; // Estimated height per chat item (reduced by 15px)
+    return {
+      length: ITEM_HEIGHT,
+      offset: ITEM_HEIGHT * index,
+      index,
+    };
+  }, []);
 
   const handleChatPress = (chat: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -586,29 +663,32 @@ export default function PremiumChatScreen() {
   };
 
   const handlePinChat = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !user?.uid) return;
     
     try {
-      const chatRef = doc(db, 'chats', selectedChat.id);
-      await updateDoc(chatRef, {
-        isPinned: !selectedChat.isPinned,
-        updatedAt: serverTimestamp(),
-      });
+      const isPinned = selectedChat.pinnedUsers?.includes(user.uid);
       
-      CustomAlertService.showSuccess(
-        isRTL ? 'نجح' : 'Success',
-        selectedChat.isPinned
-          ? (isRTL ? 'تم إلغاء التثبيت' : 'Chat unpinned')
-          : (isRTL ? 'تم التثبيت' : 'Chat pinned')
-      );
+      if (isPinned) {
+        await chatService.unpinChat(selectedChat.id, user.uid);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم إلغاء تثبيت المحادثة' : 'Chat unpinned'
+        );
+      } else {
+        await chatService.pinChat(selectedChat.id, user.uid);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم تثبيت المحادثة' : 'Chat pinned'
+        );
+      }
       
       setShowQuickActions(false);
       await loadChats();
     } catch (error) {
-      console.error('Error pinning chat:', error);
+      logger.error('Error pinning/unpinning chat:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل في تثبيت المحادثة' : 'Failed to pin chat'
+        isRTL ? 'فشل تثبيت/إلغاء تثبيت المحادثة' : 'Failed to pin/unpin chat'
       );
     }
   };
@@ -624,45 +704,51 @@ export default function PremiumChatScreen() {
       });
       
       CustomAlertService.showSuccess(
-        isRTL ? 'نجح' : 'Success',
+        t('success'),
         selectedChat.isMuted
-          ? (isRTL ? 'تم إلغاء الكتم' : 'Chat unmuted')
-          : (isRTL ? 'تم الكتم' : 'Chat muted')
+          ? t('chatUnmuted')
+          : t('chatMuted')
       );
       
       setShowQuickActions(false);
       await loadChats();
     } catch (error) {
-      console.error('Error muting chat:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error muting chat:', error);
       CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل في كتم المحادثة' : 'Failed to mute chat'
+        t('error'),
+        t('failedToMuteChat')
       );
     }
   };
 
   const handleArchiveChat = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !user?.uid) return;
     
     try {
-      const chatRef = doc(db, 'chats', selectedChat.id);
-      await updateDoc(chatRef, {
-        isArchived: true,
-        updatedAt: serverTimestamp(),
-      });
+      const isArchived = selectedChat.archivedUsers?.includes(user.uid);
       
-      CustomAlertService.showSuccess(
-        isRTL ? 'نجح' : 'Success',
-        isRTL ? 'تم الأرشفة' : 'Chat archived'
-      );
+      if (isArchived) {
+        await chatService.unarchiveChat(selectedChat.id, user.uid);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم إلغاء أرشفة المحادثة' : 'Chat unarchived'
+        );
+      } else {
+        await chatService.archiveChat(selectedChat.id, user.uid);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم أرشفة المحادثة' : 'Chat archived'
+        );
+      }
       
       setShowQuickActions(false);
       await loadChats();
     } catch (error) {
-      console.error('Error archiving chat:', error);
+      logger.error('Error archiving/unarchiving chat:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل في أرشفة المحادثة' : 'Failed to archive chat'
+        isRTL ? 'فشل أرشفة/إلغاء أرشفة المحادثة' : 'Failed to archive/unarchive chat'
       );
     }
   };
@@ -672,8 +758,8 @@ export default function PremiumChatScreen() {
     
     // Show confirmation alert
     CustomAlertService.showInfo(
-      isRTL ? 'تأكيد الحذف' : 'Confirm Delete',
-      isRTL ? 'هل أنت متأكد من حذف هذه المحادثة؟' : 'Are you sure you want to delete this chat?'
+      t('confirmDelete'),
+      t('areYouSureDeleteChat')
     );
     
     // For now, just proceed with deletion
@@ -686,17 +772,18 @@ export default function PremiumChatScreen() {
       });
       
       CustomAlertService.showSuccess(
-        isRTL ? 'نجح' : 'Success',
-        isRTL ? 'تم الحذف' : 'Chat deleted'
+        t('success'),
+        t('chatDeleted')
       );
       
       setShowQuickActions(false);
       await loadChats();
     } catch (error) {
-      console.error('Error deleting chat:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error deleting chat:', error);
       CustomAlertService.showError(
-        isRTL ? 'خطأ' : 'Error',
-        isRTL ? 'فشل في حذف المحادثة' : 'Failed to delete chat'
+        t('error'),
+        t('failedToDeleteChat')
       );
     }
   };
@@ -705,8 +792,8 @@ export default function PremiumChatScreen() {
     if (!selectedChat) return;
     
     CustomAlertService.showInfo(
-      isRTL ? 'تنبيه' : 'Poke',
-      isRTL ? `تم إرسال تنبيه إلى ${selectedChat.name}` : `Poked ${selectedChat.name}`
+      t('poke'),
+      t('pokedUser', { name: selectedChat.name })
     );
     
     setShowQuickActions(false);
@@ -716,11 +803,24 @@ export default function PremiumChatScreen() {
   const transformedChats = chats.map((chat: any) => {
     const isJobChat = chat.type === 'job';
     const isGuildChat = chat.type === 'guild';
-    const participantName = isJobChat
-      ? chat.jobTitle || 'Job Chat'
-      : isGuildChat
-      ? chat.guildName || 'Guild Chat'
-      : chat.participantName || chat.name || 'Unknown';
+    
+    // For direct chats, try to get participant name from participantNames object
+    let participantName = 'Unknown';
+    if (isJobChat) {
+      participantName = chat.jobTitle || 'Job Chat';
+    } else if (isGuildChat) {
+      participantName = chat.guildName || 'Guild Chat';
+    } else {
+      // For direct chats, get the other participant's ID
+      const otherParticipant = chat.participants?.find((p: string) => p !== user?.uid);
+      if (otherParticipant && chat.participantNames?.[otherParticipant]) {
+        participantName = chat.participantNames[otherParticipant];
+      } else if (chat.participantName) {
+        participantName = chat.participantName;
+      } else if (chat.name) {
+        participantName = chat.name;
+      }
+    }
 
     // Handle lastMessage - it can be a string or an object
     const lastMessageText = typeof chat.lastMessage === 'string' 
@@ -749,7 +849,8 @@ export default function PremiumChatScreen() {
         messageDate = new Date();
       }
     } catch (error) {
-      console.warn('Error parsing message date:', error);
+      // COMMENT: PRIORITY 1 - Replace console.warn with logger
+      logger.warn('Error parsing message date:', error);
       messageDate = new Date();
     }
 
@@ -757,6 +858,10 @@ export default function PremiumChatScreen() {
     const unreadCount = typeof chat.unreadCount === 'object' 
       ? (chat.unreadCount[user?.uid || ''] || 0)
       : (chat.unreadCount || 0);
+
+    // Check if chat is archived/pinned by current user
+    const isArchived = chat.archivedUsers?.includes(user?.uid || '') || false;
+    const isPinned = chat.pinnedUsers?.includes(user?.uid || '') || false;
 
     return {
       ...chat,
@@ -766,7 +871,8 @@ export default function PremiumChatScreen() {
       date: messageDate.toISOString(),
       unread: unreadCount,
       totalMessages: chat.messageCount || 0,
-      isPinned: chat.isPinned || false,
+      isPinned,
+      isArchived,
       isMuted: chat.isMuted || false,
       online: chat.online || false,
       typing: chat.typing || false,
@@ -777,16 +883,35 @@ export default function PremiumChatScreen() {
     };
   });
 
-  // Separate pinned and regular chats
-  const pinnedChats = transformedChats.filter((chat: any) => chat.isPinned);
-  const regularChats = transformedChats.filter((chat: any) => !chat.isPinned);
+  // Filter chats based on archive status
+  const archiveFilteredChats = showArchived
+    ? transformedChats.filter((chat: any) => chat.isArchived)
+    : transformedChats.filter((chat: any) => !chat.isArchived);
+
+  // Separate pinned and regular chats, sort pinned first
+  const pinnedChats = archiveFilteredChats.filter((chat: any) => chat.isPinned);
+  const regularChats = archiveFilteredChats.filter((chat: any) => !chat.isPinned);
+
+  // Combine: pinned first, then regular (both sorted by updatedAt desc)
+  const sortedChats = [
+    ...pinnedChats.sort((a, b) => {
+      const aTime = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+      const bTime = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    }),
+    ...regularChats.sort((a, b) => {
+      const aTime = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+      const bTime = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    }),
+  ];
 
   // Filter chats based on search
   const filteredChats = searchQuery
-    ? regularChats.filter((chat: any) =>
+    ? sortedChats.filter((chat: any) =>
         chat.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : regularChats;
+    : sortedChats;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
@@ -796,34 +921,27 @@ export default function PremiumChatScreen() {
       <PremiumHeader
         theme={theme}
         isRTL={isRTL}
+        t={t}
         onSearch={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          router.push('/(modals)/user-search' as any);
+          setShowSearch(!showSearch);
         }}
-        onMenu={() => {
-          // TODO: Show menu
-        }}
+        onMenu={() => setShowQuickActions(true)}
+        onToggleArchive={() => setShowArchived(!showArchived)}
+        showArchived={showArchived}
       />
-
-      {/* Search Bar */}
       {showSearch && (
         <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
-          <View style={[styles.searchBar, { backgroundColor: theme.background }]}>
-            <Search size={20} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.textPrimary }]}
-              placeholder={isRTL ? 'بحث...' : 'Search...'}
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <X size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
+          <TextInput
+            style={[styles.searchInput, { color: theme.textPrimary }]}
+            placeholder={isRTL ? 'البحث...' : 'Search...'}
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+          />
+          <TouchableOpacity onPress={() => setShowSearch(false)}>
+            <X size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
         </View>
       )}
 
@@ -833,7 +951,7 @@ export default function PremiumChatScreen() {
           <View style={[styles.sectionHeader, { backgroundColor: theme.surface }]}>
             <Pin size={16} color={theme.primary} />
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              {isRTL ? 'المحادثات المثبتة' : 'Pinned Chats'}
+              {t('pinnedChats')}
             </Text>
           </View>
           <ScrollView
@@ -885,34 +1003,24 @@ export default function PremiumChatScreen() {
           <MessageCircle size={64} color={theme.textSecondary} />
           <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
             {searchQuery
-              ? (isRTL ? 'لا توجد نتائج' : 'No results found')
-              : (isRTL ? 'لا توجد محادثات' : 'No chats yet')}
+              ? t('noResultsFound')
+              : t('noChatsYet')}
           </Text>
         </View>
       ) : (
         <FlatList
           data={filteredChats}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => {
-            // Show date separator if it's a new day
-            const showDateSeparator = index === 0 || 
-              (filteredChats[index - 1]?.date !== item.date);
-            
-            return (
-              <>
-                {showDateSeparator && item.date && (
-                  <DateSeparator date={item.date} theme={theme} isRTL={isRTL} />
-                )}
-                <PremiumChatItem
-                  chat={item}
-                  onPress={() => handleChatPress(item)}
-                  onLongPress={() => handleChatLongPress(item)}
-                  theme={theme}
-                  isRTL={isRTL}
-                />
-              </>
-            );
-          }}
+          // COMMENT: PRODUCTION HARDENING - Task 5.2 - Memoized renderItem for performance
+          renderItem={memoizedRenderItem}
+          // COMMENT: PRODUCTION HARDENING - Task 5.2 - getItemLayout for fixed height items (estimated ~100px per chat item)
+          getItemLayout={getItemLayout}
+          // COMMENT: PRODUCTION HARDENING - Task 5.2 - Performance optimizations
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          initialNumToRender={10}
+          windowSize={10}
           contentContainerStyle={styles.chatList}
           refreshControl={
             <RefreshControl
@@ -946,8 +1054,8 @@ export default function PremiumChatScreen() {
               <Pin size={20} color={theme.textPrimary} />
               <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
                 {selectedChat?.isPinned
-                  ? (isRTL ? 'إلغاء التثبيت' : 'Unpin')
-                  : (isRTL ? 'تثبيت' : 'Pin')}
+                  ? t('unpin')
+                  : t('pin')}
               </Text>
             </TouchableOpacity>
 
@@ -962,8 +1070,8 @@ export default function PremiumChatScreen() {
               )}
               <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
                 {selectedChat?.isMuted
-                  ? (isRTL ? 'إلغاء الكتم' : 'Unmute')
-                  : (isRTL ? 'كتم' : 'Mute')}
+                  ? t('unmute')
+                  : t('mute')}
               </Text>
             </TouchableOpacity>
 
@@ -973,7 +1081,7 @@ export default function PremiumChatScreen() {
             >
               <Zap size={20} color={theme.textPrimary} />
               <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
-                {isRTL ? 'تنبيه' : 'Poke'}
+                {t('poke')}
               </Text>
             </TouchableOpacity>
 
@@ -983,7 +1091,7 @@ export default function PremiumChatScreen() {
             >
               <Archive size={20} color={theme.textPrimary} />
               <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
-                {isRTL ? 'أرشفة' : 'Archive'}
+                {t('archive')}
               </Text>
             </TouchableOpacity>
 
@@ -993,7 +1101,7 @@ export default function PremiumChatScreen() {
             >
               <Trash2 size={20} color={theme.error} />
               <Text style={[styles.quickActionText, { color: theme.error }]}>
-                {isRTL ? 'حذف' : 'Delete'}
+                {t('delete')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1012,7 +1120,7 @@ export default function PremiumChatScreen() {
             <View style={styles.modalHandle} />
             
             <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
-              {isRTL ? 'بدء محادثة جديدة' : 'Start New Chat'}
+              {t('startNewChat')}
             </Text>
 
             <TouchableOpacity
@@ -1027,10 +1135,10 @@ export default function PremiumChatScreen() {
               </View>
               <View style={styles.newChatInfo}>
                 <Text style={[styles.newChatTitle, { color: theme.textPrimary }]}>
-                  {isRTL ? 'محادثة مع مستخدم' : 'Chat with User'}
+                  {t('chatWithUser')}
                 </Text>
                 <Text style={[styles.newChatDescription, { color: theme.textSecondary }]}>
-                  {isRTL ? 'ابدأ محادثة مباشرة' : 'Start a direct conversation'}
+                  {t('startDirectConversation')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1047,10 +1155,10 @@ export default function PremiumChatScreen() {
               </View>
               <View style={styles.newChatInfo}>
                 <Text style={[styles.newChatTitle, { color: theme.textPrimary }]}>
-                  {isRTL ? 'الانضمام إلى نقابة' : 'Join Guild'}
+                  {t('joinGuild')}
                 </Text>
                 <Text style={[styles.newChatDescription, { color: theme.textSecondary }]}>
-                  {isRTL ? 'انضم إلى محادثة جماعية' : 'Join a group conversation'}
+                  {t('joinGroupConversation')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1060,7 +1168,7 @@ export default function PremiumChatScreen() {
               onPress={() => setShowNewChatOptions(false)}
             >
               <Text style={[styles.cancelButtonText, { color: theme.error }]}>
-                {isRTL ? 'إلغاء' : 'Cancel'}
+                {t('cancel')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1235,7 +1343,8 @@ const styles = StyleSheet.create({
   },
   chatItemContent: {
     flexDirection: 'row',
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 9.5,
     gap: 12,
   },
   
@@ -1244,9 +1353,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatarBorder: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 1.5,
     borderColor: '#000000',
     alignItems: 'center',
@@ -1254,9 +1363,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -1366,10 +1475,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  messageCount: {
+  messageCountBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+  messageCountText: {
     fontSize: 11,
-    color: '#C7C7CC',
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '600',
     fontFamily: FONT_FAMILY,
   },
 

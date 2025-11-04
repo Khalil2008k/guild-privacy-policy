@@ -20,6 +20,8 @@ import { jobService, Job } from '../../services/jobService';
 import { AlertTriangle, FileText, ArrowLeft, ArrowRight, Shield } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { CustomAlertService } from '../../services/CustomAlertService';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -47,7 +49,8 @@ export default function JobDisputeScreen() {
         setJob(jobData);
       }
     } catch (error) {
-      console.error('Error loading job:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job:', error);
       CustomAlertService.showError(t('error'), 'Failed to load job details');
     } finally {
       setLoading(false);
@@ -106,7 +109,8 @@ export default function JobDisputeScreen() {
                 throw new Error(result.message);
               }
             } catch (error: any) {
-              console.error('Error raising dispute:', error);
+              // COMMENT: PRIORITY 1 - Replace console.error with logger
+              logger.error('Error raising dispute:', error);
               CustomAlertService.showError(
                 t('error'),
                 error.message || (isRTL ? 'فشل في رفع النزاع' : 'Failed to raise dispute')

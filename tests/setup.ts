@@ -1,4 +1,5 @@
-import '@testing-library/jest-native/extend-expect';
+// COMMENT: PRIORITY 1 - Fix testing infrastructure - Remove missing dependency
+// import '@testing-library/jest-native/extend-expect'; // COMMENTED: Package not installed
 import 'react-native-gesture-handler/jestSetup';
 
 // Set up environment variables for tests

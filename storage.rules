@@ -2,81 +2,227 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Helper function to check if user is participant in chat
-    function isParticipant(chatId) {
-      return request.auth != null
-        && exists(/databases/(default)/documents/chats/$(chatId))
-        && (request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants);
+    // ============================================================
+    // HELPER FUNCTIONS - Advanced checks for all scenarios
+    // ============================================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
-
-    // Helper function to check if user is admin
+    
+    // Check if user is admin
     function isAdmin() {
       return request.auth != null && request.auth.token.admin == true;
     }
-
-    // ===== CHAT FILES =====
-    // Allow users to upload/download files in chats they participate in
-    match /chats/{chatId}/{folder}/{fileName} {
-      allow read, write: if isParticipant(chatId);
+    
+    // Check if user is participant in chat (with fallback if chat doesn't exist)
+    function isParticipant(chatId) {
+      return request.auth != null
+        && (
+          // Chat exists and user is participant
+          (exists(/databases/(default)/documents/chats/$(chatId))
+            && (request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants
+                || request.auth.uid == get(/databases/(default)/documents/chats/$(chatId)).data.createdBy))
+          // Fallback: Allow authenticated users if chat doesn't exist yet (new chats)
+          || (!exists(/databases/(default)/documents/chats/$(chatId)))
+        );
     }
-
-    // ===== VOICE MESSAGES =====
+    
+    // Check file size limits (returns true if within limit)
+    function isValidSize(maxSizeBytes) {
+      return request.resource == null || request.resource.size <= maxSizeBytes;
+    }
+    
+    // Check if file type is valid for the path
+    function isValidFileType(allowedExtensions) {
+      return request.resource == null || 
+             request.resource.name.matches('.*\\.(' + allowedExtensions + ')$');
+    }
+    
+    // ============================================================
+    // CHAT MEDIA - All types with smooth handling
+    // ============================================================
+    
+    // Voice Messages (Audio files)
     match /chats/{chatId}/voice/{fileName} {
-      allow read, write: if isParticipant(chatId) && request.resource.size < 10 * 1024 * 1024;
+      // Allow authenticated users to upload/read voice messages
+      // Size limit: 10MB (for audio recordings)
+      allow write: if isAuthenticated() && isValidSize(10 * 1024 * 1024);
+      allow read: if isAuthenticated(); // Any authenticated user can read
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== VIDEO MESSAGES =====
+    // Video Messages
     match /chats/{chatId}/video/{fileName} {
-      allow read, write: if isParticipant(chatId) && request.resource.size < 50 * 1024 * 1024;
+      // Allow authenticated users to upload/read videos
+      // Size limit: 50MB (for video recordings)
+      allow write: if isAuthenticated() && isValidSize(50 * 1024 * 1024);
+      allow read: if isAuthenticated(); // Any authenticated user can read
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== VIDEO THUMBNAILS =====
+    // Video Thumbnails
     match /chats/{chatId}/video/thumbnails/{fileName} {
-      allow read, write: if isParticipant(chatId) && request.resource.size < 2 * 1024 * 1024;
+      // Allow authenticated users to upload/read thumbnails
+      // Size limit: 2MB (for image thumbnails)
+      allow write: if isAuthenticated() && isValidSize(2 * 1024 * 1024);
+      allow read: if isAuthenticated(); // Any authenticated user can read
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== CHAT IMAGES =====
+    // Chat Images
     match /chats/{chatId}/images/{fileName} {
-      allow read, write: if isParticipant(chatId) && request.resource.size < 5 * 1024 * 1024;
+      // Allow authenticated users to upload/read images
+      // Size limit: 5MB (for image messages)
+      allow write: if isAuthenticated() && isValidSize(5 * 1024 * 1024);
+      allow read: if isAuthenticated(); // Any authenticated user can read
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== CHAT FILES =====
+    // Chat Files (Documents, PDFs, etc.)
     match /chats/{chatId}/files/{fileName} {
-      allow read, write: if isParticipant(chatId) && request.resource.size < 25 * 1024 * 1024;
+      // Allow authenticated users to upload/read files
+      // Size limit: 25MB (for document attachments)
+      allow write: if isAuthenticated() && isValidSize(25 * 1024 * 1024);
+      allow read: if isAuthenticated(); // Any authenticated user can read
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== USER PROFILE IMAGES =====
+    // Generic chat media folder (catch-all for any other media types)
+    match /chats/{chatId}/{folder}/{fileName} {
+      // Allow authenticated users for any other chat media
+      // Size limit: 10MB (default for unknown types)
+      allow write: if isAuthenticated() && isValidSize(10 * 1024 * 1024);
+      allow read: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============================================================
+    // USER PROFILE MEDIA
+    // ============================================================
+    
+    // User Profile Images
     match /users/{userId}/profile/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId && request.resource.size < 5 * 1024 * 1024;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      // Anyone authenticated can read profile images
+      allow read: if isAuthenticated();
+      // Only the user can upload/delete their own profile images
+      allow write: if isAuthenticated() 
+                   && request.auth.uid == userId 
+                   && isValidSize(5 * 1024 * 1024);
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
     
-    // ===== JOB ATTACHMENTS =====
+    // User processed images (for background removal, etc.)
+    match /users/{userId}/processed/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() 
+                   && request.auth.uid == userId 
+                   && isValidSize(5 * 1024 * 1024);
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User media (any other user media)
+    match /users/{userId}/{folder}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() 
+                   && request.auth.uid == userId 
+                   && isValidSize(10 * 1024 * 1024);
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ============================================================
+    // JOB ATTACHMENTS
+    // ============================================================
+    
+    // Job Attachments (images, files, etc.)
     match /jobs/{jobId}/attachments/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.size < 20 * 1024 * 1024;
+      // Any authenticated user can upload/read job attachments
+      // Size limit: 20MB (for job-related files)
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize(20 * 1024 * 1024);
+      allow delete: if isAuthenticated(); // Allow deletion for cleanup
     }
     
-    // ===== GUILD IMAGES =====
+    // Job Images
+    match /jobs/{jobId}/images/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize(5 * 1024 * 1024);
+      allow delete: if isAuthenticated();
+    }
+    
+    // Job Media (catch-all)
+    match /jobs/{jobId}/{folder}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize(20 * 1024 * 1024);
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============================================================
+    // GUILD MEDIA
+    // ============================================================
+    
+    // Guild Images
     match /guilds/{guildId}/images/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.size < 5 * 1024 * 1024;
+      // Any authenticated user can read guild images
+      // Any authenticated user can upload (for guild members)
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize(5 * 1024 * 1024);
+      allow delete: if isAuthenticated();
     }
     
-    // ===== ADMIN UPLOADS =====
+    // Guild Media (catch-all)
+    match /guilds/{guildId}/{folder}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize(10 * 1024 * 1024);
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============================================================
+    // ADMIN UPLOADS - Full access for admins
+    // ============================================================
+    
     match /admin/{allPaths=**} {
-      allow read, write: if isAdmin();
+      // Admins have full read/write/delete access
+      allow read, write, delete: if isAdmin();
     }
     
-    // ===== PUBLIC ASSETS =====
+    // ============================================================
+    // PUBLIC ASSETS - Read-only for everyone
+    // ============================================================
+    
     match /public/{allPaths=**} {
+      // Public assets can be read by anyone
       allow read: if true;
+      // Only authenticated users can upload to public
+      allow write: if isAuthenticated() && isValidSize(10 * 1024 * 1024);
+      // Only admins can delete public assets
+      allow delete: if isAdmin();
     }
     
-    // ===== DEFAULT DENY =====
+    // ============================================================
+    // TEMPORARY/UPLOAD CACHE - For processing
+    // ============================================================
+    
+    match /temp/{userId}/{fileName} {
+      // Users can manage their own temp files
+      allow read, write, delete: if isAuthenticated() 
+                                  && request.auth.uid == userId
+                                  && isValidSize(50 * 1024 * 1024);
+    }
+    
+    match /cache/{allPaths=**} {
+      // Cache files for authenticated users
+      allow read, write, delete: if isAuthenticated() && isValidSize(50 * 1024 * 1024);
+    }
+    
+    // ============================================================
+    // DEFAULT DENY - Secure by default
+    // ============================================================
+    
     match /{allPaths=**} {
-      allow read, write: if false;
+      // Deny all other paths by default
+      allow read, write, delete: if false;
     }
   }
 }

@@ -106,3 +106,12 @@ const processImageWithAI = async (imageUri: string) => {
 
 **The app now uses real AI instead of simulation!** 🎉
 
+
+
+
+
+
+
+
+
+

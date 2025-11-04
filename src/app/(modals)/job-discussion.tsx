@@ -38,6 +38,8 @@ import { jobService, Job } from '../../services/jobService';
 import { chatFileService } from '../../services/chatFileService';
 import { ChatInput } from '../../components/ChatInput';
 import { Send, User, ArrowLeft, ArrowRight, MessageCircle, Coins, CheckCircle, XCircle, MoreVertical, Image as ImageIcon } from 'lucide-react-native';
+// COMMENT: PRIORITY 1 - Replace console statements with logger
+import { logger } from '../../utils/logger';
 
 interface Message {
   id: string;
@@ -126,7 +128,8 @@ export default function JobDiscussionScreen() {
         setMessages(sampleMessages);
       }
     } catch (error) {
-      console.error('Error loading job discussion:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error loading job discussion:', error);
       CustomAlertService.showError('Error', 'Failed to load discussion');
     } finally {
       setLoading(false);
@@ -160,7 +163,8 @@ export default function JobDiscussionScreen() {
       }, 100);
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending message:', error);
       CustomAlertService.showError('Error', 'Failed to send message');
     } finally {
       setSending(false);
@@ -172,9 +176,11 @@ export default function JobDiscussionScreen() {
   };
 
   const handleSendImage = async (uri: string) => {
-    console.log('🖼️ handleSendImage called with URI:', uri);
+    // COMMENT: PRIORITY 1 - Replace console.log with logger
+    logger.debug('🖼️ handleSendImage called with URI:', uri);
     if (!user || !job) {
-      console.log('❌ No user or job');
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('❌ No user or job');
       return;
     }
 
@@ -182,7 +188,8 @@ export default function JobDiscussionScreen() {
     try {
       // Create a temporary chat ID for this job discussion
       const chatId = `job_discussion_${jobId}`;
-      console.log('📤 Uploading image to chat:', chatId);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('📤 Uploading image to chat:', chatId);
       
       // Upload image
       const { url } = await chatFileService.uploadFile(
@@ -192,7 +199,8 @@ export default function JobDiscussionScreen() {
         'image/jpeg',
         user.uid
       );
-      console.log('✅ Image uploaded, URL:', url);
+      // COMMENT: PRIORITY 1 - Replace console.log with logger
+      logger.debug('✅ Image uploaded, URL:', url);
 
       // Add image message to local state
       const imageMessage: Message = {
@@ -217,7 +225,8 @@ export default function JobDiscussionScreen() {
         isRTL ? 'تم إرسال الصورة بنجاح' : 'Image sent successfully'
       );
     } catch (error) {
-      console.error('Error sending image:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending image:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل إرسال الصورة' : 'Failed to send image'
@@ -268,7 +277,8 @@ export default function JobDiscussionScreen() {
         isRTL ? 'تم إرسال الملف بنجاح' : 'File sent successfully'
       );
     } catch (error) {
-      console.error('Error sending file:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending file:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل إرسال الملف' : 'Failed to send file'
@@ -305,7 +315,8 @@ export default function JobDiscussionScreen() {
         isRTL ? 'تم مشاركة الموقع بنجاح' : 'Location shared successfully'
       );
     } catch (error) {
-      console.error('Error sending location:', error);
+      // COMMENT: PRIORITY 1 - Replace console.error with logger
+      logger.error('Error sending location:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل مشاركة الموقع' : 'Failed to share location'

@@ -167,3 +167,12 @@ npx expo start --clear
 3. Build APK once errors are resolved
 
 
+
+
+
+
+
+
+
+
+

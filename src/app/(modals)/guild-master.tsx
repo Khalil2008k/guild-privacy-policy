@@ -21,6 +21,7 @@ import { GuildSystem } from '../../utils/guildSystem';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Crown, Shield, Users, Settings, TrendingUp, Award, AlertCircle } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import ModalHeader from '../components/ModalHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
