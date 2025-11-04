@@ -92,7 +92,7 @@ export const GuildMapModal = React.memo<GuildMapModalProps>(({ visible, onClose 
         </View>
 
         {/* Real Map Content */}
-        <View style={styles.mapContent}>
+        <View style={styles.mapContent} pointerEvents="box-none">
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.primary} />

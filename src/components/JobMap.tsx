@@ -481,7 +481,9 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
   };
 
   const handleMapPress = (event: any) => {
-    if (onLocationPress) {
+    // Only handle if it's a long press or specific gesture
+    // Don't interfere with normal map navigation
+    if (onLocationPress && event.nativeEvent.action === 'longPress') {
       const { latitude, longitude } = event.nativeEvent.coordinate;
       onLocationPress({
         latitude,
@@ -542,13 +544,13 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents="box-none">
         <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={initialRegion}
-          onPress={handleMapPress}
+          onLongPress={onLocationPress ? handleMapPress : undefined}
           mapType={mapType}
           showsUserLocation={showUserLocation}
           showsMyLocationButton={false}
@@ -573,6 +575,7 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
           maxZoomLevel={20}
           minZoomLevel={3}
           liteMode={false}
+          toolbarEnabled={false}
         >
         {/* User Location Marker */}
         {userLocation && (
