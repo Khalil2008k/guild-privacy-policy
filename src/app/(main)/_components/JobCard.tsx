@@ -40,6 +40,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   // Get job content in current language (Arabic if available and language is Arabic)
   const jobTitle = (language === 'ar' && (job as any).titleAr) ? (job as any).titleAr : job.title;
   const jobDescription = (language === 'ar' && (job as any).descriptionAr) ? (job as any).descriptionAr : job.description;
+  const jobLocation = (language === 'ar' && (job as any).locationAr) 
+    ? (job as any).locationAr 
+    : (typeof job.location === 'object' ? job.location?.address : job.location);
 
   // Translate time units (e.g., "3 days" -> "3 أيام")
   const translateTimeUnit = (timeStr: string): string => {
@@ -273,7 +276,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
                   textAlign: isRTL ? 'right' : 'left'
                 }
               ]}>
-                {t('location')}: {typeof job.location === 'object' ? (job.location?.address || (isRTL ? 'عن بُعد' : 'Remote')) : job.location}
+                {t('location')}: {jobLocation || (isRTL ? 'عن بُعد' : 'Remote')}
               </Text>
             </View>
           </View>
