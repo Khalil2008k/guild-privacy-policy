@@ -43,12 +43,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   // Get description - check for Arabic field first, then fallback to English
   let jobDescription = job.description;
   if (language === 'ar') {
-    if ((job as any).descriptionAr) {
-      jobDescription = (job as any).descriptionAr;
-    } else if (job.description) {
-      // Keep English description if Arabic not available
-      jobDescription = job.description;
+    // Check multiple possible field names for Arabic description
+    const descriptionAr = (job as any).descriptionAr || (job as any).description_ar || (job as any).ar_description;
+    if (descriptionAr && descriptionAr.trim()) {
+      jobDescription = descriptionAr;
     }
+    // If no Arabic description found, keep English (will be displayed)
   }
   
   // Get location - check for Arabic field first, handle object/string location
