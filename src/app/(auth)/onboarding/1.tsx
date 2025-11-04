@@ -12,7 +12,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useI18n } from '@/contexts/I18nProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Shield, Users, ChevronRight } from 'lucide-react-native';
+import { Shield, Users, ChevronRight, ChevronLeft } from 'lucide-react-native';
 import Button from '../../../components/Button';
 
 const { width, height } = Dimensions.get('window');
@@ -124,7 +124,7 @@ const OnboardingScreen1: React.FC = () => {
           onPress={handleNext}
           variant="primary"
           size="large"
-          rightIcon={<ChevronRight size={20} color={theme.buttonText} />}
+          rightIcon={isRTL ? <ChevronLeft size={20} color={theme.buttonText} /> : <ChevronRight size={20} color={theme.buttonText} />}
           style={styles.nextButton}
         />
       </View>

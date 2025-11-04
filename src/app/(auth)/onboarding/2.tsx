@@ -43,7 +43,7 @@ const OnboardingScreen2: React.FC = () => {
           onPress={handleBack}
           variant="ghost"
           size="small"
-          leftIcon={<ChevronLeft size={24} color={theme.textSecondary} />}
+          leftIcon={isRTL ? <ChevronRight size={24} color={theme.textSecondary} /> : <ChevronLeft size={24} color={theme.textSecondary} />}
           style={styles.backButton}
         />
         <View style={[styles.logoHeader, {
@@ -93,7 +93,7 @@ const OnboardingScreen2: React.FC = () => {
           onPress={handleNext}
           variant="primary"
           size="large"
-          rightIcon={<ChevronRight size={20} color={theme.buttonText} />}
+          rightIcon={isRTL ? <ChevronLeft size={20} color={theme.buttonText} /> : <ChevronRight size={20} color={theme.buttonText} />}
           style={styles.nextButton}
         />
       </View>
