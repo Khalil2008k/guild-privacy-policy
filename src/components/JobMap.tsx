@@ -257,19 +257,24 @@ const getCustomMapStyle = (isDark: boolean) => [
 ];
 
 interface Job {
-  id: string;
+  id?: string;
   title: string;
   description: string;
-  salary: string;
-  location: {
+  budget?: string | {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  salary?: string; // Legacy field
+  location: string | {
     address: string;
-    coordinates: {
+    coordinates?: {
       latitude: number;
       longitude: number;
     };
   };
-  status: string;
-  createdAt: string;
+  status?: string;
+  createdAt?: string | Date;
   distance?: number; // Distance from user in kilometers
 }
 
@@ -336,8 +341,9 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
   // Initialize marker animations
   const initializeMarkerAnimations = () => {
     jobs.forEach(job => {
-      if (!markerAnimations.current[job.id]) {
-        markerAnimations.current[job.id] = new Animated.Value(0);
+      const jobId = job.id || `job-${Math.random()}`;
+      if (!markerAnimations.current[jobId]) {
+        markerAnimations.current[jobId] = new Animated.Value(0);
       }
     });
   };
@@ -384,10 +390,14 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
   };
 
   const calculateDistances = () => {
-    if (!userLocation) return;
+    if (!userLocation) {
+      // If no user location, just set jobs without distance calculation
+      setJobsWithDistance(jobs);
+      return;
+    }
     
     const jobsWithDist = jobs.map(job => {
-      if (job.location?.coordinates) {
+      if (typeof job.location === 'object' && job.location?.coordinates) {
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
@@ -406,8 +416,8 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
 
   const fitMapToJobs = () => {
     const coordinates = jobs
-      .filter(job => job.location?.coordinates)
-      .map(job => job.location.coordinates);
+      .filter(job => typeof job.location === 'object' && job.location?.coordinates)
+      .map(job => (job.location as { coordinates: { latitude: number; longitude: number } }).coordinates);
     
     if (coordinates.length > 0) {
       const minLat = Math.min(...coordinates.map(coord => coord.latitude));
@@ -584,24 +594,27 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
 
             {/* Job Markers with Distance */}
             {jobsWithDistance
-              .filter(job => job.location?.coordinates)
+              .filter(job => typeof job.location === 'object' && job.location?.coordinates)
               .map((job) => {
-                const markerAnimation = markerAnimations.current[job.id];
+                const jobId = job.id || `job-${Math.random()}`;
+                const markerAnimation = markerAnimations.current[jobId];
                 const scale = markerAnimation ? markerAnimation.interpolate({
                   inputRange: [0, 1],
                   outputRange: [1, 1.2],
                 }) : 1;
                 
+                const location = job.location as { coordinates: { latitude: number; longitude: number } };
+                
                 return (
-                  <React.Fragment key={job.id}>
+                  <React.Fragment key={jobId}>
                     {/* Job Marker */}
                     <Marker
-                      coordinate={job.location.coordinates}
+                      coordinate={location.coordinates}
                       title={job.title}
-                      description={`${job.salary} - ${job.distance ? `${job.distance}km away` : job.location.address}`}
+                      description={`${job.salary || (typeof job.budget === 'string' ? job.budget : job.budget ? `${job.budget.min}-${job.budget.max} ${job.budget.currency || 'QR'}` : 'N/A')} - ${job.distance ? `${job.distance}km away` : (typeof job.location === 'object' ? job.location.address : job.location || 'Unknown')}`}
                       pinColor={getMarkerColor(job)}
                       onPress={() => {
-                        animateMarker(job.id);
+                        animateMarker(jobId);
                         setSelectedJob(job);
                         animateCallout(true);
                       }}
@@ -641,7 +654,7 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
                                 {job.title}
                               </Text>
                               <Text style={[styles.calloutStatus, { color: theme.textSecondary }]}>
-                                {job.status}
+                                {job.status || 'open'}
                               </Text>
                             </View>
                           </View>
@@ -650,14 +663,14 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
                             <View style={styles.calloutDetailRow}>
                               <DollarSign size={14} color={theme.primary} />
                               <Text style={[styles.calloutSalary, { color: theme.primary }]}>
-                                {job.salary}
+                                {job.salary || (typeof job.budget === 'string' ? job.budget : job.budget ? `${job.budget.min}-${job.budget.max} ${job.budget.currency || 'QR'}` : 'N/A')}
                               </Text>
                             </View>
                             
                             <View style={styles.calloutDetailRow}>
                               <MapPin size={14} color={theme.textSecondary} />
                               <Text style={[styles.calloutAddress, { color: theme.textSecondary }]}>
-                                {job.location.address}
+                                {typeof job.location === 'object' ? job.location.address : job.location || 'Unknown'}
                               </Text>
                             </View>
                             
@@ -730,7 +743,7 @@ export function JobMap({ jobs, onJobPress, onLocationPress }: JobMapProps) {
         <View style={styles.jobCountContent}>
           <Shield size={16} color={theme.background} />
           <Text style={[styles.jobCountText, { color: theme.background }]}>
-            {jobsWithDistance.filter(job => job.location?.coordinates).length} {isRTL ? 'وظيفة' : 'Jobs'}
+            {jobsWithDistance.filter(job => typeof job.location === 'object' && job.location?.coordinates).length} {isRTL ? 'وظيفة' : 'Jobs'}
           </Text>
         </View>
       </View>
