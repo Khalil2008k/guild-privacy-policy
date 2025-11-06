@@ -38,35 +38,22 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Get job content in current language (Arabic if available and language is Arabic)
-  const jobTitle = (language === 'ar' && (job as any).titleAr) ? (job as any).titleAr : job.title;
+  const jobTitle = (language === 'ar' && job.titleAr) ? job.titleAr : job.title;
   
   // Get description - check for Arabic field first, then fallback to English
   let jobDescription = job.description;
-  if (language === 'ar') {
-    // Check multiple possible field names for Arabic description
-    const descriptionAr = (job as any).descriptionAr || (job as any).description_ar || (job as any).ar_description;
-    if (descriptionAr && descriptionAr.trim()) {
-      jobDescription = descriptionAr;
-    }
-    // If no Arabic description found, keep English (will be displayed)
+  if (language === 'ar' && job.descriptionAr && job.descriptionAr.trim()) {
+    jobDescription = job.descriptionAr;
   }
   
   // Get location - check for Arabic field first, handle object/string location
   let jobLocation = '';
-  if (language === 'ar') {
-    if ((job as any).locationAr) {
-      jobLocation = (job as any).locationAr;
-    } else if (typeof job.location === 'object' && job.location?.address) {
-      jobLocation = job.location.address;
-    } else if (typeof job.location === 'string') {
-      jobLocation = job.location;
-    }
-  } else {
-    if (typeof job.location === 'object' && job.location?.address) {
-      jobLocation = job.location.address;
-    } else if (typeof job.location === 'string') {
-      jobLocation = job.location;
-    }
+  if (language === 'ar' && job.locationAr) {
+    jobLocation = job.locationAr;
+  } else if (typeof job.location === 'object' && job.location?.address) {
+    jobLocation = job.location.address;
+  } else if (typeof job.location === 'string') {
+    jobLocation = job.location;
   }
 
   // Translate time units (e.g., "3 days" -> "3 أيام")
@@ -246,16 +233,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
               ]} numberOfLines={1}>
                 {job.clientName || 'Unknown User'}
               </Text>
-              {/* Always show GID, even if loading */}
-              <Text style={[
-                styles.posterGID, 
-                { 
-                  color: theme.textSecondary,
-                  textAlign: isRTL ? 'right' : 'left'
-                }
-              ]}>
-                GID: {posterProfile?.idNumber || (job as any).posterGID || 'N/A'}
-              </Text>
+                     {/* Always show GID, even if loading */}
+                     <Text style={[
+                       styles.posterGID, 
+                       { 
+                         color: theme.textSecondary,
+                         textAlign: isRTL ? 'right' : 'left'
+                       }
+                     ]}>
+                       GID: {posterProfile?.idNumber || job.posterGID || 'N/A'}
+                     </Text>
             </View>
           </View>
         </View>

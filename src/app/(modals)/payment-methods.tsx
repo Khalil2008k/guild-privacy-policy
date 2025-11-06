@@ -36,8 +36,9 @@ import { EditPaymentMethodModal } from './_components/EditPaymentMethodModal';
 // COMMENT: FORBIDDEN AI SYSTEM - U²-Net component disabled per ABSOLUTE_RULES.md
 // import SimpleU2NetBackgroundRemover from '../../components/SimpleU2NetBackgroundRemover';
 // Note: Cards are stored locally on device only (not on GUILD servers)
-// When using Fatora payment gateway, saved card info auto-fills their form
-// Fatora is just a payment processor, not storing cards
+// ✅ SADAD: When using Sadad payment gateway, saved card info auto-fills their form
+// ❌ FATORA: Replaced Fatora with Sadad
+// Sadad is just a payment processor, not storing cards
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -84,7 +85,8 @@ export default function PaymentMethodsScreen() {
   const u2netTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load payment methods on mount
-  // Cards are stored locally on device via Fatora SDK
+  // ✅ SADAD: Cards are stored locally on device via Sadad SDK
+  // ❌ FATORA: Replaced Fatora with Sadad
   // COMMENT: PRODUCTION HARDENING - Task 5.1 - Add cleanup for async operations
   useEffect(() => {
     let isMounted = true; // Cleanup flag to prevent state updates on unmounted component

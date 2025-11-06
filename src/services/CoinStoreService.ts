@@ -27,9 +27,10 @@ export class CoinStoreService {
    */
   static async purchaseCoins(coins: { [symbol: string]: number }): Promise<any> {
     try {
-      const response = await BackendAPI.post('/coins/purchase', {
+      // ✅ FIX: Use /api/coins/purchase instead of /coins/purchase
+      const response = await BackendAPI.post('/api/coins/purchase', {
         coins,
-        paymentMethod: 'fatora', // Default to Fatora PSP
+        paymentMethod: 'sadad', // ✅ SADAD: Updated to Sadad PSP
       });
 
       return response;
@@ -44,7 +45,8 @@ export class CoinStoreService {
    */
   static async getCoinCatalog() {
     try {
-      const response = await BackendAPI.get('/coins/catalog');
+      // ✅ FIX: Use /api/coins/catalog instead of /coins/catalog
+      const response = await BackendAPI.get('/api/coins/catalog');
       return response;
     } catch (error) {
       console.error('Error fetching coin catalog:', error);

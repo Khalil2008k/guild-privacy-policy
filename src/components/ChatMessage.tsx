@@ -515,6 +515,8 @@ export function ChatMessage({
               {
                 writingDirection: textDirection,
                 textAlign: textDirection === 'rtl' ? 'right' : 'left',
+                marginBottom: 20, // ✅ MASTER FIX: Bottom margin to prevent overlap with footer (timestamp + checkmarks)
+                // Ensures text content never overlaps with footer, even in short messages
               },
             ]}
           />
@@ -529,10 +531,12 @@ export function ChatMessage({
           />
           
           {linkPreview && (
-            <LinkPreview preview={linkPreview} isOwnMessage={isOwnMessage} />
+            <View style={{ marginBottom: 4 }}>
+              <LinkPreview preview={linkPreview} isOwnMessage={isOwnMessage} />
+            </View>
           )}
           {message.editedAt && (
-            <View style={styles.editedBadge}>
+            <View style={[styles.editedBadge, { marginBottom: 4 }]}>
               <Edit2 size={10} color={isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary} />
               <Text style={[styles.editedText, { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
                 {isRTL ? 'معدل' : 'edited'}
@@ -547,16 +551,12 @@ export function ChatMessage({
           <View style={[
             styles.messageFooter,
             {
+              // ✅ LAYERED ARCHITECTURE: Footer adapts to bubble - always use space-between
               flexDirection: textDirection === 'rtl' ? 'row-reverse' : 'row',
-              justifyContent: textDirection === 'rtl' ? 'flex-start' : 'flex-end',
-              // Adjust positioning based on message type and reaction button
-              ...(isOwnMessage ? {
-                left: 32, // Account for reaction button space on left
-                right: 12, // Standard right padding
-              } : {
-                right: 32, // Account for reaction button space on right
-                left: 12, // Standard left padding
-              }),
+              justifyContent: 'space-between', // ✅ LAYERED ARCHITECTURE: Time left, checkmarks right (opposite corners)
+              // ✅ LAYERED ARCHITECTURE: Footer adapts to bubble width automatically
+              // left: 12 and right: 12 from base style ensure footer spans bubble width
+              // Footer layer adapts to bubble size via left/right positioning
             },
           ]}>
             <View style={[
@@ -569,16 +569,19 @@ export function ChatMessage({
               {isStarredByCurrentUser && (
                 <Star size={12} color="#FFD700" style={styles.starIcon} fill="#FFD700" />
               )}
-              <Text style={[
-                ...asTextStyle(styles.timeText), 
-                { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary },
-                // Remove shadow for sender messages
-                isOwnMessage && {
-                  textShadowColor: 'transparent',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 0,
-                },
-              ]}>
+              <Text 
+                numberOfLines={1}
+                style={[
+                  ...asTextStyle(styles.timeText), 
+                  { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary },
+                  // Remove shadow for sender messages
+                  isOwnMessage && {
+                    textShadowColor: 'transparent',
+                    textShadowOffset: { width: 0, height: 0 },
+                    textShadowRadius: 0,
+                  },
+                ]}
+              >
                 {formatTime(message.createdAt)}
               </Text>
             </View>
@@ -739,7 +742,10 @@ export function ChatMessage({
                           {isStarredByCurrentUser && (
                             <Star size={12} color="#FFD700" style={styles.starIcon} fill="#FFD700" />
                           )}
-                          <Text style={[...asTextStyle(styles.timeText), { color: '#FFFFFF' }]}>
+                          <Text 
+                            numberOfLines={1}
+                            style={[...asTextStyle(styles.timeText), { color: '#FFFFFF' }]}
+                          >
                             {formatTime(message.createdAt)}
                           </Text>
                         </View>
@@ -847,16 +853,19 @@ export function ChatMessage({
                     {isStarredByCurrentUser && (
                       <Star size={12} color="#FFD700" style={styles.starIcon} fill="#FFD700" />
                     )}
-                    <Text style={[
-                      ...asTextStyle(styles.timeText), 
-                      { color: '#FFFFFF' },
-                      // Remove shadow for sender messages in media overlay
-                      isOwnMessage && {
-                        textShadowColor: 'transparent',
-                        textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: 0,
-                      },
-                    ]}>
+                    <Text 
+                      numberOfLines={1}
+                      style={[
+                        ...asTextStyle(styles.timeText), 
+                        { color: '#FFFFFF' },
+                        // Remove shadow for sender messages in media overlay
+                        isOwnMessage && {
+                          textShadowColor: 'transparent',
+                          textShadowOffset: { width: 0, height: 0 },
+                          textShadowRadius: 0,
+                        },
+                      ]}
+                    >
                       {formatTime(message.createdAt)}
                     </Text>
                   </View>
@@ -925,7 +934,10 @@ export function ChatMessage({
                   {isStarredByCurrentUser && (
                     <Star size={12} color="#FFD700" style={styles.starIcon} fill="#FFD700" />
                   )}
-                  <Text style={[...asTextStyle(styles.timeText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
+                  <Text 
+                    numberOfLines={1}
+                    style={[...asTextStyle(styles.timeText), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}
+                  >
                     {formatTime(message.createdAt)}
                   </Text>
                 </View>
@@ -1211,7 +1223,16 @@ export function ChatMessage({
                     return (
                       <View key={userId}>
                         <Pressable
-                          style={[styles.reactionPill, { backgroundColor: 'rgba(255,255,255,0.08)' }]}
+                          style={({ pressed }) => [
+                            styles.reactionPill,
+                            styles.reactionPillEmoji, // ✅ ENHANCED: Separate style for emoji pills
+                            {
+                              backgroundColor: pressed 
+                                ? 'rgba(255,255,255,0.15)' 
+                                : 'rgba(255,255,255,0.1)',
+                              transform: [{ scale: pressed ? 0.95 : 1 }],
+                            },
+                          ]}
                           onPress={() => {
                             if (onReaction && chatId) {
                               onReaction(message);
@@ -1227,15 +1248,27 @@ export function ChatMessage({
                   })}
                 </>
               )}
-              {/* Add reaction button */}
+              {/* ✅ ENHANCED: Modern reaction button with icon */}
               <View>
                 <Pressable
-                  style={[styles.reactionPill, { backgroundColor: 'rgba(255,255,255,0.08)' }]}
+                  style={({ pressed }) => [
+                    styles.reactionPill,
+                    {
+                      backgroundColor: pressed 
+                        ? 'rgba(255,255,255,0.15)' 
+                        : 'rgba(255,255,255,0.1)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    },
+                  ]}
                   onPress={() => {
                     setShowReactionPicker(true);
                   }}
                 >
-                  <Text style={[styles.addReactionText, { color: theme.textSecondary }]}>+</Text>
+                  <Smile 
+                    size={16} 
+                    color={theme.textSecondary} 
+                    strokeWidth={2}
+                  />
                 </Pressable>
               </View>
             </Animated.View>
@@ -1301,7 +1334,9 @@ export function ChatMessage({
 const styles = StyleSheet.create({
   messageContainer: {
     marginVertical: 3, // Reduced to 3px spacing between bubbles
-    marginHorizontal: 7.68, // Further reduced by 20% from 9.6 (9.6 * 0.8 = 7.68)
+    marginHorizontal: 8, // ✅ MASTER FIX: Increased to industry standard minimum (8-12px range)
+    // Changed from 7.68px to 8px for better visual spacing and professional appearance
+    // Industry standard: WhatsApp (8-12px), Telegram (8-12px), iMessage (8-12px)
     maxWidth: '85%', // Maximum width - use percentage to prevent overflow off screen
     alignSelf: 'flex-start', // Size to content width
     // TODO: Add 10-14px spacing between different senders if sender grouping exists
@@ -1313,14 +1348,17 @@ const styles = StyleSheet.create({
   messageBubbleWrapper: {
     position: 'relative', // For absolute positioning of reactions
     maxWidth: '100%', // Use full width of container
-    minWidth: 50, // Minimum width to prevent too small bubbles
+    minWidth: 100, // COMMENT: FIX - Increased minimum width to match messageBubble
     alignSelf: 'flex-start', // Size to content width (default, will be overridden per message)
     width: '100%', // Take full width of messageContainer
   },
   messageBubble: {
+    // ✅ LAYERED ARCHITECTURE: Bubble (container/field) adapts to text content
     paddingVertical: 8, // Consistent vertical padding
     paddingHorizontal: 12, // Comfortable horizontal padding
-    paddingBottom: 16, // Extra bottom padding to make room for footer
+    paddingBottom: 8, // ✅ MASTER FIX: Reduced paddingBottom - text content now has marginBottom: 20 to create space
+    // Footer is absolutely positioned, so paddingBottom doesn't affect footer position
+    // Text content marginBottom ensures footer never overlaps text
     paddingTop: 8, // Top padding
     paddingLeft: 32, // Extra left padding for sender reaction button space (will be overridden)
     paddingRight: 12, // Default right padding (will be overridden for receiver)
@@ -1332,10 +1370,12 @@ const styles = StyleSheet.create({
     borderWidth: 0, // No border for cleaner look
     flexWrap: 'wrap', // Allow text to wrap to new lines
     overflow: 'hidden', // Hide overflow to keep footer inside bubble
-    minWidth: 50, // Minimum width to prevent too small bubbles
-    maxWidth: 300, // Maximum width to prevent overflow
+    minWidth: 100, // COMMENT: FIX - Increased minimum width to prevent time/checkmarks overlap in short messages
+    maxWidth: '100%', // ✅ MASTER FIX: Inherit from parent (messageBubbleWrapper) which inherits from messageContainer (85%)
+    // Changed from absolute 300px to percentage for responsive alignment across all screen sizes
     alignSelf: 'flex-start', // Size to content width
-    position: 'relative', // For absolute positioning of footer
+    position: 'relative', // ✅ LAYERED ARCHITECTURE: Relative positioning for footer layer (time + checkmarks)
+    // Footer layer adapts to bubble size and positions in corners
   },
   ownMessageBubble: {
     // Own messages (sent): 3 corners rounded (top-left, top-right, bottom-left)
@@ -1355,7 +1395,8 @@ const styles = StyleSheet.create({
     fontSize: 11, // Slightly increased from 9.6 to 11
     lineHeight: 14.85, // fontSize * 1.35 = 11 * 1.35 = 14.85
     letterSpacing: 0.15,
-    marginBottom: 6, // Spacing between paragraphs
+    marginBottom: 6, // Spacing between paragraphs (for multi-paragraph text)
+    // ✅ MASTER FIX: Additional bottom margin added inline to prevent footer overlap
     // Text wraps naturally when constrained by maxWidth
   },
   // ✅ MODERN 2025: Voice message with horizontal pill layout
@@ -1417,15 +1458,16 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     // ✅ MODERN 2025 DESIGN: Self-contained MediaTile with modern styling
-    width: '100%',
-    maxWidth: '85%', // Match image container (modern apps use 80-85%)
+    width: '100%', // Fill available width of parent (messageContainer which has maxWidth: '85%')
+    // ✅ MASTER FIX: Removed redundant maxWidth - inherits from messageContainer (85%)
+    // Parent already constrains width, so child just needs to fill parent
     position: 'relative',
     borderRadius: 16, // Modern rounded corners
     overflow: 'hidden',
     backgroundColor: 'transparent',
     marginVertical: 2, // Subtle spacing
-    marginHorizontal: 0,
-    padding: 0,
+    marginHorizontal: 0, // Inherits horizontal margin from messageContainer
+    padding: 0, // ✅ CRITICAL: No padding on clipping node
     // Modern shadow for depth
     elevation: 2,
     shadowColor: '#000',
@@ -1520,20 +1562,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   messageFooter: {
-    position: 'absolute', // Position absolutely at bottom of bubble
+    // ✅ LAYERED ARCHITECTURE: Footer layer (time + checkmarks) adapts to bubble size
+    position: 'absolute', // Absolutely positioned relative to messageBubble (parent container)
     bottom: 4, // 4px from bottom of bubble
-    right: 12, // 12px from right edge (adjust based on message type)
-    left: 12, // 12px from left edge (adjust based on message type)
+    // ✅ LAYERED ARCHITECTURE: Footer adapts to bubble width - spans from left to right edges
+    // Footer width = bubble width - 24px (12px left + 12px right)
+    // This ensures footer adapts to bubble size automatically
+    left: 12, // ✅ ADAPTS TO BUBBLE: 12px from left edge of bubble
+    right: 12, // ✅ ADAPTS TO BUBBLE: 12px from right edge of bubble
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end', // Right-align footer (LTR) or flex-start (RTL)
-    gap: 4,
+    justifyContent: 'space-between', // ✅ LAYERED ARCHITECTURE: Time on left corner, checkmarks on right corner
+    gap: 6, // Spacing between time and status icon
     minWidth: 0, // Allow shrinking below content size
-    maxWidth: '100%', // Ensure footer doesn't exceed bubble width
+    maxWidth: '100%', // ✅ ADAPTS TO BUBBLE: Footer never exceeds bubble width
     paddingHorizontal: 0, // Remove extra padding
-    flexShrink: 1, // Allow footer to shrink if needed
-    flexWrap: 'wrap', // Allow wrapping if content is too long
-    zIndex: 1, // Ensure footer appears above content
+    flexShrink: 0, // ✅ LAYERED ARCHITECTURE: Don't shrink - maintain corner positions
+    flexWrap: 'nowrap', // ✅ LAYERED ARCHITECTURE: Prevent wrapping - keep in single line
+    zIndex: 10, // ✅ LAYERED ARCHITECTURE: Higher z-index - footer layer above text layer
+    minHeight: 18, // Minimum height to prevent overlap
+    pointerEvents: 'none', // ✅ LAYERED ARCHITECTURE: Allow text selection through footer area
+    // ✅ LAYERED ARCHITECTURE: Footer layer adapts to bubble, positioned in corners
+    // Time and checkmarks both have functions (interactive) but layer adapts to bubble
   },
   mediaFooter: {
     // Legacy footer style - kept for compatibility
@@ -1574,13 +1624,16 @@ const styles = StyleSheet.create({
     maxWidth: '90%', // Prevent overflow on very long timestamps
   },
   footerLeft: {
+    // ✅ LAYERED ARCHITECTURE: Time container - sticks to left corner of footer layer
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginRight: 'auto', // Push to left for incoming messages
-    flexShrink: 1, // Allow shrinking to prevent overflow
+    marginRight: 'auto', // ✅ LAYERED ARCHITECTURE: Always push to left corner (opposite from checkmarks)
+    flexShrink: 0, // ✅ LAYERED ARCHITECTURE: Don't shrink - maintain position at left corner
     minWidth: 0, // Allow shrinking below content size
-    maxWidth: '90%', // Constrain to prevent overflow (leave room for status icon)
+    maxWidth: '60%', // ✅ LAYERED ARCHITECTURE: Reduced to ensure time stays on left, leaves room for checkmarks on right
+    pointerEvents: 'auto', // ✅ LAYERED ARCHITECTURE: Time has function (interactive) - allow interaction
+    flexWrap: 'nowrap', // ✅ LAYERED ARCHITECTURE: Prevent wrapping - keep time on single line
   },
   pinIcon: {
     marginRight: 2,
@@ -1595,14 +1648,18 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
-    flexShrink: 1, // Allow text to shrink if needed
+    flexShrink: 0, // ✅ MASTER FIX: Don't shrink - keep time on single line
     minWidth: 0, // Allow shrinking below content size
+    // ✅ MASTER FIX: Prevent text wrapping - keep "8:33 PM" on one line
+    flexWrap: 'nowrap', // Prevent wrapping
   },
   statusIcon: {
-    marginLeft: 4,
-    flexShrink: 0, // Keep checkmarks visible, don't shrink them
+    // ✅ LAYERED ARCHITECTURE: Checkmarks container - sticks to right corner of footer layer
+    marginLeft: 'auto', // ✅ LAYERED ARCHITECTURE: Push to right edge (opposite corner from time)
+    flexShrink: 0, // ✅ LAYERED ARCHITECTURE: Keep checkmarks visible, don't shrink them
     maxWidth: 24, // Constrain status icon width to prevent overflow
     minWidth: 20, // Minimum width for checkmarks
+    pointerEvents: 'auto', // ✅ LAYERED ARCHITECTURE: Checkmarks have function (interactive) - allow interaction
   },
   statusIconButton: {
     padding: 2,
@@ -1653,14 +1710,15 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     // ✅ MODERN 2025 DESIGN: Self-contained MediaTile with modern styling
-    width: '100%', // Fill available width
-    maxWidth: '85%', // Modern chat apps use 80-85%
+    width: '100%', // Fill available width of parent (messageContainer which has maxWidth: '85%')
+    // ✅ MASTER FIX: Removed redundant maxWidth - inherits from messageContainer (85%)
+    // Parent already constrains width, so child just needs to fill parent
     position: 'relative', // For absolute positioning of overlays
     borderRadius: 16, // ✅ Modern rounded corners (16px instead of 20px)
     overflow: 'hidden', // Clip media to rounded corners
     marginVertical: 2, // Subtle spacing between messages
-    marginHorizontal: 0,
-    // ✅ CRITICAL: NO PADDING on this node
+    marginHorizontal: 0, // Inherits horizontal margin from messageContainer
+    // ✅ CRITICAL: NO PADDING on this node (padding on clipping node causes visible side color)
     padding: 0,
     // Modern shadow for depth
     elevation: 2,
@@ -1817,17 +1875,18 @@ const styles = StyleSheet.create({
   },
   reactionsContainer: {
     position: 'absolute', // Position relative to bubble wrapper
-    left: -10, // Position at left edge for sender messages (half outside bubble - 10px overlap)
+    left: -12, // COMMENT: FIX - Slightly more offset to prevent overlap with bubble
     top: '50%', // Position at vertical middle
     transform: [{ translateY: -10 }], // Center vertically (half of typical button height)
     alignItems: 'center', // Center align items
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4, // Reduced gap between reaction icons
+    zIndex: 10, // COMMENT: FIX - Ensure reactions appear above other elements
   },
   reactionsContainerRight: {
     left: 'auto', // Remove left positioning
-    right: -10, // Position at right edge (end) for receiver messages (half outside bubble - 10px overlap)
+    right: -12, // COMMENT: FIX - Slightly more offset to prevent overlap with bubble
     // top: '50%', transform already set in base style for vertical centering
   },
   reactionRow: {
@@ -1844,7 +1903,10 @@ const styles = StyleSheet.create({
     gap: 2, // Reduced gap between emojis in container
   },
   reactionEmoji: {
-    fontSize: 12, // Reduced from 16 to 12
+    // ✅ ENHANCED: Better emoji display in reaction pills
+    fontSize: 14, // Slightly larger for better visibility
+    lineHeight: 18, // Proper line height for emoji
+    includeFontPadding: false, // Remove extra padding for cleaner look
   },
   addReactionButton: {
     width: 20, // Reduced from 28 to 20
@@ -1870,6 +1932,37 @@ const styles = StyleSheet.create({
     left: 'auto', // Remove left positioning
     right: -10, // Position at right edge (end) for receiver messages (half outside bubble - 10px overlap)
     // top: '50%', transform already set in base style for vertical centering
+  },
+  reactionPill: {
+    // ✅ ENHANCED: Modern reaction pill button with professional styling
+    width: 28, // Optimal size for touch target (icon button)
+    height: 28, // Optimal size for touch target
+    borderRadius: 14, // Perfect circle (half of width/height)
+    justifyContent: 'center',
+    alignItems: 'center',
+    // ✅ Modern glassmorphism effect
+    backgroundColor: 'rgba(255,255,255,0.1)', // Semi-transparent white
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)', // Subtle border for depth
+    // ✅ Modern shadow for depth and elevation
+    elevation: 3, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    // ✅ Smooth transitions
+    transition: 'all 0.2s ease',
+  },
+  reactionPillEmoji: {
+    // ✅ ENHANCED: Flexible width for emoji pills to accommodate multiple emojis
+    width: 'auto', // Override fixed width - adapt to content
+    minWidth: 28, // Minimum size for touch target
+    height: 28, // Fixed height for consistency
+    borderRadius: 14, // Rounded pill shape
+    paddingHorizontal: 8, // Horizontal padding for emojis
+    paddingVertical: 4, // Vertical padding for emojis
+    flexDirection: 'row', // ✅ ENHANCED: Row layout for multiple emojis
+    gap: 2, // ✅ ENHANCED: Small gap between emojis
   },
   addReactionText: {
     fontSize: 12, // Reduced from 18 to 12 to match smaller button
@@ -1937,14 +2030,18 @@ if (__DEV__) {
     err(ic, 'imageContainer minHeight must be >= 160dp (prevents collapse before load).');
   }
   
-  // ✅ Binary QA: Assert width for proper sizing (fixed 250px)
-  if (vc?.width && vc.width !== 250) {
-    err(vc, 'videoContainer width should be 250px (fixed size).');
+  // ✅ MASTER FIX: Updated assertion - videoContainer should use width: '100%' to inherit from parent
+  // Removed outdated assertion about fixed 250px width
+  if (vc?.width && vc.width !== '100%') {
+    err(vc, 'videoContainer should use width: 100% to inherit from messageContainer');
   }
-  if (ic?.maxWidth && ic.maxWidth !== '80%' && ic.maxWidth !== '78%') {
-    if (typeof ic.maxWidth === 'string' && !ic.maxWidth.match(/^7[5-9]%|8[0-9]%$/)) {
-      err(ic, 'imageContainer maxWidth should be 75-80% (match chat width policy).');
-    }
+  // ✅ MASTER FIX: Updated assertion - media containers should NOT have maxWidth
+  // They should inherit from messageContainer (85%) via width: '100%'
+  if (ic?.maxWidth) {
+    err(ic, 'imageContainer should NOT have maxWidth - inherit from messageContainer via width: 100%');
+  }
+  if (vc?.maxWidth) {
+    err(vc, 'videoContainer should NOT have maxWidth - inherit from messageContainer via width: 100%');
   }
 }
 

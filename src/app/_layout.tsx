@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Linking, Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import AuthProvider from '../contexts/AuthContext';
@@ -121,6 +121,79 @@ export default function RootLayout() {
       logger.warn('[Cold Start] Failed to mark first render:', error);
     }
   }, []);
+
+  // 🍎 Apple Compliance: Handle deep links for external browser payment return
+  React.useEffect(() => {
+    // Handle initial deep link (if app opened via deep link)
+    const handleInitialURL = async () => {
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          handleDeepLink(initialUrl);
+        }
+      } catch (error) {
+        logger.error('Error getting initial URL:', error);
+      }
+    };
+
+    // Handle deep links while app is running
+    const handleURL = (event: { url: string }) => {
+      handleDeepLink(event.url);
+    };
+
+    const subscription = Linking.addEventListener('url', handleURL);
+    handleInitialURL();
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  /**
+   * 🍎 Apple Compliance: Handle payment deep links
+   * Called when user returns from external browser (Safari) after payment
+   */
+  const handleDeepLink = (url: string) => {
+    try {
+      logger.info('🔗 Deep link received:', url);
+      
+      if (!url.includes('guild://payment')) {
+        return; // Not a payment deep link
+      }
+
+      // Parse deep link
+      const urlObj = new URL(url);
+      const path = urlObj.pathname;
+      
+      if (path.includes('/success')) {
+        const transactionId = urlObj.searchParams.get('transaction_id') || 'unknown';
+        const orderId = urlObj.searchParams.get('order_id') || 'unknown';
+        
+        logger.info('✅ Payment success deep link:', { transactionId, orderId });
+        
+        // Navigate to payment success screen or show success message
+        // The payment modal will handle verification
+        // For now, we'll just log it - the payment components will handle verification
+        
+      } else if (path.includes('/failure')) {
+        const orderId = urlObj.searchParams.get('order_id') || 'unknown';
+        const error = urlObj.searchParams.get('error') || 'Payment failed';
+        
+        logger.error('❌ Payment failure deep link:', { orderId, error });
+        
+        // Navigate to payment failure screen or show error message
+        
+      } else if (path.includes('/cancel')) {
+        const orderId = urlObj.searchParams.get('order_id') || 'unknown';
+        
+        logger.info('⚠️ Payment cancelled deep link:', { orderId });
+        
+        // Navigate back or show cancellation message
+      }
+    } catch (error) {
+      logger.error('❌ Error handling deep link:', error);
+    }
+  };
 
   return (
     <View style={styles.rootContainer}>

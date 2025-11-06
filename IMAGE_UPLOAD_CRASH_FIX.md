@@ -228,3 +228,6 @@ try {
 The image upload should now work correctly without crashes. If issues persist, check logs for specific error messages.
 
 
+
+
+

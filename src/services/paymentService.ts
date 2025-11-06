@@ -1,7 +1,8 @@
 /**
  * Payment Service
- * Handles payment initiation and verification with Fatora PSP
- * Integrates with backend Fatora API
+ * ✅ SADAD: Handles payment initiation and verification with Sadad PSP
+ * ❌ FATORA: Replaced Fatora with Sadad as primary payment gateway
+ * Integrates with backend Sadad API
  */
 
 import { BackendAPI } from '../config/backend';
@@ -36,7 +37,8 @@ export interface PaymentVerificationResult {
 }
 
 /**
- * Initiate payment with Fatora
+ * ✅ SADAD: Initiate payment with Sadad
+ * ❌ FATORA: Replaced Fatora with Sadad
  * Creates a checkout session and returns the payment URL
  */
 export const initiatePayment = async (
@@ -70,7 +72,7 @@ export const initiatePayment = async (
       logger.warn('Failed to get FCM token (push notifications disabled):', error);
     }
 
-    // Call backend to create Fatora checkout
+    // ✅ SADAD: Call backend to create Sadad checkout
     const response = await BackendAPI.post('/payments/create', {
       amount: request.amount,
       orderId: request.orderId,
@@ -125,7 +127,8 @@ export const initiatePayment = async (
 
 /**
  * Verify payment status
- * Checks the payment status with backend/Fatora
+ * ✅ SADAD: Checks the payment status with backend/Sadad
+ * ❌ FATORA: Replaced Fatora with Sadad
  */
 export const verifyPayment = async (
   paymentId: string

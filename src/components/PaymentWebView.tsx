@@ -1,8 +1,11 @@
 /**
  * Payment WebView Component
- * Displays Fatora payment page in WebView and detects completion
- * Follows Fatora's official mobile integration guide
- * Reference: https://fatora.io/api/mobileIntegration.php
+ * 🍎 Apple Compliance: Uses external browser (Safari) on iOS instead of WebView
+ * ✅ SADAD: Displays Sadad payment page
+ * ❌ FATORA: Replaced Fatora with Sadad
+ * 
+ * iOS: Opens payment in Safari (external browser) - Required for App Store compliance
+ * Android: Can use WebView or external browser (configurable)
  */
 
 import React, { useRef, useState, useEffect, useCallback, memo } from 'react';
@@ -12,12 +15,14 @@ import {
   ActivityIndicator, 
   TouchableOpacity,
   Text,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WebView, { WebViewNavigation } from 'react-native-webview';
 import { X } from 'lucide-react-native';
 import { logger } from '../utils/logger';
+import { openExternalPayment, requiresExternalBrowser } from '../utils/externalPayment';
 
 interface PaymentWebViewProps {
   checkoutUrl: string;
@@ -40,6 +45,9 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const webViewRef = useRef<WebView>(null);
+  
+  // 🍎 Apple Compliance: Check if external browser is required (iOS)
+  const useExternalBrowser = requiresExternalBrowser();
 
   // COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized load handlers with useCallback
   const handleLoadStart = useCallback(() => {
@@ -55,9 +63,29 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
   }, []);
 
   useEffect(() => {
-    // COMMENT: PRODUCTION HARDENING - Task 2.7 - Use logger instead of console.log
+    // 🍎 Apple Compliance: On iOS, open payment in external browser (Safari)
+    if (useExternalBrowser) {
+      logger.info('🍎 iOS detected - Opening payment in Safari (external browser) for Apple compliance');
+      openExternalPayment(
+        checkoutUrl,
+        'unknown', // orderId not available here, will be extracted from deep link
+        (transactionId, orderId) => {
+          logger.info('✅ Payment successful from external browser:', { transactionId, orderId });
+          onSuccess(transactionId, orderId);
+        },
+        (error) => {
+          logger.error('❌ Payment failed from external browser:', error);
+          onFailure(error);
+        }
+      );
+      // Close this component since we're using external browser
+      // User will return via deep link
+      return;
+    }
+    
+    // Android: Use WebView (or can also use external browser)
     logger.info('💳 Payment WebView opened', { checkoutUrl: checkoutUrl.substring(0, 50) + '...' });
-  }, [checkoutUrl]);
+  }, [checkoutUrl, useExternalBrowser, onSuccess, onFailure]);
 
   /**
    * Handle URL changes - detect success/failure
@@ -184,13 +212,45 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
     onFailure(errorMessage, `HTTP_${statusCode}`);
   }, [onFailure]);
 
+  // 🍎 Apple Compliance: On iOS, show message instead of WebView
+  if (useExternalBrowser) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Opening Payment</Text>
+            <Text style={styles.headerSubtitle}>Powered by Sadad</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <X size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.externalBrowserContainer}>
+          <ActivityIndicator size="large" color="#00FF88" />
+          <Text style={styles.externalBrowserTitle}>Opening Safari...</Text>
+          <Text style={styles.externalBrowserText}>
+            Your payment page is opening in Safari.{'\n'}
+            Complete your payment there, then return to the app.
+          </Text>
+          <Text style={styles.externalBrowserNote}>
+            🍎 This is required for App Store compliance
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header with close button */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Secure Payment</Text>
-          <Text style={styles.headerSubtitle}>Powered by Fatora</Text>
+          <Text style={styles.headerSubtitle}>Powered by Sadad</Text>
         </View>
         <TouchableOpacity 
           style={styles.closeButton} 
@@ -318,6 +378,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     fontWeight: '500',
+  },
+  externalBrowserContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    backgroundColor: '#0A0A0A',
+  },
+  externalBrowserTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 24,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  externalBrowserText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  externalBrowserNote: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 24,
   },
 });
 

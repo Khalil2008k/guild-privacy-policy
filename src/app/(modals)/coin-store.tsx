@@ -3,7 +3,7 @@
  * Modern e-commerce design matching app style
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,6 +28,49 @@ import { WebView } from 'react-native-webview';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '../../utils/logger';
+// 🍎 Apple Compliance: External browser payment utility
+import { openExternalPayment, requiresExternalBrowser } from '../../utils/externalPayment';
+
+// 🍎 Apple Compliance: External browser payment component for iOS
+const ExternalBrowserPaymentView: React.FC<{
+  paymentUrl: string;
+  paymentId: string;
+  onSuccess: () => void;
+  onFailure: () => void;
+  theme: any;
+}> = ({ paymentUrl, paymentId, onSuccess, onFailure, theme }) => {
+  useEffect(() => {
+    // Open payment in Safari on mount
+    openExternalPayment(
+      paymentUrl,
+      paymentId,
+      (transactionId, orderId) => {
+        logger.info('✅ Payment successful from external browser:', { transactionId, orderId });
+        onSuccess();
+      },
+      (error) => {
+        logger.error('❌ Payment failed from external browser:', error);
+        onFailure();
+      }
+    );
+  }, [paymentUrl, paymentId, onSuccess, onFailure]);
+
+  return (
+    <View style={styles.externalBrowserContainer}>
+      <ActivityIndicator size="large" color={theme.primary} />
+      <Text style={[styles.externalBrowserTitle, { color: theme.textPrimary }]}>
+        Opening Safari...
+      </Text>
+      <Text style={[styles.externalBrowserText, { color: theme.textSecondary }]}>
+        Your payment page is opening in Safari.{'\n'}
+        Complete your payment there, then return to the app.
+      </Text>
+      <Text style={[styles.externalBrowserNote, { color: theme.textSecondary }]}>
+        🍎 This is required for App Store compliance
+      </Text>
+    </View>
+  );
+};
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -131,6 +174,8 @@ export default function CoinStoreScreen() {
 
   const handleConfirmPayment = () => {
     setShowConfirmModal(false);
+    // 🍎 Apple Compliance: On iOS, payment opens in external browser (Safari)
+    // WebView is only used on Android
     setShowPaymentWebView(true);
   };
 
@@ -547,7 +592,8 @@ export default function CoinStoreScreen() {
         </View>
       </Modal>
 
-      {/* Fatora Payment WebView Modal */}
+      {/* ✅ SADAD: Sadad Payment WebView Modal */}
+      {/* 🍎 Apple Compliance: On iOS, opens in external browser (Safari) instead of WebView */}
       <Modal
         visible={showPaymentWebView}
         animationType="slide"
@@ -578,49 +624,61 @@ export default function CoinStoreScreen() {
             <View style={[styles.securityBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
               <CheckCircle size={16} color={theme.primary} />
               <Text style={[styles.securityBadgeText, { color: theme.textPrimary }]}>
-                {t('securePaymentViaFatora')}
+                {t('securePaymentViaSadad')}
               </Text>
             </View>
           </View>
 
-          {/* WebView */}
+          {/* 🍎 Apple Compliance: Use external browser on iOS, WebView on Android */}
           {paymentUrl ? (
-            <WebView
-              source={{ uri: paymentUrl }}
-              style={styles.webView}
-              onNavigationStateChange={(navState) => {
-                // COMMENT: PRIORITY 1 - Replace console.log with logger
-                logger.debug('Navigation:', navState.url);
-                
-                // Check for success/failure URLs
-                if (navState.url.includes('success') || navState.url.includes('payment/success')) {
-                  handlePaymentSuccess();
-                } else if (navState.url.includes('failed') || navState.url.includes('payment/failed')) {
+            requiresExternalBrowser() ? (
+              // iOS: Show message and open external browser
+              <ExternalBrowserPaymentView
+                paymentUrl={paymentUrl}
+                paymentId={paymentId}
+                onSuccess={handlePaymentSuccess}
+                onFailure={handlePaymentFailure}
+                theme={theme}
+              />
+            ) : (
+              // Android: Use WebView
+              <WebView
+                source={{ uri: paymentUrl }}
+                style={styles.webView}
+                onNavigationStateChange={(navState) => {
+                  // COMMENT: PRIORITY 1 - Replace console.log with logger
+                  logger.debug('Navigation:', navState.url);
+                  
+                  // Check for success/failure URLs
+                  if (navState.url.includes('success') || navState.url.includes('payment/success')) {
+                    handlePaymentSuccess();
+                  } else if (navState.url.includes('failed') || navState.url.includes('payment/failed')) {
+                    handlePaymentFailure();
+                  } else if (navState.url.includes('cancel') || navState.url.includes('payment/cancel')) {
+                    handlePaymentClose();
+                  }
+                }}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  // COMMENT: PRIORITY 1 - Replace console.error with logger
+                  logger.error('WebView error:', nativeEvent);
                   handlePaymentFailure();
-                } else if (navState.url.includes('cancel') || navState.url.includes('payment/cancel')) {
-                  handlePaymentClose();
-                }
-              }}
-              onError={(syntheticEvent) => {
-                const { nativeEvent } = syntheticEvent;
-                // COMMENT: PRIORITY 1 - Replace console.error with logger
-                logger.error('WebView error:', nativeEvent);
-                handlePaymentFailure();
-              }}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={theme.primary} />
-                  <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                    {t('loadingPaymentGateway')}
-                  </Text>
-                </View>
-              )}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              thirdPartyCookiesEnabled={true}
-              sharedCookiesEnabled={true}
-            />
+                }}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                    <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                      {t('loadingPaymentGateway')}
+                    </Text>
+                  </View>
+                )}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                thirdPartyCookiesEnabled={true}
+                sharedCookiesEnabled={true}
+              />
+            )
           ) : (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.primary} />
@@ -1014,6 +1072,31 @@ const styles = StyleSheet.create({
   },
   webViewContainer: {
     flex: 1,
+  },
+  externalBrowserContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  externalBrowserTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 24,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  externalBrowserText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  externalBrowserNote: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 24,
   },
   webViewHeader: {
     paddingHorizontal: 16,

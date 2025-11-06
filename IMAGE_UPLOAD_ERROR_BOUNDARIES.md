@@ -148,3 +148,6 @@ The multiple layers of error handling should prevent crashes and provide clear e
 All error boundaries and try/catch blocks are in place. The app should no longer crash when sending images - errors will be caught and displayed to the user.
 
 
+
+
+

@@ -150,3 +150,6 @@ setMessages((currentMessages) => {
 The app should no longer crash when sending images. All state updates now use functional form to avoid stale closure issues.
 
 
+
+
+

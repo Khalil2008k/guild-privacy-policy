@@ -1,7 +1,10 @@
 /**
  * Payment Modal Screen
- * Displays payment details and initiates Fatora payment
- * Opens WebView for secure payment processing
+ * 🍎 Apple Compliance: Opens payment in external browser (Safari) on iOS
+ * ✅ SADAD: Displays payment details and initiates Sadad payment
+ * ❌ FATORA: Replaced Fatora with Sadad
+ * iOS: Opens Safari (external browser) - Required for App Store compliance
+ * Android: Can use WebView or external browser
  */
 
 import React, { useState, useCallback, Suspense, lazy } from 'react';

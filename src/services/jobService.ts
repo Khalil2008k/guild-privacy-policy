@@ -65,6 +65,15 @@ export interface Job {
   rejectionReason?: string;
   reviewedBy?: string;
   reviewedAt?: Date;
+  // Arabic language fields
+  titleAr?: string;
+  descriptionAr?: string;
+  locationAr?: string;
+  requirementsAr?: string;
+  deliverablesAr?: string;
+  primaryLanguage?: 'en' | 'ar' | 'both';
+  rating?: number;
+  posterGID?: string;
 }
 
 export interface Offer {
