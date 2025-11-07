@@ -587,20 +587,24 @@ export default function CoinStoreScreen() {
               <X size={24} color={theme.textSecondary} />
             </TouchableOpacity>
 
-            {/* Success Icon */}
-            <View style={[styles.confirmIconContainer, { backgroundColor: theme.primary }]}>
-              <CheckCircle size={48} color="#000000" />
-            </View>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: insets.bottom }}
+            >
+              {/* Success Icon */}
+              <View style={[styles.confirmIconContainer, { backgroundColor: theme.primary }]}>
+                <CheckCircle size={48} color="#000000" />
+              </View>
 
-            {/* Title */}
-            <Text style={[styles.confirmTitle, { color: theme.textPrimary }]}>
-              {t('orderConfirmation')}
-            </Text>
-            <Text style={[styles.confirmSubtitle, { color: theme.textSecondary }]}>
-              {t('reviewOrder')}
-            </Text>
+              {/* Title */}
+              <Text style={[styles.confirmTitle, { color: theme.textPrimary }]}>
+                {t('orderConfirmation')}
+              </Text>
+              <Text style={[styles.confirmSubtitle, { color: theme.textSecondary }]}>
+                {t('reviewOrder')}
+              </Text>
 
-            {/* Order Summary Card */}
+              {/* Order Summary Card */}
             <View style={[styles.orderSummaryCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
               <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
@@ -649,38 +653,39 @@ export default function CoinStoreScreen() {
                   {t('securePaymentDescription')}
                 </Text>
               </View>
-            </View>
+              </View>
 
-            {/* Action Buttons */}
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                handleConfirmPayment();
-              }}
-              style={[styles.confirmButton, { backgroundColor: theme.primary }]}
-            >
-              <Wallet size={20} color="#000000" />
-              <Text style={styles.confirmButtonText}>
-                {t('proceedToPayment')}
-              </Text>
-              {isRTL ? (
-                <ArrowLeft size={20} color="#000000" />
-              ) : (
-                <ArrowRight size={20} color="#000000" />
-              )}
-            </TouchableOpacity>
+              {/* Action Buttons */}
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                  handleConfirmPayment();
+                }}
+                style={[styles.confirmButton, { backgroundColor: theme.primary }]}
+              >
+                <Wallet size={20} color="#000000" />
+                <Text style={styles.confirmButtonText}>
+                  {t('proceedToPayment')}
+                </Text>
+                {isRTL ? (
+                  <ArrowLeft size={20} color="#000000" />
+                ) : (
+                  <ArrowRight size={20} color="#000000" />
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowConfirmModal(false);
-              }}
-              style={[styles.cancelButton, { borderColor: theme.border }]}
-            >
-              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
-                {t('notNow')}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowConfirmModal(false);
+                }}
+                style={[styles.cancelButton, { borderColor: theme.border }]}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
+                  {t('notNow')}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>

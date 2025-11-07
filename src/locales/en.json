@@ -162,6 +162,8 @@
   "securePayment": "Secure Payment",
   "securePaymentDescription": "Your payment is processed securely through Sadad Payment Gateway",
   "proceedToPayment": "Proceed to Payment",
+  "acceptAndPay": "Accept and Pay",
+  "notNow": "Not Now",
   "locationPermissionRequired": "Location Permission Required",
   "locationPermissionMessage": "We need location permission to get your current location",
   "locationSet": "Location Set",

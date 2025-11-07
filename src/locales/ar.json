@@ -164,6 +164,8 @@
   "securePayment": "دفع آمن",
   "securePaymentDescription": "يتم معالجة دفعتك بشكل آمن من خلال بوابة الدفع سداد",
   "proceedToPayment": "متابعة إلى الدفع",
+  "acceptAndPay": "موافق والدفع",
+  "notNow": "ليس الآن",
   "locationPermissionRequired": "إذن الموقع مطلوب",
   "locationPermissionMessage": "نحتاج إذن الموقع لتحديد موقعك الحالي",
   "locationSet": "تم تحديد الموقع",
