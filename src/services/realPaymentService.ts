@@ -17,6 +17,21 @@ export interface Wallet {
   createdAt: Date;
   updatedAt: Date;
   isDemoMode: boolean;
+  available?: number;
+  hold?: number;
+  released?: number;
+  totalEarned?: number;
+  totalSpent?: number;
+  balances?: Record<string, number>;
+  balanceDetails?: Array<{
+    symbol: string;
+    name: string;
+    quantity: number;
+    value: number;
+    totalValue: number;
+    icon: string;
+    color: string;
+  }>;
 }
 
 export interface Transaction {
@@ -78,28 +93,49 @@ class RealPaymentService {
    */
   async getWallet(userId: string): Promise<Wallet | null> {
     try {
-      const response = await BackendAPI.get(`/api/v1/payments/wallet/${userId}`);
-      if (response?.data?.success === true) {
-        return response.data.data || response.data.wallet;
+      // Use the new coin balance endpoint
+      const response = await BackendAPI.get(`/api/coins/balance`);
+      
+      if (response?.data?.success === true || response?.success === true) {
+        const data = response.data || response;
+        const balanceData = data.data || data;
+        
+        // Convert coin balance response to Wallet format
+        return {
+          userId: balanceData.userId || userId,
+          balance: balanceData.totalValue || balanceData.totalQAREquivalent || 0,
+          currency: 'Guild Coins' as const,
+          transactions: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isDemoMode: false,
+          available: balanceData.totalValue || balanceData.totalQAREquivalent || 0,
+          hold: 0,
+          released: 0,
+          totalEarned: balanceData.totalValue || balanceData.totalQAREquivalent || 0,
+          totalSpent: 0,
+          balances: balanceData.balances || {},
+          balanceDetails: balanceData.balanceDetails || []
+        };
       }
       
-      // If no wallet exists, create one
+      // If no wallet exists, return default
       return await this.initializeWallet(userId);
     } catch (error) {
       logger.warn('Error getting wallet (using offline mode):', error);
       // Return default wallet for offline mode with proper structure
       return {
         userId,
-        balance: this.INITIAL_BETA_BALANCE,
+        balance: 0, // Start with 0 instead of beta balance
         currency: this.BETA_CURRENCY,
         transactions: [],
         createdAt: new Date(),
         updatedAt: new Date(),
         isDemoMode: true, // Set to true for offline mode
-        available: this.INITIAL_BETA_BALANCE,
+        available: 0,
         hold: 0,
         released: 0,
-        totalEarned: this.INITIAL_BETA_BALANCE,
+        totalEarned: 0,
         totalSpent: 0
       };
     }
