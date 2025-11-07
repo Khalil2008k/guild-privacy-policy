@@ -370,7 +370,7 @@ export default function CoinStoreScreen() {
         </View>
 
         {/* Current Balance Card */}
-        {wallet && wallet.balance > 0 && (
+        {wallet && typeof wallet.balance === 'number' && wallet.balance > 0 && (
           <View style={[styles.balanceCard, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
             <View style={[styles.balanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Wallet size={20} color={theme.primary} />
@@ -381,7 +381,7 @@ export default function CoinStoreScreen() {
             <Text style={[styles.balanceAmount, { color: theme.primary }]}>
               {wallet.balance.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
             </Text>
-            {wallet.balanceDetails && wallet.balanceDetails.length > 0 && (
+            {wallet.balanceDetails && Array.isArray(wallet.balanceDetails) && wallet.balanceDetails.length > 0 && (
               <View style={[styles.balanceCoins, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {wallet.balanceDetails.map((coin: any) => (
                   <View key={coin.symbol} style={[styles.balanceCoinItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
