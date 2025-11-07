@@ -109,7 +109,7 @@ export default function CoinStoreScreen() {
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useI18n();
   const { theme } = useTheme();
-  const { refreshWallet } = useRealPayment();
+  const { wallet, refreshWallet } = useRealPayment();
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -368,6 +368,35 @@ export default function CoinStoreScreen() {
             {t('neverExpire')}. {t('canBeWithdrawn')}.
           </Text>
         </View>
+
+        {/* Current Balance Card */}
+        {wallet && wallet.balance > 0 && (
+          <View style={[styles.balanceCard, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+            <View style={[styles.balanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Wallet size={20} color={theme.primary} />
+              <Text style={[styles.balanceTitle, { color: theme.textPrimary, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+                {isRTL ? 'رصيدك الحالي' : 'Your Current Balance'}
+              </Text>
+            </View>
+            <Text style={[styles.balanceAmount, { color: theme.primary }]}>
+              {wallet.balance.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
+            </Text>
+            {wallet.balanceDetails && wallet.balanceDetails.length > 0 && (
+              <View style={[styles.balanceCoins, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                {wallet.balanceDetails.map((coin: any) => (
+                  <View key={coin.symbol} style={[styles.balanceCoinItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <Text style={[styles.balanceCoinQty, { color: theme.textPrimary }]}>
+                      {coin.quantity}×
+                    </Text>
+                    <Text style={[styles.balanceCoinSymbol, { color: theme.textSecondary, marginLeft: isRTL ? 0 : 4, marginRight: isRTL ? 4 : 0 }]}>
+                      {coin.symbol}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Coins Grid */}
         <View style={styles.grid}>
@@ -926,6 +955,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONT_FAMILY,
     lineHeight: 20,
+  },
+  balanceCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  balanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  balanceTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: FONT_FAMILY,
+  },
+  balanceAmount: {
+    fontSize: 32,
+    fontWeight: '700',
+    fontFamily: FONT_FAMILY,
+    marginBottom: 12,
+  },
+  balanceCoins: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  balanceCoinItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  balanceCoinQty: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: FONT_FAMILY,
+  },
+  balanceCoinSymbol: {
+    fontSize: 14,
+    fontFamily: FONT_FAMILY,
   },
   grid: { 
     flexDirection: 'row', 
