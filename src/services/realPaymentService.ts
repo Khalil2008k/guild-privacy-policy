@@ -47,6 +47,7 @@ export interface Transaction {
   reference?: string;
   fees?: number;
   netAmount?: number;
+  coins?: Record<string, number>;
 }
 
 export interface PaymentRequest {
@@ -100,12 +101,15 @@ class RealPaymentService {
         const data = response.data || response;
         const balanceData = data.data || data;
         
+        // Fetch transactions
+        const transactions = await this.getTransactionHistory(userId, 50);
+        
         // Convert coin balance response to Wallet format
         return {
           userId: balanceData.userId || userId,
           balance: balanceData.totalValue || balanceData.totalQAREquivalent || 0,
           currency: 'Guild Coins' as const,
-          transactions: [],
+          transactions: transactions,
           createdAt: new Date(),
           updatedAt: new Date(),
           isDemoMode: false,
@@ -269,10 +273,26 @@ class RealPaymentService {
    */
   async getTransactionHistory(userId: string, limit: number = 50): Promise<Transaction[]> {
     try {
-      const response = await BackendAPI.get(`/api/v1/payments/transactions/${userId}?limit=${limit}`);
+      const response = await BackendAPI.get(`/api/coins/transactions?limit=${limit}`);
       
-      if (response.data.success) {
-        return response.data.transactions;
+      if (response?.data?.success || response?.success) {
+        const data = response.data || response;
+        const transactions = data.data || data.transactions || [];
+        
+        // Convert coin ledger entries to Transaction format
+        return transactions.map((entry: any) => ({
+          id: entry.id,
+          type: entry.type === 'credit' ? 'deposit' : 'payment',
+          amount: entry.qarValue || 0,
+          currency: 'QAR',
+          description: entry.description || 'Transaction',
+          status: entry.status || 'completed',
+          createdAt: entry.createdAt ? new Date(entry.createdAt) : new Date(),
+          reference: entry.id,
+          fees: 0,
+          netAmount: entry.qarValue || 0,
+          coins: entry.coins || {}
+        }));
       }
       
       return [];
