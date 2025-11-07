@@ -3,7 +3,7 @@
  * Modern e-commerce design matching app style
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import {
   StatusBar,
   Image,
   Modal,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -116,6 +117,7 @@ export default function CoinStoreScreen() {
   const [showPaymentWebView, setShowPaymentWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState('');
   const [paymentId, setPaymentId] = useState('');
+  const paymentHandledRef = useRef(false);
 
   const total = Object.entries(cart).reduce((sum, [sym, qty]) => {
     const coin = COINS.find(c => c.symbol === sym);
@@ -247,6 +249,13 @@ export default function CoinStoreScreen() {
   };
 
   const handlePaymentSuccess = async () => {
+    // Prevent double handling
+    if (paymentHandledRef.current) {
+      logger.info('Payment already handled, skipping...');
+      return;
+    }
+    paymentHandledRef.current = true;
+    
     setShowPaymentWebView(false);
     setLoading(true);
     
@@ -266,18 +275,32 @@ export default function CoinStoreScreen() {
       logger.error('Error refreshing wallet:', error);
     } finally {
       setLoading(false);
+      // Reset ref after handling
+      setTimeout(() => {
+        paymentHandledRef.current = false;
+      }, 1000);
     }
   };
 
   const handlePaymentFailure = () => {
+    if (paymentHandledRef.current) {
+      return;
+    }
+    paymentHandledRef.current = true;
+    
     setShowPaymentWebView(false);
     CustomAlertService.showError(
       t('paymentFailed'),
       isRTL ? 'فشلت عملية الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.'
     );
+    
+    setTimeout(() => {
+      paymentHandledRef.current = false;
+    }, 1000);
   };
 
   const handlePaymentClose = () => {
+    paymentHandledRef.current = false;
     setShowPaymentWebView(false);
     CustomAlertService.showWarning(
       t('cancelPayment'),
@@ -743,17 +766,33 @@ export default function CoinStoreScreen() {
               <WebView
                 source={{ uri: paymentUrl }}
                 style={styles.webView}
+                originWhitelist={['*']}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
                 onNavigationStateChange={(navState) => {
-                  logger.debug('Navigation:', navState.url);
+                  logger.debug('📍 Navigation event:', navState.url);
                   
                   // Check for deep link (guildapp://) - payment completed
-                  if (navState.url.startsWith('guildapp://payment-success')) {
-                    logger.info('✅ Payment success deep link detected, closing WebView');
-                    handlePaymentSuccess();
-                    return false; // Prevent navigation
+                  // This catches the navigation on both iOS and Android
+                  if (navState.url.startsWith('guildapp://')) {
+                    logger.info('🔗 Deep link detected in navigation:', navState.url);
+                    
+                    if (navState.url.includes('payment-success')) {
+                      logger.info('✅ Handling payment success from deep link');
+                      handlePaymentSuccess();
+                    } else if (navState.url.includes('payment-failed')) {
+                      logger.info('❌ Handling payment failure from deep link');
+                      handlePaymentFailure();
+                    } else if (navState.url.includes('payment-cancel')) {
+                      logger.info('🚫 Handling payment cancellation from deep link');
+                      handlePaymentClose();
+                    }
+                    
+                    // Don't proceed with navigation
+                    return;
                   }
                   
-                  // Check for success/failure URLs
+                  // Fallback: Check for success/failure in regular URLs
                   if (navState.url.includes('success') || navState.url.includes('payment/success')) {
                     handlePaymentSuccess();
                   } else if (navState.url.includes('failed') || navState.url.includes('payment/failed')) {
@@ -763,15 +802,18 @@ export default function CoinStoreScreen() {
                   }
                 }}
                 onShouldStartLoadWithRequest={(request) => {
-                  // Intercept deep links and handle them
+                  logger.debug('🔍 onShouldStartLoadWithRequest:', request.url);
+                  
+                  // iOS: Intercept deep links BEFORE they load
+                  // Android: This may not always fire for custom schemes, so we rely on onNavigationStateChange
                   if (request.url.startsWith('guildapp://')) {
-                    logger.info('🔗 Deep link intercepted:', request.url);
+                    logger.info(`🔗 Deep link intercepted in onShouldStart (${Platform.OS}):`, request.url);
                     
-                    if (request.url.startsWith('guildapp://payment-success')) {
+                    if (request.url.includes('payment-success')) {
                       handlePaymentSuccess();
-                    } else if (request.url.startsWith('guildapp://payment-failed')) {
+                    } else if (request.url.includes('payment-failed')) {
                       handlePaymentFailure();
-                    } else if (request.url.startsWith('guildapp://payment-cancel')) {
+                    } else if (request.url.includes('payment-cancel')) {
                       handlePaymentClose();
                     }
                     
