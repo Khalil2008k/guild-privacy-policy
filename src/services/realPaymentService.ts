@@ -101,8 +101,14 @@ class RealPaymentService {
         const data = response.data || response;
         const balanceData = data.data || data;
         
-        // Fetch transactions
-        const transactions = await this.getTransactionHistory(userId, 50);
+        // Fetch transactions (non-blocking - don't fail if this errors)
+        let transactions: Transaction[] = [];
+        try {
+          transactions = await this.getTransactionHistory(userId, 50);
+        } catch (transError) {
+          logger.warn('Failed to fetch transactions, continuing without them:', transError);
+          // Continue without transactions - don't block wallet loading
+        }
         
         // Convert coin balance response to Wallet format
         return {
