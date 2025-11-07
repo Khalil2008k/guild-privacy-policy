@@ -30,6 +30,8 @@ import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { logger } from '../../utils/logger';
 // 🍎 Apple Compliance: External browser payment utility
 import { openExternalPayment, requiresExternalBrowser } from '../../utils/externalPayment';
+// ✅ SADAD WEB CHECKOUT 2.1: Firebase Auth for user data
+import { auth } from '../../config/firebase';
 
 // 🍎 Apple Compliance: External browser payment component for iOS
 const ExternalBrowserPaymentView: React.FC<{
@@ -40,19 +42,26 @@ const ExternalBrowserPaymentView: React.FC<{
   theme: any;
 }> = ({ paymentUrl, paymentId, onSuccess, onFailure, theme }) => {
   useEffect(() => {
-    // Open payment in Safari on mount
-    openExternalPayment(
-      paymentUrl,
-      paymentId,
-      (transactionId, orderId) => {
-        logger.info('✅ Payment successful from external browser:', { transactionId, orderId });
-        onSuccess();
-      },
-      (error) => {
-        logger.error('❌ Payment failed from external browser:', error);
-        onFailure();
-      }
-    );
+    // 🍎 iOS: Open payment URL directly in Safari (external browser)
+    // paymentUrl is now the actual payment URL, not a data URI
+    if (paymentUrl && !paymentUrl.startsWith('data:')) {
+      logger.info('🍎 Opening payment URL in Safari (external browser):', paymentUrl);
+      openExternalPayment(
+        paymentUrl,
+        paymentId,
+        (transactionId, orderId) => {
+          logger.info('✅ Payment successful from external browser:', { transactionId, orderId });
+          onSuccess();
+        },
+        (error) => {
+          logger.error('❌ Payment failed from external browser:', error);
+          onFailure();
+        }
+      );
+    } else {
+      logger.error('❌ Invalid payment URL for external browser:', paymentUrl);
+      onFailure();
+    }
   }, [paymentUrl, paymentId, onSuccess, onFailure]);
 
   return (
@@ -87,12 +96,12 @@ const COIN_IMAGES = {
 };
 
 const COINS = [
-  { symbol: 'GBC', name: 'Bronze', nameAr: 'برونزية', value: 5 },
-  { symbol: 'GSC', name: 'Silver', nameAr: 'فضية', value: 10 },
-  { symbol: 'GGC', name: 'Gold', nameAr: 'ذهبية', value: 50 },
-  { symbol: 'GPC', name: 'Platinum', nameAr: 'بلاتينية', value: 100 },
-  { symbol: 'GDC', name: 'Diamond', nameAr: 'ماسية', value: 200 },
-  { symbol: 'GRC', name: 'Ruby', nameAr: 'ياقوتية', value: 500 },
+  { symbol: 'GBC', name: 'Bronze', nameAr: 'برونزية', value: 5, price: 5.50 },
+  { symbol: 'GSC', name: 'Silver', nameAr: 'فضية', value: 10, price: 11.00 },
+  { symbol: 'GGC', name: 'Gold', nameAr: 'ذهبية', value: 50, price: 55.00 },
+  { symbol: 'GPC', name: 'Platinum', nameAr: 'بلاتينية', value: 100, price: 110.00 },
+  { symbol: 'GDC', name: 'Diamond', nameAr: 'ماسية', value: 200, price: 220.00 },
+  { symbol: 'GRC', name: 'Royal', nameAr: 'ملكية', value: 500, price: 550.00 },
 ];
 
 export default function CoinStoreScreen() {
@@ -109,6 +118,11 @@ export default function CoinStoreScreen() {
   const [paymentId, setPaymentId] = useState('');
 
   const total = Object.entries(cart).reduce((sum, [sym, qty]) => {
+    const coin = COINS.find(c => c.symbol === sym);
+    return sum + (coin?.price || 0) * qty;
+  }, 0);
+
+  const coinValue = Object.entries(cart).reduce((sum, [sym, qty]) => {
     const coin = COINS.find(c => c.symbol === sym);
     return sum + (coin?.value || 0) * qty;
   }, 0);
@@ -144,25 +158,78 @@ export default function CoinStoreScreen() {
     setLoading(true);
 
     try {
-      const response = await CoinStoreService.purchaseCoins(cart);
+      // ✅ SADAD WEB CHECKOUT 2.1: Use new web checkout endpoint
+      const { BackendAPI } = await import('../../config/backend');
       
-      // If there's a payment URL, show it (Fatora integration - ONLY way to connect to Fatora)
-      if (response.data?.paymentUrl) {
-        setPaymentUrl(response.data.paymentUrl);
-        setPaymentId(response.data?.paymentId || response.data?.payment_id || '');
+      // Get current user from Firebase Auth (no hooks - direct access)
+      // Use auth.currentUser directly, same as authTokenService.ts
+      if (!auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+      
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      // Calculate total amount (with 10% platform fee already included in prices)
+      const totalAmount = total; // Use pre-calculated total with markup
+
+      // Call NEW Sadad Coin Purchase endpoint (SHA-256 signature method)
+      const response = await BackendAPI.post('/api/coins/purchase/sadad/initiate', {
+        customAmount: totalAmount, // Use custom amount instead of package
+        email: currentUser.email || `${currentUser.uid}@guild.app`,
+        mobileNo: currentUser.phoneNumber || '+97450123456',
+        language: 'ENG'
+      });
+
+      // NEW: Response is JSON with formPayload (Sadad SHA-256 signature method)
+      if (response && response.success && response.data && response.data.formPayload) {
+        const { formPayload, orderId } = response.data;
+        
+        // Generate HTML form that auto-submits to Sadad
+        const formFields = Object.entries(formPayload.fields)
+          .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}">`)
+          .join('\n        ');
+        
+        const htmlForm = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting to Sadad Payment...</title>
+</head>
+<body>
+  <form id="sadadForm" action="${formPayload.action}" method="${formPayload.method}">
+    ${formFields}
+  </form>
+  <script>
+    document.getElementById('sadadForm').submit();
+  </script>
+</body>
+</html>`;
+        
+        let paymentUrl: string;
+        
+        if (requiresExternalBrowser()) {
+          // 🍎 iOS: Can't use data URI, must build URL manually
+          // Build query string from form fields
+          const queryParams = new URLSearchParams(formPayload.fields as Record<string, string>).toString();
+          paymentUrl = `${formPayload.action}?${queryParams}`;
+          logger.info('🍎 Built payment URL for iOS external browser:', paymentUrl);
+        } else {
+          // Android: Use data URI with HTML form
+          paymentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlForm)}`;
+        }
+        
+        setPaymentUrl(paymentUrl);
+        setPaymentId(orderId); // Use orderId from backend
         setShowConfirmModal(true);
       } else {
-        // Direct purchase (no payment needed)
-        CustomAlertService.showSuccess(
-          t('success'),
-          `${t('purchasedCoins')} ${totalQty} ${isRTL ? 'عملة' : 'coins'}`
-        );
-        setCart({});
-        // Refresh wallet to show updated balance
-        await refreshWallet();
-        router.back();
+        throw new Error('Invalid response from payment server');
       }
     } catch (error: any) {
+      logger.error('❌ Web Checkout initiation failed:', error);
       CustomAlertService.showError(
         t('error'),
         error.message || (isRTL ? 'فشل الشراء' : 'Purchase failed. Please try again.')
@@ -275,7 +342,7 @@ export default function CoinStoreScreen() {
             </Text>
           </View>
           <Text style={[styles.descriptionText, { color: theme.textSecondary }]}>
-            {t('neverExpire')} {t('canBeWithdrawn')}
+            {t('neverExpire')}. {t('canBeWithdrawn')}.
           </Text>
         </View>
 
@@ -299,9 +366,14 @@ export default function CoinStoreScreen() {
                   <Text style={[styles.coinName, { color: theme.textPrimary }]}>
                     {isRTL ? coin.nameAr : coin.name}
                   </Text>
-                  <Text style={[styles.coinValue, { color: theme.textSecondary }]}>
-                    {coin.value} {isRTL ? 'ريال' : 'QAR'}
-                  </Text>
+                  <View>
+                    <Text style={[styles.coinValue, { color: theme.primary, fontWeight: '600' }]}>
+                      {coin.price.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
+                    </Text>
+                    <Text style={[styles.coinSubValue, { color: theme.textSecondary, fontSize: 11 }]}>
+                      {coin.value} {isRTL ? 'ريال قيمة' : 'QAR value'} + 10%
+                    </Text>
+                  </View>
                 </View>
 
                 {/* Add/Remove Buttons */}
@@ -362,10 +434,14 @@ export default function CoinStoreScreen() {
                   {totalQty} {isRTL ? 'عنصر' : t('items')}
                 </Text>
                 <Text style={styles.cartTotalText}>
-                  {total} {isRTL ? 'ريال' : 'QAR'}
+                  {total.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
+                </Text>
+                <Text style={[styles.cartItemsText, { fontSize: 12, opacity: 0.6 }]}>
+                  {coinValue.toFixed(2)} {isRTL ? 'ريال قيمة' : 'QAR value'} + {(total - coinValue).toFixed(2)} {isRTL ? 'رسوم' : 'fee'}
                 </Text>
               </View>
             </View>
+            <View style={[styles.cartDivider, { backgroundColor: 'rgba(0,0,0,0.1)' }]} />
             <TouchableOpacity 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -537,10 +613,27 @@ export default function CoinStoreScreen() {
               <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
               <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
-                  {t('totalAmount')}
+                  {isRTL ? 'قيمة العملات' : 'Coin Value'}
+                </Text>
+                <Text style={[styles.summaryValue, { color: theme.textPrimary }]}>
+                  {coinValue.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
+                </Text>
+              </View>
+              <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                  {isRTL ? 'رسوم المنصة (10%)' : 'Platform Fee (10%)'}
+                </Text>
+                <Text style={[styles.summaryValue, { color: theme.textSecondary }]}>
+                  +{(total - coinValue).toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
+                </Text>
+              </View>
+              <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
+              <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.summaryLabel, { color: theme.textSecondary, fontWeight: 'bold' }]}>
+                  {isRTL ? 'المبلغ الإجمالي' : 'Total Amount'}
                 </Text>
                 <Text style={[styles.summaryValueLarge, { color: theme.primary }]}>
-                  {total} {isRTL ? 'ريال' : 'QAR'}
+                  {total.toFixed(2)} {isRTL ? 'ريال' : 'QAR'}
                 </Text>
               </View>
             </View>
@@ -838,9 +931,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   floatingCart: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    gap: 12,
     padding: 16,
     borderRadius: 16,
     shadowColor: '#000',
@@ -891,14 +983,20 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY,
     color: '#000000',
   },
+  cartDivider: {
+    height: 1,
+    width: '100%',
+  },
   checkoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.1)',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
+    width: '100%',
   },
   checkoutBtnText: {
     fontSize: 16,
