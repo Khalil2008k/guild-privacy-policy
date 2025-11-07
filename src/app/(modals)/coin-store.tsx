@@ -744,8 +744,14 @@ export default function CoinStoreScreen() {
                 source={{ uri: paymentUrl }}
                 style={styles.webView}
                 onNavigationStateChange={(navState) => {
-                  // COMMENT: PRIORITY 1 - Replace console.log with logger
                   logger.debug('Navigation:', navState.url);
+                  
+                  // Check for deep link (guildapp://) - payment completed
+                  if (navState.url.startsWith('guildapp://payment-success')) {
+                    logger.info('✅ Payment success deep link detected, closing WebView');
+                    handlePaymentSuccess();
+                    return false; // Prevent navigation
+                  }
                   
                   // Check for success/failure URLs
                   if (navState.url.includes('success') || navState.url.includes('payment/success')) {
@@ -755,6 +761,24 @@ export default function CoinStoreScreen() {
                   } else if (navState.url.includes('cancel') || navState.url.includes('payment/cancel')) {
                     handlePaymentClose();
                   }
+                }}
+                onShouldStartLoadWithRequest={(request) => {
+                  // Intercept deep links and handle them
+                  if (request.url.startsWith('guildapp://')) {
+                    logger.info('🔗 Deep link intercepted:', request.url);
+                    
+                    if (request.url.startsWith('guildapp://payment-success')) {
+                      handlePaymentSuccess();
+                    } else if (request.url.startsWith('guildapp://payment-failed')) {
+                      handlePaymentFailure();
+                    } else if (request.url.startsWith('guildapp://payment-cancel')) {
+                      handlePaymentClose();
+                    }
+                    
+                    return false; // Don't load the deep link URL
+                  }
+                  
+                  return true; // Allow other URLs
                 }}
                 onError={(syntheticEvent) => {
                   const { nativeEvent } = syntheticEvent;
