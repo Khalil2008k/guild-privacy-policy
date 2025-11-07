@@ -52,7 +52,7 @@ class CoinWalletAPIClientClass {
    */
   async getBalance(): Promise<any> {
     try {
-      const response = await BackendAPI.get('/coins/balance');
+      const response = await BackendAPI.get('/api/coins/balance');
       return response;
     } catch (error) {
       console.error('Error getting balance:', error);
@@ -65,7 +65,7 @@ class CoinWalletAPIClientClass {
    */
   async getWallet(): Promise<UserWallet> {
     try {
-      const response = await BackendAPI.get('/coins/wallet');
+      const response = await BackendAPI.get('/api/coins/wallet');
       return response.data;
     } catch (error) {
       console.error('Error getting wallet:', error);
@@ -78,7 +78,7 @@ class CoinWalletAPIClientClass {
    */
   async getTransactions(limit: number = 50): Promise<{ transactions: CoinTransaction[] }> {
     try {
-      const response = await BackendAPI.get(`/coins/transactions?limit=${limit}`);
+      const response = await BackendAPI.get(`/api/coins/transactions?limit=${limit}`);
       return response;
     } catch (error) {
       console.error('Error getting transactions:', error);
