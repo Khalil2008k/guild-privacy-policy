@@ -25,7 +25,8 @@ import {
   Info,
   LogOut,
   Settings as SettingsIcon,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -582,6 +583,12 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: '#FF6B6B' }]}>Danger Zone</Text>
           <View style={styles.card}>
+            <Item
+              icon={<Trash2 size={20} color="#FF6B6B" />}
+              title={isRTL ? 'حذف الحساب' : 'Delete Account'}
+              subtitle={isRTL ? 'حذف حسابك وجميع بياناتك نهائيًا' : 'Permanently delete your account and all data'}
+              onPress={() => router.push('/(modals)/delete-account')}
+            />
             <Item
               icon={<LogOut size={20} color="#FF6B6B" />}
               title={t('signOut')}
