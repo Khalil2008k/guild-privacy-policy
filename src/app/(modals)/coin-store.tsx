@@ -160,45 +160,133 @@ export default function CoinStoreScreen() {
     setLoading(true);
 
     try {
-      // ✅ SADAD WEB CHECKOUT 2.1: Use new web checkout endpoint
-      const { BackendAPI } = await import('../../config/backend');
-      
-      // Get current user from Firebase Auth (no hooks - direct access)
-      // Use auth.currentUser directly, same as authTokenService.ts
-      if (!auth) {
-        throw new Error('Firebase Auth not initialized');
+      // 🍎 iPad Fix 1: Import BackendAPI with comprehensive error handling
+      let BackendAPI;
+      try {
+        const backendModule = await import('../../config/backend');
+        BackendAPI = backendModule.BackendAPI;
+        if (!BackendAPI) {
+          throw new Error('BackendAPI not found in module');
+        }
+      } catch (importError) {
+        logger.error('❌ [iPad] Failed to import BackendAPI:', importError);
+        CustomAlertService.showError(
+          t('error'),
+          isRTL ? 'فشل تحميل نظام الدفع. أعد تشغيل التطبيق.' : 'Failed to load payment system. Please restart the app.'
+        );
+        setLoading(false);
+        return;
       }
-      
+
+      // 🍎 iPad Fix 2: Validate Firebase Auth with user-friendly error
+      if (!auth) {
+        logger.error('❌ [iPad] Firebase Auth not initialized');
+        CustomAlertService.showError(
+          t('error'),
+          isRTL ? 'نظام المصادقة غير متاح. أعد تشغيل التطبيق.' : 'Authentication system unavailable. Please restart the app.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      // 🍎 iPad Fix 3: Validate current user with redirect to login
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        throw new Error('User not authenticated');
+        logger.error('❌ [iPad] User not logged in');
+        CustomAlertService.showError(
+          t('error'),
+          isRTL ? 'يرجى تسجيل الدخول مرة أخرى.' : 'Please log in again.'
+        );
+        setLoading(false);
+        router.replace('/login');
+        return;
+      }
+
+      // 🍎 iPad Fix 4: Check network connectivity
+      try {
+        const NetInfo = await import('@react-native-community/netinfo');
+        const netInfo = await NetInfo.default.fetch();
+        if (!netInfo.isConnected || !netInfo.isInternetReachable) {
+          logger.warn('⚠️ [iPad] No internet connection');
+          CustomAlertService.showError(
+            t('error'),
+            isRTL ? 'لا يوجد اتصال بالإنترنت. تحقق من الشبكة.' : 'No internet connection. Please check your network.'
+          );
+          setLoading(false);
+          return;
+        }
+      } catch (netInfoError) {
+        logger.warn('⚠️ [iPad] Could not check network (continuing anyway):', netInfoError);
+        // Continue even if network check fails
       }
 
       // Calculate total amount (with 10% platform fee already included in prices)
       const totalAmount = total; // Use pre-calculated total with markup
 
-      // Call NEW Sadad Coin Purchase endpoint (SHA-256 signature method)
-      const response = await BackendAPI.post('/api/coins/purchase/sadad/initiate', {
-        customAmount: totalAmount, // Use custom amount instead of package
-        email: currentUser.email || `${currentUser.uid}@guild.app`,
-        mobileNo: currentUser.phoneNumber || '+97450123456',
-        language: 'ENG'
+      // Validate minimum amount
+      if (totalAmount < 10) {
+        logger.warn('⚠️ [iPad] Amount below minimum:', totalAmount);
+        CustomAlertService.showWarning(
+          t('error'),
+          isRTL ? 'الحد الأدنى للشراء 10 ريال' : 'Minimum purchase amount is 10 QAR'
+        );
+        setLoading(false);
+        return;
+      }
+
+      // 🍎 iPad Fix 5: Log comprehensive debug info
+      logger.info('🍎 [iPad] Initiating coin purchase...', {
+        device: Platform.OS,
+        isPad: Platform.isPad,
+        version: Platform.Version,
+        totalAmount,
+        userId: currentUser.uid,
+        email: currentUser.email,
+        timestamp: new Date().toISOString(),
       });
 
-      // NEW: Response is JSON with formPayload (Sadad SHA-256 signature method)
-      if (response && response.success && response.data && response.data.formPayload) {
-        const { formPayload, orderId } = response.data;
-        
-        // Generate HTML form that auto-submits to Sadad
-        const formFields = Object.entries(formPayload.fields)
-          .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}">`)
-          .join('\n        ');
-        
-        const htmlForm = `
+      // 🍎 iPad Fix 6: Call backend with timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        logger.error('❌ [iPad] Request timeout after 30s');
+      }, 30000); // 30s timeout
+
+      let response;
+      try {
+        response = await BackendAPI.post('/api/coins/purchase/sadad/initiate', {
+          customAmount: totalAmount,
+          email: currentUser.email || `${currentUser.uid}@guild.app`,
+          mobileNo: currentUser.phoneNumber || '+97450123456',
+          language: 'ENG'
+        });
+        clearTimeout(timeoutId);
+      } catch (apiError: any) {
+        clearTimeout(timeoutId);
+        throw apiError;
+      }
+
+      logger.info('✅ [iPad] Payment initiation response received:', response);
+
+      // 🍎 iPad Fix 7: Validate response with detailed error
+      if (!response || !response.success || !response.data || !response.data.formPayload) {
+        const errorDetail = JSON.stringify(response).substring(0, 200);
+        throw new Error(`Invalid response from payment server: ${errorDetail}`);
+      }
+
+      const { formPayload, orderId } = response.data;
+      
+      // Generate HTML form that auto-submits to Sadad
+      const formFields = Object.entries(formPayload.fields)
+        .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}">`)
+        .join('\n        ');
+      
+      const htmlForm = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecting to Sadad Payment...</title>
 </head>
 <body>
@@ -210,31 +298,43 @@ export default function CoinStoreScreen() {
   </script>
 </body>
 </html>`;
-        
-        let paymentUrl: string;
-        
-        if (requiresExternalBrowser()) {
-          // 🍎 iOS: Can't use data URI, must build URL manually
-          // Build query string from form fields
-          const queryParams = new URLSearchParams(formPayload.fields as Record<string, string>).toString();
-          paymentUrl = `${formPayload.action}?${queryParams}`;
-          logger.info('🍎 Built payment URL for iOS external browser:', paymentUrl);
-        } else {
-          // Android: Use data URI with HTML form
-          paymentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlForm)}`;
-        }
-        
-        setPaymentUrl(paymentUrl);
-        setPaymentId(orderId); // Use orderId from backend
-        setShowConfirmModal(true);
+      
+      let paymentUrl: string;
+      
+      if (requiresExternalBrowser()) {
+        // 🍎 iOS: Build query string for external browser
+        const queryParams = new URLSearchParams(formPayload.fields as Record<string, string>).toString();
+        paymentUrl = `${formPayload.action}?${queryParams}`;
+        logger.info('🍎 [iPad] Built payment URL for Safari:', paymentUrl.substring(0, 100) + '...');
       } else {
-        throw new Error('Invalid response from payment server');
+        // Android: Use data URI with HTML form
+        paymentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlForm)}`;
+        logger.info('📱 Built payment URL for WebView');
       }
+      
+      setPaymentUrl(paymentUrl);
+      setPaymentId(orderId);
+      setShowConfirmModal(true);
+      
+      logger.info('✅ [iPad] Payment initiation successful, showing confirmation modal');
+      
     } catch (error: any) {
-      logger.error('❌ Web Checkout initiation failed:', error);
+      // 🍎 iPad Fix 8: Comprehensive error handling with debug IDs
+      logger.error('❌ [iPad] Payment initiation failed:', error);
+      
+      let errorMessage = isRTL ? 'فشل الشراء. حاول مرة أخرى.' : 'Purchase failed. Please try again.';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = isRTL ? 'انتهت مهلة الطلب. تحقق من اتصالك.' : 'Request timed out. Please check your connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+        // Add debug ID for support
+        errorMessage += ` (Error ID: ${Date.now()})`;
+      }
+      
       CustomAlertService.showError(
         t('error'),
-        error.message || (isRTL ? 'فشل الشراء' : 'Purchase failed. Please try again.')
+        errorMessage
       );
     } finally {
       setLoading(false);
@@ -605,14 +705,34 @@ export default function CoinStoreScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
+                  if (loading) return; // 🍎 iPad Fix: Prevent double tap
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                   handleAcceptTerms();
                 }}
-                style={[styles.modalBtn, { backgroundColor: theme.primary }]}
+                disabled={loading}
+                style={[
+                  styles.modalBtn, 
+                  { 
+                    backgroundColor: loading ? theme.border : theme.primary,
+                    opacity: loading ? 0.6 : 1
+                  }
+                ]}
+                accessibilityLabel={t('acceptAndPay')}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: loading }}
               >
-                <Text style={[styles.modalBtnText, { color: '#000000' }]}>
-                  {t('acceptAndPay')}
-                </Text>
+                {loading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#000000" style={{ marginRight: 8 }} />
+                    <Text style={[styles.modalBtnText, { color: '#000000' }]}>
+                      {isRTL ? 'جاري التحميل...' : 'Loading...'}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[styles.modalBtnText, { color: '#000000' }]}>
+                    {t('acceptAndPay')}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -1153,7 +1273,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24, 
     borderTopRightRadius: 24, 
     padding: 24, 
-    maxHeight: height * 0.8 
+    maxHeight: Platform.isPad ? height * 0.6 : height * 0.8,  // 🍎 iPad Fix: Adjust height for iPad
+    minHeight: Platform.isPad ? 400 : 300  // 🍎 iPad Fix: Ensure minimum height
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1294,14 +1415,18 @@ const styles = StyleSheet.create({
   },
   modalActions: { 
     flexDirection: 'row', 
-    gap: 12 
+    gap: 12,
+    marginTop: 16  // 🍎 iPad Fix: Add spacing
   },
   modalBtn: { 
     flex: 1, 
-    paddingVertical: 14, 
+    padding: Platform.isPad ? 18 : 14,  // 🍎 iPad Fix: Larger padding on iPad
     borderRadius: 12, 
     alignItems: 'center',
-    borderWidth: 1 
+    justifyContent: 'center',  // 🍎 iPad Fix: Center content
+    borderWidth: 1,
+    minHeight: 48,  // 🍎 iPad Fix: Ensure minimum touch target
+    flexDirection: 'row'  // 🍎 iPad Fix: Support icon + text 
   },
   modalBtnText: { 
     fontSize: 16, 
