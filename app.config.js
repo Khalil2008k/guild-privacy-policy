@@ -22,10 +22,11 @@ export default {
         usesNonExemptEncryption: false
       },
       infoPlist: {
-        NSCameraUsageDescription: "GUILD needs camera access to scan QR codes and upload photos.",
-        NSPhotoLibraryUsageDescription: "GUILD needs photo library access to upload images.",
-        NSLocationWhenInUseUsageDescription: "GUILD uses your location to show nearby jobs and guilds.",
-        NSMicrophoneUsageDescription: "GUILD needs microphone access for video calls.",
+        // 🍎 Apple Guideline 5.1.1: Clear, specific permission descriptions
+        NSCameraUsageDescription: "GUILD needs camera access to take photos for your profile picture, job postings, and document verification. This helps you showcase your work and verify your identity.",
+        NSPhotoLibraryUsageDescription: "GUILD needs access to your photo library to select and share images for your profile, job postings, and portfolio. This helps you present your work professionally.",
+        NSMicrophoneUsageDescription: "GUILD needs microphone access to record and send voice messages in chat conversations. This helps you communicate more effectively with clients and freelancers.",
+        NSLocationWhenInUseUsageDescription: "GUILD uses your location to show nearby jobs and guilds. This helps you find relevant work opportunities in your area.",
         // COMMENT: Apple App Tracking Transparency (ATT) - Required for iOS 14.5+
         // This permission must be requested before using IDFA (Identifier for Advertisers)
         NSUserTrackingUsageDescription: "GUILD uses tracking to improve your experience and show relevant jobs. You can disable this in Settings."
@@ -92,22 +93,22 @@ export default {
       [
         "expo-image-picker",
         {
-          photosPermission: "The app accesses your photos to let you share them.",
-          cameraPermission: "The app accesses your camera to let you take photos."
+          photosPermission: "GUILD needs access to your photo library to select and share images for your profile, job postings, and portfolio.",
+          cameraPermission: "GUILD needs camera access to take photos for your profile picture, job postings, and document verification."
         }
       ],
       [
         "expo-camera",
         {
-          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
-          microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone",
+          cameraPermission: "GUILD needs camera access to take photos for your profile picture, job postings, and document verification.",
+          microphonePermission: "GUILD needs microphone access to record and send voice messages in chat conversations.",
           recordAudioAndroid: true
         }
       ],
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "This app uses location to show nearby jobs and improve your experience.",
+          locationAlwaysAndWhenInUsePermission: "GUILD uses your location to show nearby jobs and guilds. This helps you find relevant work opportunities in your area.",
           isIosBackgroundLocationEnabled: false
         }
       ],
