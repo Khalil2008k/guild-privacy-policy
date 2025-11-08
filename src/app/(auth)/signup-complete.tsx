@@ -257,10 +257,11 @@ export default function CompleteSignupScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     if (currentStep === 'personal') {
-      if (!fullName || !dateOfBirth || !gender || !nationality) {
+      // 🍎 Apple Guideline 5.1.1(v): Data Minimization - Nationality is optional
+      if (!fullName || !dateOfBirth || !gender) {
         CustomAlertService.showInfo(
           'Missing Information',
-          'Please fill in all personal information fields.'
+          'Please fill in all required personal information fields.'
         );
         return;
       }
@@ -739,14 +740,17 @@ export default function CompleteSignupScreen() {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Nationality *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Nationality (Optional)</Text>
+        <Text style={[styles.helpText, { color: theme.textSecondary, fontSize: 12, marginBottom: 8 }]}>
+          🍎 You may skip this field. Providing nationality helps with Qatar ID verification.
+        </Text>
         <TouchableOpacity
           style={[styles.input, styles.dropdownButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
           onPress={() => setShowNationalityDropdown(!showNationalityDropdown)}
           activeOpacity={0.8}
         >
           <Text style={[styles.dropdownText, { color: nationality ? theme.textPrimary : theme.textSecondary }]}>
-            {nationality || 'Select your nationality'}
+            {nationality || 'Select your nationality (optional)'}
           </Text>
           <Ionicons 
             name={showNationalityDropdown ? "chevron-up" : "chevron-down"} 
@@ -977,6 +981,9 @@ export default function CompleteSignupScreen() {
 
       <View style={styles.inputContainer}>
         <Text style={[styles.label, { color: theme.textSecondary }]}>Phone Number *</Text>
+        <Text style={[styles.helpText, { color: theme.textSecondary, fontSize: 12, marginBottom: 8 }]}>
+          Required for account verification and enabling communication between clients and freelancers.
+        </Text>
         <View style={styles.phoneInputContainer}>
           {/* Country Code Picker */}
           <TouchableOpacity
