@@ -241,3 +241,4 @@ Then reload your app and try purchasing coins!
 
 **Everything should work smoothly now on BOTH iOS and Android!** 🎉
 
+

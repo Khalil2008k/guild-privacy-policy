@@ -239,10 +239,18 @@ export default function PaymentScreen() {
     // Format error message
     const errorMessage = paymentProcessor.formatError({ error, errorCode });
 
-    // Show error message
+    // Format error code for chat sharing (unique format)
+    const { formatErrorCodeForChat } = require('@/utils/errorCodeFormatter');
+    const formattedErrorCode = errorCode ? formatErrorCodeForChat(errorCode) : null;
+
+    // Show error message with formatted error code
+    const displayMessage = formattedErrorCode 
+      ? `${errorMessage || 'Payment could not be completed. Please try again.'}\n\nError Code: ${formattedErrorCode}`
+      : errorMessage || 'Payment could not be completed. Please try again.';
+
     CustomAlertService.showError(
       'Payment Failed',
-      errorMessage || 'Payment could not be completed. Please try again.'
+      displayMessage
     );
   }, [paymentState, paymentId, paymentProcessor]);
 

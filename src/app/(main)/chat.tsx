@@ -145,6 +145,7 @@ function PremiumChatItem({
   t,
 }: any) {
   const { user } = useAuth();
+  const isSupportChat = chat.id?.startsWith('support_') || chat.type === 'support';
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -647,7 +648,9 @@ export default function PremiumChatScreen() {
 
   const handleChatPress = (chat: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (chat.type === 'guild') {
+    if (chat.id?.startsWith('support_') || chat.type === 'support') {
+      router.push(`/(modals)/support-chat` as any);
+    } else if (chat.type === 'guild') {
       router.push(`/(modals)/guild-chat/${chat.id}` as any);
     } else if (chat.type === 'job') {
       router.push(`/(modals)/chat/${chat.jobId}` as any);
@@ -888,9 +891,24 @@ export default function PremiumChatScreen() {
     ? transformedChats.filter((chat: any) => chat.isArchived)
     : transformedChats.filter((chat: any) => !chat.isArchived);
 
-  // Separate pinned and regular chats, sort pinned first
-  const pinnedChats = archiveFilteredChats.filter((chat: any) => chat.isPinned);
-  const regularChats = archiveFilteredChats.filter((chat: any) => !chat.isPinned);
+  // Separate support chat from regular chats to prevent duplicates
+  const supportChat = archiveFilteredChats.find((chat: any) => 
+    chat.id?.startsWith('support_') || chat.type === 'support'
+  );
+  
+  // Remove support chat from regular chats list
+  const chatsWithoutSupport = archiveFilteredChats.filter((chat: any) => 
+    !(chat.id?.startsWith('support_') || chat.type === 'support')
+  );
+
+  // Separate pinned and regular chats
+  const regularPinnedChats = chatsWithoutSupport.filter((chat: any) => chat.isPinned);
+  const regularChats = chatsWithoutSupport.filter((chat: any) => !chat.isPinned);
+  
+  // Build final list: support chat first (if exists), then pinned, then regular
+  const pinnedChats = supportChat 
+    ? [supportChat, ...regularPinnedChats]
+    : regularPinnedChats;
 
   // Combine: pinned first, then regular (both sorted by updatedAt desc)
   const sortedChats = [

@@ -183,6 +183,13 @@ service cloud.firestore {
     
     // CHATS
     match /chats/{chatId} {
+      // Helper function to check if chat is support chat
+      function isSupportChat() {
+        return chatId.matches('support_.*') || 
+               (resource != null && resource.data.type == 'support') ||
+               (request.resource != null && request.resource.data.type == 'support');
+      }
+      
       // Allow authenticated users to read chats
       // For collection queries, the where clause filters by participants
       // For individual document reads, check if user is participant
@@ -194,9 +201,23 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
         request.auth.uid in request.resource.data.participants;
       
-      allow update, delete: if isAuthenticated() &&
+      // Allow update if user is participant (but prevent unpinning/deleting support chats)
+      allow update: if isAuthenticated() &&
         (isParticipant(resource.data) ||
-         isAdmin());
+         isAdmin()) &&
+        // Prevent unpinning support chats
+        !(isSupportChat() && 
+          request.resource.data.pinned == false && 
+          resource.data.pinned == true) &&
+        // Prevent marking support chat as deletable
+        !(isSupportChat() && 
+          request.resource.data.undeletable == false);
+      
+      // Prevent deletion of support chats
+      allow delete: if isAuthenticated() &&
+        (isParticipant(resource.data) ||
+         isAdmin()) &&
+        !isSupportChat();
 
       // Messages under each chat
       match /messages/{messageId} {

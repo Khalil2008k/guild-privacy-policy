@@ -193,3 +193,4 @@ After you rebuild your app with `npx expo start --clear`:
 
 **The receipt is now BEAUTIFUL and matches Guild's brand! 🎨✨**
 
+

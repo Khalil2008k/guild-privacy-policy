@@ -89,13 +89,13 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
 
   /**
    * Handle URL changes - detect success/failure
-   * As per Fatora documentation: https://fatora.io/api/mobileIntegration.php
+   * ✅ SADAD WEB CHECKOUT 2.1: Updated for Sadad callback URLs
    * 
    * Success URL format:
-   * https://domain.com/payments/success?transaction_id=XXXXX&order_id=XXXXX&response_code=000
+   * https://domain.com/api/payments/sadad/callback?STATUS=TXN_SUCCESS&ORDERID=XXX&TXNAMOUNT=XXX
    * 
    * Failure URL format:
-   * https://domain.com/payments/failure?order_id=XXXXX&response_code=XXX&description=XXXXX
+   * https://domain.com/api/payments/sadad/callback?STATUS=TXN_FAILURE&ORDERID=XXX
    * COMMENT: PRODUCTION HARDENING - Task 2.9 - Optimized with useCallback
    */
   const handleNavigationStateChange = useCallback((navState: WebViewNavigation) => {
@@ -104,7 +104,44 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
     // COMMENT: PRODUCTION HARDENING - Task 2.7 - Use logger instead of console.log
     logger.debug('💳 WebView URL changed', { url: url.substring(0, 100) + '...' });
 
-    // Check for success completion
+    // ✅ SADAD WEB CHECKOUT 2.1: Check for Sadad callback URL
+    if (url.includes('/api/payments/sadad/callback') || url.includes('/payments/sadad/callback')) {
+      try {
+        // Extract parameters from URL
+        const urlObj = new URL(url);
+        const status = urlObj.searchParams.get('STATUS') || urlObj.searchParams.get('status');
+        const orderId = urlObj.searchParams.get('ORDERID') || 
+                       urlObj.searchParams.get('ORDER_ID') ||
+                       urlObj.searchParams.get('order_id') ||
+                       'unknown';
+        const transactionId = urlObj.searchParams.get('transaction_number') ||
+                             urlObj.searchParams.get('transaction_id') ||
+                             urlObj.searchParams.get('TXN_ID') ||
+                             'unknown';
+
+        if (status === 'TXN_SUCCESS' || status === 'SUCCESS' || status === 'success') {
+          logger.info('✅ Payment successful!', { 
+            transactionId, 
+            orderId, 
+            status 
+          });
+          onSuccess(transactionId, orderId);
+        } else {
+          const errorMsg = urlObj.searchParams.get('RESPMSG') || 
+                          urlObj.searchParams.get('error') ||
+                          'Payment failed';
+          logger.error('❌ Payment failed:', { status, orderId, errorMsg });
+          onFailure(errorMsg, status || 'unknown');
+        }
+      } catch (error) {
+        logger.error('Failed to parse callback URL:', error);
+        // If we can't parse, assume success if it's the callback URL
+        onSuccess('callback', 'unknown');
+      }
+      return; // Don't check other URL patterns
+    }
+
+    // Legacy: Check for success completion (backward compatibility)
     if (url.includes('/payments/success') || url.includes('success=true') || url.includes('/success')) {
       try {
         // Extract parameters from URL
@@ -132,7 +169,7 @@ const PaymentWebView = memo<PaymentWebViewProps>(({
       }
     }
     
-    // Check for failure completion
+    // Legacy: Check for failure completion (backward compatibility)
     if (url.includes('/payments/failure') || url.includes('failure=true') || url.includes('/failure')) {
       try {
         // Extract parameters from URL

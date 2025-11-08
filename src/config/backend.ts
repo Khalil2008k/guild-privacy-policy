@@ -85,6 +85,12 @@ export class BackendAPI {
         throw new Error(errorMessage);
       }
 
+      // ✅ SADAD WEB CHECKOUT 2.1: Handle HTML responses (for payment forms)
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        return await response.text();
+      }
+
       return await response.json();
     } catch (error) {
       logger.error(`Backend API request failed: ${endpoint}`, error);
