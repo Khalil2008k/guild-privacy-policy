@@ -33,6 +33,9 @@ import { logger } from '../../utils/logger';
 import { openExternalPayment, requiresExternalBrowser } from '../../utils/externalPayment';
 // ✅ SADAD WEB CHECKOUT 2.1: Firebase Auth for user data
 import { auth } from '../../config/firebase';
+// 🍎 Apple IAP: In-App Purchase service for iOS (Guideline 3.1.1)
+import { appleIAPService, IAP_COIN_MAP } from '../../services/AppleIAPService';
+import type { Product } from 'react-native-iap';
 
 // 🍎 Apple Compliance: External browser payment component for iOS
 const ExternalBrowserPaymentView: React.FC<{
@@ -118,6 +121,9 @@ export default function CoinStoreScreen() {
   const [paymentUrl, setPaymentUrl] = useState('');
   const [paymentId, setPaymentId] = useState('');
   const paymentHandledRef = useRef(false);
+  // 🍎 iOS IAP: State for Apple In-App Purchase products
+  const [iapProducts, setIapProducts] = useState<Product[]>([]);
+  const [iapLoading, setIapLoading] = useState(false);
 
   const total = Object.entries(cart).reduce((sum, [sym, qty]) => {
     const coin = COINS.find(c => c.symbol === sym);
@@ -144,6 +150,35 @@ export default function CoinStoreScreen() {
     });
   };
 
+  // 🍎 iOS IAP: Load IAP products on mount (iOS only)
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      loadIAPProducts();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (Platform.OS === 'ios') {
+        appleIAPService.cleanup();
+      }
+    };
+  }, []);
+
+  const loadIAPProducts = async () => {
+    try {
+      setIapLoading(true);
+      logger.info('[IAP] Loading products...');
+      const products = await appleIAPService.getAvailableProducts();
+      setIapProducts(products);
+      logger.info('[IAP] Products loaded:', products);
+    } catch (error) {
+      logger.error('[IAP] Failed to load products:', error);
+      // Don't block the UI, allow fallback to Sadad if needed
+    } finally {
+      setIapLoading(false);
+    }
+  };
+
   const handleCheckout = () => {
     if (totalQty === 0) {
       CustomAlertService.showWarning(
@@ -160,128 +195,184 @@ export default function CoinStoreScreen() {
     setLoading(true);
 
     try {
-      // 🍎 iPad Fix 1: Import BackendAPI with comprehensive error handling
-      let BackendAPI;
-      try {
-        const backendModule = await import('../../config/backend');
-        BackendAPI = backendModule.BackendAPI;
-        if (!BackendAPI) {
-          throw new Error('BackendAPI not found in module');
-        }
-      } catch (importError) {
-        logger.error('❌ [iPad] Failed to import BackendAPI:', importError);
-        CustomAlertService.showError(
-          t('error'),
-          isRTL ? 'فشل تحميل نظام الدفع. أعد تشغيل التطبيق.' : 'Failed to load payment system. Please restart the app.'
+      // 🍎 iOS: Use Apple IAP (Apple Guideline 3.1.1)
+      if (Platform.OS === 'ios') {
+        await handleIOSIAPPurchase();
+      } else {
+        // Android/Web: Use Sadad PSP
+        await handleSadadPurchase();
+      }
+    } catch (error: any) {
+      logger.error('❌ Payment failed:', error);
+      
+      let errorMessage = isRTL ? 'فشل الشراء. حاول مرة أخرى.' : 'Purchase failed. Please try again.';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = isRTL ? 'انتهت مهلة الطلب. تحقق من اتصالك.' : 'Request timed out. Please check your connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+        errorMessage += ` (Error ID: ${Date.now()})`;
+      }
+      
+      CustomAlertService.showError(
+        t('error'),
+        errorMessage
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🍎 iOS IAP: Handle Apple In-App Purchase (Guideline 3.1.1)
+  const handleIOSIAPPurchase = async () => {
+    try {
+      logger.info('🍎 [iOS IAP] Starting purchase flow...');
+
+      // Determine which product to purchase based on cart total
+      const totalAmount = total;
+      let productId = '';
+
+      // Map amount to IAP product ID
+      if (totalAmount <= 5) {
+        productId = 'com.guild.coins.bronze';
+      } else if (totalAmount <= 10) {
+        productId = 'com.guild.coins.silver';
+      } else if (totalAmount <= 50) {
+        productId = 'com.guild.coins.gold';
+      } else if (totalAmount <= 100) {
+        productId = 'com.guild.coins.platinum';
+      } else {
+        productId = 'com.guild.coins.diamond';
+      }
+
+      logger.info(`🍎 [iOS IAP] Purchasing product: ${productId} for ${totalAmount} QAR`);
+
+      // Initiate purchase
+      await appleIAPService.purchaseProduct(productId);
+
+      // Purchase listener will handle verification and coin crediting
+      logger.info('🍎 [iOS IAP] Purchase initiated, waiting for completion...');
+
+      // Show processing message
+      CustomAlertService.showSuccess(
+        isRTL ? 'جاري المعالجة' : 'Processing',
+        isRTL ? 'جاري معالجة الدفع...' : 'Processing payment...'
+      );
+
+      // Clear cart after successful initiation
+      setCart({});
+
+      // Refresh wallet after a delay (to allow backend to process)
+      setTimeout(async () => {
+        await refreshWallet();
+        CustomAlertService.showSuccess(
+          t('paymentSuccess'),
+          isRTL ? 'تم إضافة العملات إلى محفظتك' : 'Coins added to your wallet'
         );
-        setLoading(false);
-        return;
+      }, 3000);
+
+    } catch (error: any) {
+      logger.error('❌ [iOS IAP] Purchase failed:', error);
+      throw error;
+    }
+  };
+
+  // Sadad PSP: Handle payment for Android/Web
+  const handleSadadPurchase = async () => {
+    // Import BackendAPI with comprehensive error handling
+    let BackendAPI;
+    try {
+      const backendModule = await import('../../config/backend');
+      BackendAPI = backendModule.BackendAPI;
+      if (!BackendAPI) {
+        throw new Error('BackendAPI not found in module');
       }
+    } catch (importError) {
+      logger.error('❌ Failed to import BackendAPI:', importError);
+      CustomAlertService.showError(
+        t('error'),
+        isRTL ? 'فشل تحميل نظام الدفع. أعد تشغيل التطبيق.' : 'Failed to load payment system. Please restart the app.'
+      );
+      throw importError;
+    }
 
-      // 🍎 iPad Fix 2: Validate Firebase Auth with user-friendly error
-      if (!auth) {
-        logger.error('❌ [iPad] Firebase Auth not initialized');
-        CustomAlertService.showError(
-          t('error'),
-          isRTL ? 'نظام المصادقة غير متاح. أعد تشغيل التطبيق.' : 'Authentication system unavailable. Please restart the app.'
-        );
-        setLoading(false);
-        return;
+    // Validate Firebase Auth
+    if (!auth) {
+      logger.error('❌ Firebase Auth not initialized');
+      throw new Error(isRTL ? 'نظام المصادقة غير متاح.' : 'Authentication system unavailable.');
+    }
+
+    // Validate current user
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      logger.error('❌ User not logged in');
+      router.replace('/login');
+      throw new Error(isRTL ? 'يرجى تسجيل الدخول مرة أخرى.' : 'Please log in again.');
+    }
+
+    // Check network connectivity
+    try {
+      const NetInfo = await import('@react-native-community/netinfo');
+      const netInfo = await NetInfo.default.fetch();
+      if (!netInfo.isConnected || !netInfo.isInternetReachable) {
+        throw new Error(isRTL ? 'لا يوجد اتصال بالإنترنت.' : 'No internet connection.');
       }
+    } catch (netInfoError) {
+      logger.warn('⚠️  Could not check network (continuing anyway):', netInfoError);
+    }
 
-      // 🍎 iPad Fix 3: Validate current user with redirect to login
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        logger.error('❌ [iPad] User not logged in');
-        CustomAlertService.showError(
-          t('error'),
-          isRTL ? 'يرجى تسجيل الدخول مرة أخرى.' : 'Please log in again.'
-        );
-        setLoading(false);
-        router.replace('/login');
-        return;
-      }
+    // Calculate total amount
+    const totalAmount = total;
 
-      // 🍎 iPad Fix 4: Check network connectivity
-      try {
-        const NetInfo = await import('@react-native-community/netinfo');
-        const netInfo = await NetInfo.default.fetch();
-        if (!netInfo.isConnected || !netInfo.isInternetReachable) {
-          logger.warn('⚠️ [iPad] No internet connection');
-          CustomAlertService.showError(
-            t('error'),
-            isRTL ? 'لا يوجد اتصال بالإنترنت. تحقق من الشبكة.' : 'No internet connection. Please check your network.'
-          );
-          setLoading(false);
-          return;
-        }
-      } catch (netInfoError) {
-        logger.warn('⚠️ [iPad] Could not check network (continuing anyway):', netInfoError);
-        // Continue even if network check fails
-      }
+    // Validate minimum amount
+    if (totalAmount < 10) {
+      throw new Error(isRTL ? 'الحد الأدنى للشراء 10 ريال' : 'Minimum purchase amount is 10 QAR');
+    }
 
-      // Calculate total amount (with 10% platform fee already included in prices)
-      const totalAmount = total; // Use pre-calculated total with markup
+    logger.info('📱 [Sadad] Initiating coin purchase...', {
+      device: Platform.OS,
+      totalAmount,
+      userId: currentUser.uid,
+      timestamp: new Date().toISOString(),
+    });
 
-      // Validate minimum amount
-      if (totalAmount < 10) {
-        logger.warn('⚠️ [iPad] Amount below minimum:', totalAmount);
-        CustomAlertService.showWarning(
-          t('error'),
-          isRTL ? 'الحد الأدنى للشراء 10 ريال' : 'Minimum purchase amount is 10 QAR'
-        );
-        setLoading(false);
-        return;
-      }
+    // Call backend with timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      logger.error('❌ Request timeout after 30s');
+    }, 30000);
 
-      // 🍎 iPad Fix 5: Log comprehensive debug info
-      logger.info('🍎 [iPad] Initiating coin purchase...', {
-        device: Platform.OS,
-        isPad: Platform.isPad,
-        version: Platform.Version,
-        totalAmount,
-        userId: currentUser.uid,
-        email: currentUser.email,
-        timestamp: new Date().toISOString(),
+    let response;
+    try {
+      response = await BackendAPI.post('/api/coins/purchase/sadad/initiate', {
+        customAmount: totalAmount,
+        email: currentUser.email || `${currentUser.uid}@guild.app`,
+        mobileNo: currentUser.phoneNumber || '+97450123456',
+        language: 'ENG'
       });
+      clearTimeout(timeoutId);
+    } catch (apiError: any) {
+      clearTimeout(timeoutId);
+      throw apiError;
+    }
 
-      // 🍎 iPad Fix 6: Call backend with timeout handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        logger.error('❌ [iPad] Request timeout after 30s');
-      }, 30000); // 30s timeout
+    logger.info('✅ [Sadad] Payment initiation response received:', response);
 
-      let response;
-      try {
-        response = await BackendAPI.post('/api/coins/purchase/sadad/initiate', {
-          customAmount: totalAmount,
-          email: currentUser.email || `${currentUser.uid}@guild.app`,
-          mobileNo: currentUser.phoneNumber || '+97450123456',
-          language: 'ENG'
-        });
-        clearTimeout(timeoutId);
-      } catch (apiError: any) {
-        clearTimeout(timeoutId);
-        throw apiError;
-      }
+    // Validate response
+    if (!response || !response.success || !response.data || !response.data.formPayload) {
+      const errorDetail = JSON.stringify(response).substring(0, 200);
+      throw new Error(`Invalid response from payment server: ${errorDetail}`);
+    }
 
-      logger.info('✅ [iPad] Payment initiation response received:', response);
-
-      // 🍎 iPad Fix 7: Validate response with detailed error
-      if (!response || !response.success || !response.data || !response.data.formPayload) {
-        const errorDetail = JSON.stringify(response).substring(0, 200);
-        throw new Error(`Invalid response from payment server: ${errorDetail}`);
-      }
-
-      const { formPayload, orderId } = response.data;
-      
-      // Generate HTML form that auto-submits to Sadad
-      const formFields = Object.entries(formPayload.fields)
-        .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}">`)
-        .join('\n        ');
-      
-      const htmlForm = `
+    const { formPayload, orderId } = response.data;
+    
+    // Generate HTML form that auto-submits to Sadad
+    const formFields = Object.entries(formPayload.fields)
+      .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}">`)
+      .join('\n        ');
+    
+    const htmlForm = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -298,47 +389,25 @@ export default function CoinStoreScreen() {
   </script>
 </body>
 </html>`;
-      
-      let paymentUrl: string;
-      
-      if (requiresExternalBrowser()) {
-        // 🍎 iOS: Build query string for external browser
-        const queryParams = new URLSearchParams(formPayload.fields as Record<string, string>).toString();
-        paymentUrl = `${formPayload.action}?${queryParams}`;
-        logger.info('🍎 [iPad] Built payment URL for Safari:', paymentUrl.substring(0, 100) + '...');
-      } else {
-        // Android: Use data URI with HTML form
-        paymentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlForm)}`;
-        logger.info('📱 Built payment URL for WebView');
-      }
-      
-      setPaymentUrl(paymentUrl);
-      setPaymentId(orderId);
-      setShowConfirmModal(true);
-      
-      logger.info('✅ [iPad] Payment initiation successful, showing confirmation modal');
-      
-    } catch (error: any) {
-      // 🍎 iPad Fix 8: Comprehensive error handling with debug IDs
-      logger.error('❌ [iPad] Payment initiation failed:', error);
-      
-      let errorMessage = isRTL ? 'فشل الشراء. حاول مرة أخرى.' : 'Purchase failed. Please try again.';
-      
-      if (error.name === 'AbortError') {
-        errorMessage = isRTL ? 'انتهت مهلة الطلب. تحقق من اتصالك.' : 'Request timed out. Please check your connection.';
-      } else if (error.message) {
-        errorMessage = error.message;
-        // Add debug ID for support
-        errorMessage += ` (Error ID: ${Date.now()})`;
-      }
-      
-      CustomAlertService.showError(
-        t('error'),
-        errorMessage
-      );
-    } finally {
-      setLoading(false);
+    
+    let paymentUrl: string;
+    
+    if (requiresExternalBrowser()) {
+      // Build query string for external browser
+      const queryParams = new URLSearchParams(formPayload.fields as Record<string, string>).toString();
+      paymentUrl = `${formPayload.action}?${queryParams}`;
+      logger.info('📱 Built payment URL for external browser:', paymentUrl.substring(0, 100) + '...');
+    } else {
+      // Android: Use data URI with HTML form
+      paymentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlForm)}`;
+      logger.info('📱 Built payment URL for WebView');
     }
+    
+    setPaymentUrl(paymentUrl);
+    setPaymentId(orderId);
+    setShowConfirmModal(true);
+    
+    logger.info('✅ [Sadad] Payment initiation successful, showing confirmation modal');
   };
 
   const handleConfirmPayment = () => {
