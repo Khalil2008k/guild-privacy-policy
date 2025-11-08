@@ -31,13 +31,13 @@ export const IAP_PRODUCT_IDS = [
   'com.guild.coins.diamond',  // 200 QAR
 ];
 
-// Map IAP products to coin values
+// Map IAP products to coin values (with 10% platform fee)
 export const IAP_COIN_MAP: Record<string, { value: number; price: number; symbol: string }> = {
-  'com.guild.coins.bronze': { value: 5, price: 5, symbol: 'GBC' },
-  'com.guild.coins.silver': { value: 10, price: 10, symbol: 'GSC' },
-  'com.guild.coins.gold': { value: 50, price: 50, symbol: 'GGC' },
-  'com.guild.coins.platinum': { value: 100, price: 100, symbol: 'GPC' },
-  'com.guild.coins.diamond': { value: 200, price: 200, symbol: 'GDC' },
+  'com.guild.coins.bronze': { value: 5, price: 5.50, symbol: 'GBC' },    // 5 QAR value + 10% = 5.50 QAR
+  'com.guild.coins.silver': { value: 10, price: 11, symbol: 'GSC' },     // 10 QAR value + 10% = 11 QAR
+  'com.guild.coins.gold': { value: 50, price: 55, symbol: 'GGC' },       // 50 QAR value + 10% = 55 QAR
+  'com.guild.coins.platinum': { value: 100, price: 110, symbol: 'GPC' }, // 100 QAR value + 10% = 110 QAR
+  'com.guild.coins.diamond': { value: 200, price: 220, symbol: 'GDC' },  // 200 QAR value + 10% = 220 QAR
 };
 
 class AppleIAPService {
