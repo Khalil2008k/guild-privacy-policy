@@ -1,12 +1,17 @@
 import React from 'react';
 import { Stack } from 'expo-router';
+import { Platform, useWindowDimensions } from 'react-native';
 
 export default function ModalLayout() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        presentation: 'modal',
+        // 🎯 iPad Fix: Use fullScreenModal on tablets to prevent small card presentation
+        presentation: (Platform.OS === 'ios' && isTablet) ? 'fullScreenModal' : 'modal',
         animation: 'slide_from_bottom',
       }}
     >

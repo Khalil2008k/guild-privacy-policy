@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Animated, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -59,6 +59,8 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
   const { bottom } = useSafeAreaInsets();
   const { theme, isDarkMode } = useTheme();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   
   // Determine current route from pathname if not provided
   const activeRoute = currentRoute || pathname;
@@ -108,22 +110,22 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
   const styles = StyleSheet.create({
     container: {
       position: 'absolute',
-      left: 18,
-      right: 18,
+      left: isTablet ? width * 0.15 : 18, // 🎯 iPad: Center nav bar with margins
+      right: isTablet ? width * 0.15 : 18,
       bottom: bottom + 10,
       backgroundColor: '#000000',
       borderRadius: 22,
-      borderWidth: 2,
-      borderColor: theme.primary + '40',
+      borderWidth: isTablet ? 3 : 2, // 🎯 iPad: Thicker border for visibility
+      borderColor: theme.primary + (isTablet ? '60' : '40'), // 🎯 iPad: More visible border
       shadowColor: theme.primary,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 16,
+      shadowOpacity: isTablet ? 0.5 : 0.3, // 🎯 iPad: Stronger shadow
+      shadowRadius: isTablet ? 20 : 16,
+      elevation: isTablet ? 20 : 16,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 4,
-      paddingHorizontal: 16,
+      paddingVertical: isTablet ? 8 : 4, // 🎯 iPad: More padding
+      paddingHorizontal: isTablet ? 24 : 16,
     },
     navItem: {
       flex: 1,
@@ -172,7 +174,7 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
     },
     navText: {
       color: '#CCCCCC',
-      fontSize: 11,
+      fontSize: isTablet ? 13 : 11, // 🎯 iPad: Larger text
       marginTop: 4,
       fontFamily: FONT_FAMILY,
       fontWeight: '700',
@@ -184,7 +186,7 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
       fontWeight: '900',
       textShadowColor: '#FFFFFF80',
       textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 4,
+      textShadowRadius: isTablet ? 6 : 4, // 🎯 iPad: Stronger glow
     },
     centerButton: {
       width: 56,
@@ -228,7 +230,7 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
                 onPress={() => handleNavPress(route)}
                 activeOpacity={0.8}
               >
-                {route.icon({ size: 30, color: theme.primary })}
+                {route.icon({ size: isTablet ? 34 : 30, color: theme.primary })}
               </TouchableOpacity>
             </View>
           );
@@ -294,7 +296,7 @@ export default function AppBottomNavigation({ currentRoute }: AppBottomNavigatio
               />
               
               {/* Icon */}
-              {route.icon({ size: 22, color: active ? theme.primary : '#CCCCCC' })}
+              {route.icon({ size: isTablet ? 26 : 22, color: active ? theme.primary : '#FFFFFF' })}
               
               {/* Label */}
               <Text style={[
