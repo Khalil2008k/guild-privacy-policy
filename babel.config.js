@@ -7,19 +7,8 @@ module.exports = function (api) {
   return {
     presets: ["babel-preset-expo"],
     // COMMENT: PRODUCTION HARDENING - Task 5.6 - Tree-shaking optimizations
-    plugins: [
-      // Remove console.log in production (complementary to Metro minification)
-      ...(isProduction
-        ? [
-            [
-              'transform-remove-console',
-              {
-                exclude: ['error', 'warn'], // Keep console.error and console.warn
-              },
-            ],
-          ]
-        : []),
-    ],
+    // NOTE: Console removal is handled by Metro minifier config, not Babel
+    plugins: [],
     // COMMENT: PRODUCTION HARDENING - Task 5.6 - Enable tree-shaking via loose mode
     // This allows better tree-shaking by converting ES6 classes to functions
     env: {

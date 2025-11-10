@@ -20,10 +20,12 @@
  */
 
 export type FeatureFlag =
-  // ===== WALLET & COINS =====
+  // ===== WALLET & CREDITS =====
   | 'GUILD_WITHDRAWAL_V2'        // New withdrawal system with KYC
   | 'GUILD_KYC_VERIFICATION'      // KYC verification flow
-  | 'GUILD_IOS_IAP_COINS'         // iOS In-App Purchase for coins
+  | 'GUILD_IOS_IAP_COINS'         // iOS In-App Purchase for coins (DEPRECATED - use external)
+  | 'GUILD_EXTERNAL_PAYMENT'      // External payment via Sadad (compliant for services)
+  | 'GUILD_CREDITS_TERMINOLOGY'   // Use "Credits" instead of "Coins" (service marketplace)
 
   // ===== JOB SYSTEM =====
   | 'GUILD_DISPUTE_V1'            // Job dispute system
@@ -72,7 +74,7 @@ interface FeatureFlagConfig {
 }
 
 const FEATURE_FLAGS: Record<FeatureFlag, FeatureFlagConfig> = {
-  // ===== WALLET & COINS =====
+  // ===== WALLET & CREDITS =====
   GUILD_WITHDRAWAL_V2: {
     enabled: false, // TODO: Enable after Phase 2 complete
     description: 'New withdrawal system with KYC verification and proper limits',
@@ -84,9 +86,19 @@ const FEATURE_FLAGS: Record<FeatureFlag, FeatureFlagConfig> = {
     allowedEnvironments: ['development', 'staging'],
   },
   GUILD_IOS_IAP_COINS: {
-    enabled: false, // TODO: Enable after Phase 10 complete
-    description: 'iOS In-App Purchase for coins (Apple guideline 3.1.1 compliance)',
+    enabled: false, // DEPRECATED: Keeping as fallback if external payment rejected
+    description: 'iOS In-App Purchase for coins (use only if external payment rejected)',
     allowedEnvironments: ['development', 'staging'],
+  },
+  GUILD_EXTERNAL_PAYMENT: {
+    enabled: true, // ✅ PRIMARY: External payment for service marketplace
+    description: 'External payment via Sadad (Apple Guideline 3.1.5 - Services)',
+    allowedEnvironments: ['development', 'staging', 'production'],
+  },
+  GUILD_CREDITS_TERMINOLOGY: {
+    enabled: true, // ✅ Use "Credits" for service marketplace positioning
+    description: 'Use "Credits" instead of "Coins" for App Store compliance',
+    allowedEnvironments: ['development', 'staging', 'production'],
   },
 
   // ===== JOB SYSTEM =====

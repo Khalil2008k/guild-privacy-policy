@@ -87,15 +87,18 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.guild"
+    namespace 'com.mazen123333.guild'
     defaultConfig {
-        applicationId "com.guild"
+        applicationId 'com.mazen123333.guild'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+        
+        // Resolve react-native-iap flavor ambiguity by preferring play flavor
+        missingDimensionStrategy 'store', 'play'
     }
     signingConfigs {
         debug {
@@ -130,6 +133,14 @@ android {
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
+    
+    // Configure product flavors to match react-native-iap's play flavor
+    flavorDimensions "store"
+    productFlavors {
+        play {
+            dimension "store"
+        }
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`
@@ -151,6 +162,7 @@ android {
         }
     }
 }
+
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

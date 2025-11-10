@@ -1,206 +1,345 @@
-# 🔴 CRITICAL FIXES - IMPLEMENTATION CHECKLIST
+# 🚨 CRITICAL FIXES CHECKLIST - START HERE
 
-**Total Estimated Time**: 3-4 hours  
-**Status**: 🔄 IN PROGRESS
-
----
-
-## ✅ Fix 1: Apply Rate Limiting to Auth Endpoints (30 minutes)
-
-**Priority**: P0 - SECURITY CRITICAL  
-**File**: `backend/src/server.ts`  
-**Status**: ✅ ALREADY IMPLEMENTED
-
-### Current Issue:
-Auth endpoints are not protected by rate limiting, making them vulnerable to brute force attacks.
-
-### Solution:
-```typescript
-import { authRateLimit } from './middleware/auth';
-
-// Apply rate limiting to auth routes
-app.use('/api/auth', authRateLimit);
-```
-
-### Verification:
-- [ ] Rate limiter applied to `/api/auth` routes
-- [ ] Test with 10 rapid login attempts
-- [ ] Verify 429 response after limit exceeded
-- [ ] Backend logs show rate limit triggers
+**Priority:** P0 - BLOCKING LAUNCH  
+**Timeline:** 2 weeks  
+**Team:** All engineers
 
 ---
 
-## ✅ Fix 2: Create Offer Submission Endpoint (1 hour)
+## ✅ WEEK 1: SECURITY FIXES (Days 1-7)
 
-**Priority**: P0 - CORE FUNCTIONALITY  
-**File**: `backend/src/routes/jobs.ts`  
-**Status**: ⏳ PENDING
+### Day 1-2: Firestore Rules Security 🔴
+**Files:** `backend/firestore.rules`
 
-### Current Issue:
-No endpoint for freelancers to submit offers to jobs.
+- [ ] **CB-010: Fix wallet transaction rules**
+  ```javascript
+  // Change line 84-88:
+  match /wallet_transactions/{transactionId} {
+    allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+    allow write: if false; // ❌ CHANGE THIS - was: if request.auth != null
+  }
+  
+  // Add new collection:
+  match /wallets/{userId} {
+    allow read: if request.auth != null && request.auth.uid == userId;
+    allow write: if false; // Only Cloud Functions
+  }
+  ```
+  - [ ] Update Firestore rules
+  - [ ] Deploy rules: `firebase deploy --only firestore:rules`
+  - [ ] Test: User cannot write to wallet
+  - [ ] Test: Backend can write to wallet
 
-### Solution:
-Create `POST /api/v1/jobs/:id/offers` endpoint with:
-- Authentication required
-- Offer validation (budget, timeline, message)
-- Duplicate offer prevention
-- Notification to job poster
+- [ ] **CB-011: Fix notification rules**
+  ```javascript
+  // Change line 57-61:
+  match /notifications/{notificationId} {
+    allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+    allow update: if request.auth != null && 
+      request.auth.uid == resource.data.userId &&
+      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+    allow create, delete: if false; // ❌ CHANGE THIS - was: allow write
+  }
+  ```
+  - [ ] Update Firestore rules
+  - [ ] Deploy rules
+  - [ ] Test: User cannot create notifications
+  - [ ] Test: User can mark notification as read
 
-### Implementation:
-```typescript
-// In backend/src/routes/jobs.ts
-router.post('/:id/offers', authenticateToken, async (req, res) => {
-  // Validate offer data
-  // Check for duplicates
-  // Create offer in DB
-  // Send notification to job poster
-  // Return created offer
-});
-```
-
-### Verification:
-- [ ] Endpoint responds to POST requests
-- [ ] Requires authentication
-- [ ] Prevents duplicate offers
-- [ ] Returns 201 on success
-- [ ] Sends notification to poster
-
----
-
-## ✅ Fix 3: Create/Fix Firebase Config (15 minutes)
-
-**Priority**: P0 - APP STABILITY  
-**File**: `src/config/firebase.ts`  
-**Status**: ⏳ PENDING
-
-### Current Issue:
-Firebase config may be missing or misconfigured.
-
-### Solution:
-Verify `src/config/firebase.ts` exists with proper initialization.
-
-### Verification:
-- [ ] File exists at correct path
-- [ ] Firebase initialized with valid credentials
-- [ ] Firestore, Auth, Storage, Messaging configured
-- [ ] No console errors on app start
-
----
-
-## ✅ Fix 4: Create Chat Conversation Screen (1 hour)
-
-**Priority**: P0 - CORE FUNCTIONALITY  
-**File**: `src/app/(modals)/chat.tsx`  
-**Status**: ⏳ PENDING
-
-### Current Issue:
-Main chat conversation screen is missing.
-
-### Solution:
-Create `chat.tsx` with:
-- Firestore onSnapshot listener for real-time messages
-- Message list (FlatList with inverted scroll)
-- Chat input component
-- File attachment support
-- Typing indicators
-
-### Implementation Structure:
-```typescript
-// src/app/(modals)/chat.tsx
-- useEffect with onSnapshot listener
-- FlatList for message rendering
-- ChatInput component integration
-- Real-time message updates
-- Navigation params (chatId, userId)
-```
-
-### Verification:
-- [ ] Screen exists and renders
-- [ ] Messages load from Firestore
-- [ ] Real-time updates work
-- [ ] Can send messages
-- [ ] Typing indicators functional
+- [ ] **CB-012: Add input validation to rules**
+  ```javascript
+  // Add to users collection (line 6-8):
+  match /users/{userId} {
+    allow write: if request.auth != null && 
+      request.auth.uid == userId &&
+      request.resource.data.name is string &&
+      request.resource.data.name.size() >= 2 &&
+      request.resource.data.name.size() <= 100 &&
+      !request.resource.data.name.matches('.*<script.*');
+  }
+  
+  // Add to jobs collection (line 11-16):
+  match /jobs/{jobId} {
+    allow create: if request.auth != null &&
+      request.resource.data.budget > 0 &&
+      request.resource.data.budget <= 1000000 &&
+      request.resource.data.title.size() >= 3 &&
+      request.resource.data.title.size() <= 200;
+  }
+  ```
+  - [ ] Add validation to all collections
+  - [ ] Deploy rules
+  - [ ] Test: Invalid data rejected
+  - [ ] Test: Valid data accepted
 
 ---
 
-## ✅ Fix 5: Complete Chat UI (30 minutes)
+### Day 3-4: Remove Console.log 🔴
+**Files:** 189 files across entire codebase
 
-**Priority**: P0 - USER EXPERIENCE  
-**File**: `src/app/(modals)/chat-list.tsx` or similar  
-**Status**: ⏳ PENDING
-
-### Current Issue:
-Chat list/conversation screens incomplete.
-
-### Solution:
-Ensure these screens exist:
-- Chat list (all conversations)
-- Individual chat screen
-- Job-specific chat
-
-### Verification:
-- [ ] Can access chat list
-- [ ] Can open individual chats
-- [ ] Navigation works properly
-- [ ] Theme applied correctly
-
----
-
-## ✅ Fix 6: Verify/Create Escrow Service (45 minutes)
-
-**Priority**: P0 - PAYMENT SECURITY  
-**File**: `backend/src/services/escrowService.ts`  
-**Status**: ⏳ PENDING
-
-### Current Issue:
-Escrow service may be missing or not integrated with job acceptance.
-
-### Solution:
-1. Verify escrowService.ts exists
-2. Ensure it has required methods:
-   - `createEscrow(jobId, amount, clientId, freelancerId)`
-   - `releaseEscrow(escrowId)`
-   - `refundEscrow(escrowId)`
-3. Integrate with job acceptance endpoint
-
-### Verification:
-- [ ] Service file exists
-- [ ] All CRUD methods present
-- [ ] Integration with job routes
-- [ ] Escrow created on job acceptance
-- [ ] Firestore/DB records created
-- [ ] Fees calculated correctly (17.5%)
+- [ ] **CB-001: Remove all 1,054 console.log statements**
+  ```bash
+  # Search for console.log:
+  grep -r "console\.log" src/ --include="*.ts" --include="*.tsx"
+  grep -r "console\.debug" src/ --include="*.ts" --include="*.tsx"
+  
+  # Replace with proper logger:
+  # ❌ REMOVE: console.log('User data:', userData);
+  # ✅ ADD: logger.info('User action', { userId: maskUserId(user.id) });
+  ```
+  - [ ] Create proper logger utility (if not exists)
+  - [ ] Replace console.log with logger.info
+  - [ ] Replace console.error with logger.error
+  - [ ] Replace console.warn with logger.warn
+  - [ ] Add ESLint rule to prevent console.log
+  - [ ] Verify: `grep -r "console\.log" src/` returns 0 results
 
 ---
 
-## 📊 PROGRESS TRACKER
+### Day 5-6: Input Validation & Sanitization 🔴
+**Files:** All user input handlers
 
-| Fix | Priority | Time | Status |
-|-----|----------|------|--------|
-| 1. Rate Limiting | P0 | 30min | 🔄 IN PROGRESS |
-| 2. Offer Endpoint | P0 | 1hr | ⏳ PENDING |
-| 3. Firebase Config | P0 | 15min | ⏳ PENDING |
-| 4. Chat Screen | P0 | 1hr | ⏳ PENDING |
-| 5. Chat UI | P0 | 30min | ⏳ PENDING |
-| 6. Escrow Service | P0 | 45min | ⏳ PENDING |
-| **TOTAL** | - | **4hr** | **0/6 Complete** |
+- [ ] **CB-004: Add input sanitization**
+  ```bash
+  npm install dompurify isomorphic-dompurify
+  ```
+  ```typescript
+  // src/utils/sanitize.ts
+  import DOMPurify from 'isomorphic-dompurify';
+  
+  export function sanitizeHTML(html: string): string {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'li'],
+      ALLOWED_ATTR: []
+    });
+  }
+  
+  export function sanitizeText(text: string): string {
+    return text
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  }
+  ```
+  - [ ] Create sanitization utilities
+  - [ ] Sanitize chat messages
+  - [ ] Sanitize job descriptions
+  - [ ] Sanitize user profiles
+  - [ ] Sanitize search queries
+  - [ ] Test with XSS payloads: `<script>alert('XSS')</script>`
+  - [ ] Verify: All inputs sanitized
 
 ---
 
-## 🧪 POST-FIX TESTING CHECKLIST
+### Day 7: Secure Token Storage 🔴
+**Files:** `src/services/authTokenService.ts`, `src/contexts/AuthContext.tsx`
 
-After all fixes:
-- [ ] Run all audit scripts again
-- [ ] Verify 0 critical issues
-- [ ] Run E2E test suite
-- [ ] Test on real device
-- [ ] Load test with 50+ users
-- [ ] Security scan
-- [ ] Deploy to staging
+- [ ] **CB-005: Migrate to SecureStore**
+  ```bash
+  npm install expo-secure-store
+  ```
+  ```typescript
+  import * as SecureStore from 'expo-secure-store';
+  
+  // ❌ REMOVE: await AsyncStorage.setItem('authToken', token);
+  // ✅ ADD:
+  await SecureStore.setItemAsync('authToken', token, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED
+  });
+  ```
+  - [ ] Install expo-secure-store
+  - [ ] Replace AsyncStorage for tokens
+  - [ ] Replace AsyncStorage for refresh tokens
+  - [ ] Replace AsyncStorage for sensitive data
+  - [ ] Test: Tokens stored securely
+  - [ ] Verify: No tokens in AsyncStorage
 
 ---
 
-**Started**: October 7, 2025  
-**Target Completion**: Same day (4 hours)  
-**Next Step**: Implementing Fix #1 (Rate Limiting)
+## ✅ WEEK 2: MONITORING & INFRASTRUCTURE (Days 8-14)
+
+### Day 8-9: Implement Monitoring 🔴
+**Files:** `src/app/_layout.tsx`, `backend/src/server.ts`
+
+- [ ] **CB-014: Add Sentry crash reporting**
+  ```bash
+  npm install @sentry/react-native @sentry/expo
+  cd backend && npm install @sentry/node @sentry/profiling-node
+  ```
+  ```typescript
+  // src/app/_layout.tsx
+  import * as Sentry from '@sentry/react-native';
+  
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    environment: __DEV__ ? 'development' : 'production',
+    tracesSampleRate: 1.0,
+  });
+  
+  export default Sentry.wrap(RootLayout);
+  ```
+  - [ ] Create Sentry account
+  - [ ] Install Sentry SDK (frontend)
+  - [ ] Install Sentry SDK (backend)
+  - [ ] Configure Sentry DSN
+  - [ ] Test: Trigger error, verify in Sentry
+  - [ ] Set up alerts (email, Slack)
+
+---
+
+### Day 10-11: Rate Limiting 🔴
+**Files:** `backend/src/middleware/rateLimiter.ts`, `backend/src/server.ts`
+
+- [ ] **CB-006: Add backend rate limiting**
+  ```bash
+  cd backend && npm install express-rate-limit rate-limit-redis ioredis
+  ```
+  ```typescript
+  // backend/src/middleware/rateLimiter.ts
+  import rateLimit from 'express-rate-limit';
+  
+  export const authRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: 'Too many attempts, please try again later'
+  });
+  
+  export const apiRateLimit = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 60, // 60 requests per minute
+  });
+  ```
+  - [ ] Install rate limiting packages
+  - [ ] Create rate limiter middleware
+  - [ ] Apply to auth endpoints
+  - [ ] Apply to payment endpoints
+  - [ ] Apply to API endpoints
+  - [ ] Test: Exceed rate limit → 429 error
+
+- [ ] **CB-013: Add Firestore rate limiting**
+  ```bash
+  # Install Firebase App Check
+  npm install @react-native-firebase/app-check
+  ```
+  - [ ] Configure Firebase App Check
+  - [ ] Enable reCAPTCHA
+  - [ ] Test: App Check token required
+
+---
+
+### Day 12: Error Boundaries 🔴
+**Files:** `src/components/ErrorBoundary.tsx`, `src/app/_layout.tsx`
+
+- [ ] **CB-003: Add global error boundaries**
+  ```typescript
+  // src/components/ErrorBoundary.tsx
+  import React from 'react';
+  
+  export class ErrorBoundary extends React.Component {
+    componentDidCatch(error, errorInfo) {
+      logger.error('App crashed', { error, errorInfo });
+      Sentry.captureException(error);
+    }
+    
+    render() {
+      if (this.state.hasError) {
+        return <SafeErrorScreen />;
+      }
+      return this.props.children;
+    }
+  }
+  ```
+  - [ ] Create ErrorBoundary component
+  - [ ] Wrap root layout
+  - [ ] Create error fallback UI
+  - [ ] Test: Trigger error, verify boundary catches it
+
+---
+
+### Day 13: Backups 🔴
+**Files:** Firebase Console, Cloud Functions
+
+- [ ] **HP-006: Set up automated backups**
+  ```bash
+  # Enable Firestore backups
+  gcloud firestore backups schedules create \
+    --database='(default)' \
+    --recurrence=daily \
+    --retention=7d
+  ```
+  - [ ] Enable Firestore daily backups
+  - [ ] Enable Firebase Storage backups
+  - [ ] Test: Trigger manual backup
+  - [ ] Verify: Backup created successfully
+
+---
+
+### Day 14: Testing & Verification 🔴
+
+- [ ] **Final Verification Checklist**
+  - [ ] All P0 issues resolved
+  - [ ] No console.log in code
+  - [ ] Firestore rules secure
+  - [ ] Monitoring working
+  - [ ] Rate limiting working
+  - [ ] Error boundaries working
+  - [ ] Backups configured
+  - [ ] All tests passing
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+### Before Moving to Week 3:
+- ✅ Security score improved from 2/10 to 7/10
+- ✅ All P0 critical blockers resolved
+- ✅ Monitoring implemented and working
+- ✅ No console.log in production code
+- ✅ Firestore rules secure
+- ✅ Rate limiting implemented
+- ✅ Backups configured
+
+---
+
+## 📋 DAILY STANDUP TEMPLATE
+
+### What did you complete yesterday?
+- [ ] List completed tasks
+
+### What will you work on today?
+- [ ] List today's tasks
+
+### Any blockers?
+- [ ] List blockers
+
+---
+
+## 🚨 EMERGENCY CONTACTS
+
+**If you find additional critical issues:**
+1. Stop work immediately
+2. Document the issue
+3. Notify team lead
+4. Add to this checklist
+5. Reassess timeline
+
+---
+
+## 📊 PROGRESS TRACKING
+
+**Week 1 Progress:** __ / 7 days complete  
+**Week 2 Progress:** __ / 7 days complete  
+**Overall Progress:** __ / 14 days complete
+
+**Blockers:** (List any blockers here)
+
+**Notes:** (Add any notes here)
+
+---
+
+**Last Updated:** November 9, 2025  
+**Next Review:** Daily standup  
+**Final Review:** End of Week 2
 

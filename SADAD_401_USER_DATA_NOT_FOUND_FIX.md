@@ -126,3 +126,4 @@ After fixing the account configuration:
 **Note:** This is a Sadad account configuration issue. The code is correct and sending the request properly. You need to configure your Sadad merchant account correctly.
 
 
+

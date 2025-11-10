@@ -143,3 +143,4 @@ After deployment, verify:
 **Note:** The frontend is currently configured to hit production backend on Render. Until you redeploy the backend, the `/api/coins/purchase` endpoint will return 404 Not Found.
 
 
+

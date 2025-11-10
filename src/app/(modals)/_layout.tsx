@@ -65,6 +65,12 @@ export default function ModalLayout() {
         }}
       />
       <Stack.Screen
+        name="guild-creation-rules"
+        options={{
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
         name="create-guild"
         options={{
           gestureEnabled: true,

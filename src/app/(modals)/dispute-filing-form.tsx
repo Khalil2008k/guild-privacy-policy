@@ -14,10 +14,11 @@ import { router } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { ArrowLeft, AlertTriangle, FileText, Upload, CheckCircle, XCircle, Scale, Shield } from 'lucide-react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'; // ✅ TASK 10: Added missing Ionicons import
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BackendAPI } from '../../config/backend';
+import { logger } from '../../utils/logger'; // ✅ Added for proper logging
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -114,7 +115,7 @@ export default function DisputeFilingFormScreen() {
         throw new Error('Failed to submit dispute');
       }
     } catch (error) {
-      console.log('Failed to submit dispute:', error);
+      logger.error('Failed to submit dispute:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'فشل في تقديم النزاع. يرجى المحاولة مرة أخرى.' : 'Failed to submit dispute. Please try again.'

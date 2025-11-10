@@ -333,3 +333,4 @@ With this implementation, GUILD is now **compliant** with Apple Guideline 3.1.1.
 
 *Completed: November 7, 2025*
 
+

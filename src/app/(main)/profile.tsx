@@ -32,6 +32,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { logger } from '../../utils/logger'; // COMMENT: PRIORITY 1 - Logger migration
+// ✅ TASK 14: iPad responsive layout components
+import { ResponsiveContainer } from '../../components/ResponsiveContainer';
+import { useResponsive } from '../../utils/responsive';
 
 const { width, height } = Dimensions.get('window');
 
@@ -90,6 +93,8 @@ export default function ProfileScreen() {
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useI18n();
   const { profile, updateProfile } = useUserProfile();
+  // ✅ TASK 14: Get responsive dimensions for iPad layout
+  const { isTablet, isLargeDevice } = useResponsive();
   
   // Debug: Log profile data
   React.useEffect(() => {

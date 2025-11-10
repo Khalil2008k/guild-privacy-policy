@@ -18,6 +18,7 @@ export default {
       buildNumber: "3",
       supportsTablet: true,
       requireFullScreen: false,
+      icon: "./assets/icon.png", // 🎨 App icon for iOS
       config: {
         usesNonExemptEncryption: false
       },
@@ -27,9 +28,12 @@ export default {
         NSPhotoLibraryUsageDescription: "GUILD needs access to your photo library to select and share images for your profile, job postings, and portfolio. This helps you present your work professionally.",
         NSMicrophoneUsageDescription: "GUILD needs microphone access to record and send voice messages in chat conversations. This helps you communicate more effectively with clients and freelancers.",
         NSLocationWhenInUseUsageDescription: "GUILD uses your location to show nearby jobs and guilds. This helps you find relevant work opportunities in your area.",
-        // COMMENT: Apple App Tracking Transparency (ATT) - Required for iOS 14.5+
-        // This permission must be requested before using IDFA (Identifier for Advertisers)
-        NSUserTrackingUsageDescription: "GUILD uses tracking to improve your experience and show relevant jobs. You can disable this in Settings."
+        // ✅ TASK 17: Face ID / Touch ID permission for biometric authentication
+        NSFaceIDUsageDescription: "GUILD uses Face ID to securely authenticate you and protect your account from unauthorized access.",
+        // ⚠️ REMOVED: NSUserTrackingUsageDescription (Task 17)
+        // Apple may reject if you request ATT but don't use IDFA
+        // Only add this back if you implement Facebook Ads, Google AdMob, or cross-app tracking
+        // NSUserTrackingUsageDescription: "GUILD uses tracking to improve your experience and show relevant jobs. You can disable this in Settings."
       }
     },
     // Android specific configuration  
@@ -61,22 +65,24 @@ export default {
     scheme: "guild",
     extra: {
       eas: {
-        projectId: "03fc46b1-43ec-4b63-a1fc-329d0e5f1d1b"
+        projectId: process.env.EAS_PROJECT_ID || "03fc46b1-43ec-4b63-a1fc-329d0e5f1d1b"
       },
-      // Force correct Firebase project (guild-4f46b)
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: "guild-4f46b",
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "guild-4f46b.firebaseapp.com",
-      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "guild-4f46b.firebasestorage.app",
-      EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyD5i6jUePndKyW1AYI0ANrizNpNzGJ6d3w",
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "654144998705",
-      EXPO_PUBLIC_FIREBASE_APP_ID: "1:654144998705:web:880f16df9efe0ad4853410",
-      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-3F86RQH389",
-      // API and WebSocket URLs
-      apiUrl: "https://guild-yf7q.onrender.com/api/v1",
-      wsUrl: process.env.EXPO_PUBLIC_WS_URL || "wss://guild-yf7q.onrender.com",
-      firebaseProjectId: "guild-4f46b",
-      // WebSocket URL for real-time features
-      EXPO_PUBLIC_WS_URL: process.env.EXPO_PUBLIC_WS_URL || "wss://guild-yf7q.onrender.com",
+      // ✅ FIXED: Load Firebase config from environment variables (Task 5)
+      // All secrets now loaded from .env file instead of hardcoded
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
+      
+      // ✅ FIXED: API and WebSocket URLs from environment
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      wsUrl: process.env.EXPO_PUBLIC_WS_URL,
+      firebaseProjectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      EXPO_PUBLIC_WS_URL: process.env.EXPO_PUBLIC_WS_URL,
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
     },
     plugins: [
       "expo-router",

@@ -197,3 +197,4 @@ Total Amount: 11.00 QAR  ← CORRECT! With 10% markup
 **Your frontend now matches the backend pricing! Test it and it should work perfectly!** 🎉
 
 
+

@@ -11,7 +11,8 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, Pressable } 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, ArrowRight, MoreVertical, CheckSquare, Phone, Video } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, MoreVertical, CheckSquare } from 'lucide-react-native';
+// import { Phone, Video } from 'lucide-react-native'; // COMMENTED OUT: Voice/Video calls not implemented yet
 import { useTheme } from '@/contexts/ThemeContext';
 import { useI18n } from '@/contexts/I18nProvider';
 import { useResponsive } from '@/utils/responsive';
@@ -30,6 +31,10 @@ interface ChatHeaderProps {
   onToggleSelection?: () => void;
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
+  // COMMENTED OUT: Voice/Video calls not implemented yet
+  // onVoiceCall?: () => void;
+  // onVideoCall?: () => void;
+  // chatId?: string;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -42,6 +47,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onToggleSelection,
   onSelectAll,
   onDeselectAll,
+  // COMMENTED OUT: Voice/Video calls not implemented yet
+  // onVoiceCall,
+  // onVideoCall,
+  // chatId,
 }) => {
   const { theme } = useTheme();
   const { t, isRTL } = useI18n();
@@ -138,17 +147,32 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </View>
               </View>
 
-              {/* RTL MODE: Right side - Phone, Video, 3 dots */}
+              {/* RTL MODE: Right side - 3 dots */}
               <View style={[styles.headerRight, { marginLeft: 50 }]}>
+                {/* COMMENTED OUT: Voice/Video calls not implemented yet */}
                 {/* Phone icon */}
-                <Pressable style={styles.iconButton}>
+                {/* <Pressable 
+                  style={styles.iconButton}
+                  onPress={() => {
+                    if (onVoiceCall && chatId && otherUser?.id) {
+                      onVoiceCall();
+                    }
+                  }}
+                >
                   <Phone size={22} color={theme.textPrimary} />
-                </Pressable>
+                </Pressable> */}
                 
                 {/* Video icon */}
-                <Pressable style={styles.iconButton}>
+                {/* <Pressable 
+                  style={styles.iconButton}
+                  onPress={() => {
+                    if (onVideoCall && chatId && otherUser?.id) {
+                      onVideoCall();
+                    }
+                  }}
+                >
                   <Video size={22} color={theme.textPrimary} />
-                </Pressable>
+                </Pressable> */}
 
                 {/* 3 dots (Menu) - far right */}
                 <TouchableOpacity 
@@ -221,17 +245,32 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </View>
               </View>
 
-              {/* LTR MODE: Right side - Phone, Video, 3 dots (OPPOSITE of RTL) */}
+              {/* LTR MODE: Right side - 3 dots (OPPOSITE of RTL) */}
               <View style={styles.headerRight}>
+                {/* COMMENTED OUT: Voice/Video calls not implemented yet */}
                 {/* Phone icon */}
-                <Pressable style={styles.iconButton}>
+                {/* <Pressable 
+                  style={styles.iconButton}
+                  onPress={() => {
+                    if (onVoiceCall && chatId && otherUser?.id) {
+                      onVoiceCall();
+                    }
+                  }}
+                >
                   <Phone size={22} color={theme.textPrimary} />
-                </Pressable>
+                </Pressable> */}
                 
                 {/* Video icon */}
-                <Pressable style={styles.iconButton}>
+                {/* <Pressable 
+                  style={styles.iconButton}
+                  onPress={() => {
+                    if (onVideoCall && chatId && otherUser?.id) {
+                      onVideoCall();
+                    }
+                  }}
+                >
                   <Video size={22} color={theme.textPrimary} />
-                </Pressable>
+                </Pressable> */}
 
                 {/* 3 dots (Menu) - far right */}
                 <TouchableOpacity 

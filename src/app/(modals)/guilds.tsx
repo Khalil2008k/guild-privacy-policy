@@ -21,6 +21,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { guildService } from '@/services/firebase/GuildService';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '@/utils/logger';
+// ✅ TASK 14: iPad responsive layout components
+import { ResponsiveFlatList } from '@/components/ResponsiveFlatList';
+import { ResponsiveContainer } from '@/components/ResponsiveContainer';
+import { useResponsive } from '@/utils/responsive';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -66,6 +70,8 @@ export default function Guilds() {
   const bottom = insets?.bottom || 0;
   const goBack = useCallback(() => router.back(), []);
   const goMap = useCallback(() => router.push('/(modals)/guild-map'), []);
+  // ✅ TASK 14: Get responsive dimensions for iPad layout
+  const { isTablet, isLargeDevice, deviceType } = useResponsive();
 
   const [activeTab, setActiveTab] = useState<TabType>('discover');
   const [guilds, setGuilds] = useState<GuildData[]>([]);
@@ -150,21 +156,21 @@ export default function Guilds() {
 
       <View style={[styles.guildStats, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={[styles.statItem, { backgroundColor: theme.primary + '15' }]}>
-          <Users size={16} color={theme.primary} />
+          <Users size={14.08} color={theme.primary} />
           <Text style={[styles.statText, { color: theme.primary }]}>
             {item.memberCount}/{item.maxMembers}
           </Text>
         </View>
 
         <View style={[styles.statItem, { backgroundColor: theme.success + '15' }]}>
-          <Star size={16} color={theme.success} />
+          <Star size={14.08} color={theme.success} />
           <Text style={[styles.statText, { color: theme.success }]}>
             {item.successRate}%
           </Text>
         </View>
 
         <View style={[styles.statItem, { backgroundColor: theme.secondary + '15' }]}>
-          <Crown size={16} color={theme.secondary} />
+          <Crown size={14.08} color={theme.secondary} />
           <Text style={[styles.statText, { color: theme.secondary }]}>
             {item.totalJobs} jobs
           </Text>
@@ -207,60 +213,60 @@ export default function Guilds() {
 
   const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.background },
-    topBar: { paddingTop: top + 8, paddingBottom: 12, paddingHorizontal: 18, backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    brandText: { color: theme.buttonText, fontSize: 24, fontWeight: '900', letterSpacing: 1.1, fontFamily: FONT_FAMILY },
-    squareBtn: { width: 40, height: 40, backgroundColor: theme.buttonText, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+    topBar: { paddingTop: top + 7.04, paddingBottom: 10.56, paddingHorizontal: 15.84, backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    brand: { flexDirection: 'row', alignItems: 'center', gap: 7.04 },
+    brandText: { color: theme.buttonText, fontSize: 21.12, fontWeight: '900', letterSpacing: 0.968, fontFamily: FONT_FAMILY },
+    squareBtn: { width: 42.24, height: 42.24, backgroundColor: theme.buttonText, borderRadius: 12.672, alignItems: 'center', justifyContent: 'center', marginLeft: 7.04 }, // 35.2 * 1.2 = 42.24, 10.56 * 1.2 = 12.672 (20% increase)
 
-    header: { backgroundColor: theme.primary, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 16, borderBottomLeftRadius: 26 },
-    title: { color: theme.buttonText, fontSize: 28, fontWeight: '900', fontFamily: FONT_FAMILY },
-    sub: { color: theme.buttonText, opacity: 0.9, fontSize: 13, fontFamily: FONT_FAMILY },
+    header: { backgroundColor: theme.primary, paddingHorizontal: 15.84, paddingTop: 8.8, paddingBottom: 14.08, borderBottomLeftRadius: 22.88 },
+    title: { color: theme.buttonText, fontSize: 24.64, fontWeight: '900', fontFamily: FONT_FAMILY },
+    sub: { color: theme.buttonText, opacity: 0.9, fontSize: 11.44, fontFamily: FONT_FAMILY },
 
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      margin: 16,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1,
+      margin: 14.08,
+      paddingHorizontal: 14.08,
+      paddingVertical: 4.73088, // 5.9136 * 0.8 = 4.73088 (20% reduction from previous)
+      borderRadius: 10.56,
+      borderWidth: 0.88,
       borderColor: theme.border,
       backgroundColor: theme.surface,
-      gap: 12,
+      gap: 10.56,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: { width: 0, height: 1.76 },
       shadowOpacity: 0.08,
-      shadowRadius: 8,
+      shadowRadius: 7.04,
       elevation: 3,
     },
     searchInput: {
       flex: 1,
-      fontSize: 16,
+      fontSize: 14.08,
       color: theme.textPrimary,
       textAlign: isRTL ? 'right' : 'left'
     },
 
     tabs: {
-      borderBottomWidth: 1,
+      borderBottomWidth: 0.88,
       borderBottomColor: theme.border,
       backgroundColor: theme.surface,
     },
     tabsContent: {
-      paddingHorizontal: 16,
-      gap: 12,
+      paddingHorizontal: 14.08,
+      gap: 10.56,
     },
     tab: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 8,
-      borderWidth: 1,
+      paddingHorizontal: 16.896, // 14.08 * 1.2 = 16.896 (20% increase)
+      paddingVertical: 12.672, // 10.56 * 1.2 = 12.672 (20% increase)
+      borderRadius: 8.448, // 7.04 * 1.2 = 8.448 (20% increase)
+      borderWidth: 0.88,
       borderColor: 'transparent',
-      gap: 8,
+      gap: 7.04,
     },
     tabText: {
-      fontSize: 14,
+      fontSize: 12.32,
       fontWeight: '600',
     },
 
@@ -273,65 +279,65 @@ export default function Guilds() {
       alignItems: 'center',
     },
     loadingText: {
-      fontSize: 16,
-      marginTop: 16,
+      fontSize: 14.08,
+      marginTop: 14.08,
       color: theme.textSecondary,
     },
     guildsList: {
-      padding: 16,
+      padding: 14.08,
     },
     guildCard: {
-      marginBottom: 16,
-      padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
+      marginBottom: 14.08,
+      padding: 14.08,
+      borderRadius: 10.56,
+      borderWidth: 0.88,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: { width: 0, height: 1.76 },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowRadius: 7.04,
       elevation: 4,
     },
     guildHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: 12,
+      marginBottom: 10.56,
     },
     guildInfo: {
       flex: 1,
     },
     guildName: {
-      fontSize: 18,
+      fontSize: 15.84,
       fontWeight: '700',
-      marginBottom: 4,
+      marginBottom: 3.52,
     },
     guildDescription: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 12.32,
+      lineHeight: 17.6,
     },
     rankBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
+      paddingHorizontal: 7.04,
+      paddingVertical: 3.52,
+      borderRadius: 7.04,
     },
     rankText: {
-      fontSize: 12,
+      fontSize: 10.56,
       fontWeight: '700',
     },
     guildStats: {
-      gap: 8,
-      marginBottom: 12,
+      gap: 7.04,
+      marginBottom: 10.56,
     },
     statItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-      gap: 4,
+      paddingHorizontal: 7.04,
+      paddingVertical: 3.52,
+      borderRadius: 5.28,
+      gap: 3.52,
     },
     statText: {
-      fontSize: 12,
+      fontSize: 10.56,
       fontWeight: '600',
     },
     guildFooter: {
@@ -340,79 +346,79 @@ export default function Guilds() {
       alignItems: 'center',
     },
     guildMeta: {
-      gap: 8,
+      gap: 7.04,
     },
     guildCategory: {
-      fontSize: 12,
+      fontSize: 10.56,
       fontWeight: '500',
     },
     guildLocation: {
-      fontSize: 12,
+      fontSize: 10.56,
     },
     publicBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
+      paddingHorizontal: 7.04,
+      paddingVertical: 3.52,
+      borderRadius: 5.28,
     },
     publicText: {
-      fontSize: 12,
+      fontSize: 10.56,
       fontWeight: '600',
     },
     privateBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
+      paddingHorizontal: 7.04,
+      paddingVertical: 3.52,
+      borderRadius: 5.28,
     },
     privateText: {
-      fontSize: 12,
+      fontSize: 10.56,
       fontWeight: '600',
     },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingVertical: 60,
+      paddingVertical: 52.8,
     },
     emptyTitle: {
-      fontSize: 20,
+      fontSize: 17.6,
       fontWeight: '700',
-      marginTop: 16,
+      marginTop: 14.08,
       color: theme.textPrimary,
     },
     emptyText: {
-      fontSize: 14,
-      marginTop: 8,
+      fontSize: 12.32,
+      marginTop: 7.04,
       textAlign: 'center',
-      paddingHorizontal: 40,
+      paddingHorizontal: 35.2,
       color: theme.textSecondary,
     },
     emptyButton: {
-      marginTop: 24,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 12,
+      marginTop: 21.12,
+      paddingVertical: 12.672, // 10.56 * 1.2 = 12.672 (20% increase)
+      paddingHorizontal: 25.344, // 21.12 * 1.2 = 25.344 (20% increase)
+      borderRadius: 12.672, // 10.56 * 1.2 = 12.672 (20% increase)
       backgroundColor: theme.primary,
     },
     emptyButtonText: {
-      fontSize: 16,
+      fontSize: 16.896, // 14.08 * 1.2 = 16.896 (20% increase)
       fontWeight: '700',
       color: theme.buttonText,
     },
     fab: {
       position: 'absolute',
-      bottom: 100,
-      right: 20,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
+      bottom: 88,
+      right: 17.6,
+      width: 59.136, // 49.28 * 1.2 = 59.136 (20% increase)
+      height: 59.136, // 49.28 * 1.2 = 59.136 (20% increase)
+      borderRadius: 29.568, // 24.64 * 1.2 = 29.568 (20% increase)
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: theme.primary,
       elevation: 8,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: { width: 0, height: 3.52 },
       shadowOpacity: 0.3,
-      shadowRadius: 8,
+      shadowRadius: 7.04,
     },
   });
 
@@ -422,12 +428,12 @@ export default function Guilds() {
 
       <View style={styles.topBar}>
         <View style={styles.brand}>
-          <ShieldCheck size={22} color={theme.buttonText} />
+          <ShieldCheck size={19.36} color={theme.buttonText} />
           <Text style={styles.brandText}>{isRTL ? 'النقابات' : 'Guilds'}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={goMap} style={styles.squareBtn}>
-            <Map size={18} color={theme.primary} />
+            <Map size={15.84} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -449,7 +455,7 @@ export default function Guilds() {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Search size={20} color={theme.textSecondary} />
+        <Search size={17.6} color={theme.textSecondary} />
         <TextInput
           style={styles.searchInput}
           placeholder={isRTL ? 'البحث عن نقابات...' : 'Search guilds...'}
@@ -479,7 +485,7 @@ export default function Guilds() {
               ]}
             >
               <tab.icon
-                size={16}
+                size={14.08}
                 color={activeTab === tab.key ? theme.primary : theme.textSecondary}
               />
               <Text
@@ -507,15 +513,18 @@ export default function Guilds() {
             </Text>
           </View>
         ) : (
-          <FlatList
+          <ResponsiveFlatList
             data={guilds}
             renderItem={renderGuildCard}
             keyExtractor={(item) => item.id}
+            minColumns={1}
+            maxColumns={3}
+            itemSpacing={16}
             contentContainerStyle={styles.guildsList}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
-                <Users size={64} color={theme.textSecondary} />
+                <Users size={56.32} color={theme.textSecondary} />
                 <Text style={styles.emptyTitle}>
                   {activeTab === 'discover' && (isRTL ? 'لا توجد نقابات' : 'No Guilds Found')}
                   {activeTab === 'my-guild' && (isRTL ? 'ليس لديك نقابة' : 'No Guild Membership')}
@@ -531,7 +540,7 @@ export default function Guilds() {
                 {activeTab === 'discover' && (
                   <TouchableOpacity
                     style={styles.emptyButton}
-                    onPress={() => setActiveTab('create')}
+                    onPress={() => router.push('/(modals)/guild-creation-rules')}
                   >
                     <Text style={styles.emptyButtonText}>
                       {isRTL ? 'إنشاء نقابة' : 'Create Guild'}
@@ -543,16 +552,6 @@ export default function Guilds() {
           />
         )}
       </View>
-
-      {/* Floating Action Button (Create Guild) */}
-      {activeTab === 'discover' && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => setActiveTab('create')}
-        >
-          <Plus size={24} color={theme.buttonText} />
-        </TouchableOpacity>
-      )}
 
       <AppBottomNavigation currentRoute="/guilds" />
     </View>

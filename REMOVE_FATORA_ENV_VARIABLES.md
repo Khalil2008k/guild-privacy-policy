@@ -94,3 +94,4 @@ After removing Fatora variables and redeploying:
 **Status:** ✅ **Code cleanup complete - Ready to remove from Render**
 
 
+

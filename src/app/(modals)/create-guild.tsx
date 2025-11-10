@@ -15,12 +15,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealPayment } from '@/contexts/RealPaymentContext';
 import CustomAlert from '@/app/components/CustomAlert';
-import { ArrowLeft, Shield, Users, MapPin, FileText, Lock, Globe, Check, Coins } from 'lucide-react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { ArrowLeft, Shield, Users, MapPin, FileText, Lock, Globe, Check, Coins, Crown, TrendingUp } from 'lucide-react-native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import AppBottomNavigation from '@/app/components/AppBottomNavigation';
 import { CustomAlertService } from '@/services/CustomAlertService';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '@/utils/logger';
+import { guildService } from '@/services/firebase/GuildService';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -57,6 +58,8 @@ export default function CreateGuildScreen() {
   const bottom = insets?.bottom || 0;
   const { t, isRTL } = useI18n();
   const { theme, isDarkMode } = useTheme();
+  const { user } = useAuth();
+  const { wallet, processPayment } = useRealPayment(); // ✅ TASK 9: Added missing hook invocation
   
   const adaptiveColors = {
     background: isDarkMode ? theme.background : '#FFFFFF',
@@ -205,9 +208,49 @@ export default function CreateGuildScreen() {
         'system' // Payment goes to system (platform)
       );
 
-      if (success) {
-        setShowSuccessAlert(true);
+      if (!success) {
+        CustomAlertService.showError(
+          t('error'),
+          isRTL ? 'فشل في معالجة الدفع' : 'Payment processing failed'
+        );
+        return;
       }
+
+      // Actually create the guild in the backend
+      if (!user?.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      const guildData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        category: selectedCategories.join(', '), // Join multiple categories
+        location: formData.location.trim() || 'Global',
+        settings: {
+          isPublic: formData.isPublic,
+          requiresApproval: true, // Default to requiring approval
+          minimumRank: 'G', // Default minimum rank
+          maxMembers: formData.maxMembers,
+          guildRules: formData.requirements.trim() 
+            ? formData.requirements.trim().split('\n').filter(r => r.trim())
+            : [
+                'Respect all members',
+                'Complete assigned tasks on time',
+                'Maintain professional communication',
+                'Contribute to guild success'
+              ],
+          autoApprovalEnabled: false,
+          memberRemovalPolicy: 'MASTER_ONLY' as const,
+        },
+      };
+
+      logger.info('Creating guild:', { name: guildData.name, userId: user.uid });
+      
+      const createdGuild = await guildService.createGuild(guildData);
+      
+      logger.info('Guild created successfully:', { guildId: createdGuild.id, name: createdGuild.name });
+      
+      setShowSuccessAlert(true);
     } catch (error) {
       // COMMENT: PRIORITY 1 - Replace console.error with logger
       logger.error('Error creating guild:', error);
@@ -216,7 +259,7 @@ export default function CreateGuildScreen() {
         isRTL ? 'فشل في إنشاء النقابة' : 'Failed to create guild'
       );
     }
-  }, [formData, selectedCategories, wallet, processPayment, t, isRTL]);
+  }, [formData, selectedCategories, wallet, processPayment, user, t, isRTL]);
   
   const handleSuccessConfirm = useCallback(() => {
     setShowSuccessAlert(false);

@@ -69,3 +69,4 @@ But using `QrCode` from `lucide-react-native` is better for consistency.
 
 
 
+

@@ -28,6 +28,7 @@
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import { secureStorage } from './secureStorage'; // ✅ ADDED: Task 6
 import { config } from '../config/environment';
 import { maybeConnectSocket, disconnectSocketSafely } from './socket';
 // COMMENT: PRIORITY 1 - Replace console statements with logger (deprecated service but still has active code)
@@ -139,8 +140,8 @@ class SocketService {
 
     // Handle token refresh
     this.socket.on('connect', async () => {
-      // Refresh token on reconnect
-      const newToken = await AsyncStorage.getItem('authToken');
+      // ✅ FIXED: Use secureStorage instead of AsyncStorage (Task 6)
+      const newToken = await secureStorage.getItem('auth_token');
       if (newToken && this.socket) {
         this.socket.auth = { token: newToken };
       }

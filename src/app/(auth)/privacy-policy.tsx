@@ -10,11 +10,14 @@ import {
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
+import { useAuth } from '../../contexts/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Shield, Lock, Eye, FileText, Check } from 'lucide-react-native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Animated, Easing } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { dataProtection } from '../../services/dataProtection';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -27,6 +30,7 @@ interface PrivacySection {
 export default function PrivacyPolicyScreen() {
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useI18n();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const adaptiveColors = {
     background: isDarkMode ? theme.background : '#FFFFFF',
@@ -189,12 +193,22 @@ export default function PrivacyPolicyScreen() {
       return;
     }
 
+    if (!user) {
+      CustomAlertService.showError(t('error'), 'Please sign in to accept the privacy policy');
+      return;
+    }
+
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // Simulate API call to save acceptance
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // ✅ TASK 11: Actually save privacy policy acceptance to Firestore
+      await dataProtection.recordConsent(
+        user.uid,
+        'privacy_policy',
+        true,
+        'explicit'
+      );
       
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       CustomAlertService.showSuccess(
@@ -210,6 +224,7 @@ export default function PrivacyPolicyScreen() {
       );
       
     } catch (error) {
+      console.error('Privacy acceptance error:', error);
       CustomAlertService.showError(t('error'), t('privacy.acceptanceError'));
     } finally {
       setIsLoading(false);

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
+  FlatList,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,6 +18,10 @@ import { jobService, Job } from '@/services/jobService';
 import { Briefcase, Plus, UserCheck, Users, History } from 'lucide-react-native';
 import JobCard from '@/components/JobCard';
 import { logger } from '@/utils/logger'; // COMMENT: FINAL STABILIZATION - Task 7 - Replace console.log with logger
+// ✅ TASK 14: iPad responsive layout components
+import { ResponsiveFlatList } from '@/components/ResponsiveFlatList';
+import { ResponsiveContainer } from '@/components/ResponsiveContainer';
+import { useResponsive, getResponsiveColumns } from '@/utils/responsive';
 
 type UserRole = 'poster' | 'doer';
 type TabType = 'browse' | 'my-jobs' | 'my-offers' | 'active' | 'history';
@@ -52,6 +57,8 @@ export default function JobsIndex() {
   const { user } = useAuth();
   const { t, isRTL } = useI18n();
   const insets = useSafeAreaInsets();
+  // ✅ TASK 14: Get responsive dimensions for iPad layout
+  const { isTablet, isLargeDevice, deviceType } = useResponsive();
 
   const [role, setRole] = useState<UserRole>('doer');
   const [activeTab, setActiveTab] = useState<TabType>('browse');
@@ -332,53 +339,58 @@ export default function JobsIndex() {
         </ScrollView>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: adaptiveColors.secondaryText }]}>
-              {isRTL ? 'جارٍ التحميل...' : 'Loading...'}
-            </Text>
-          </View>
-        ) : jobs.length > 0 ? (
-          jobs.map((job) => (
-            <JobCard key={job.id} job={job} onPress={() => handleJobPress(job)} showStatus />
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Briefcase size={64} color={adaptiveColors.secondaryText} />
-            <Text style={[styles.emptyTitle, { color: adaptiveColors.primaryText }]}>
-              {isRTL ? 'لا توجد وظائف' : 'No Jobs Found'}
-            </Text>
-            <Text style={[styles.emptyText, { color: adaptiveColors.secondaryText }]}>
-              {activeTab === 'browse'
-                ? isRTL
-                  ? 'لا توجد وظائف متاحة حالياً'
-                  : 'No jobs available right now'
-                : isRTL
-                ? 'ليس لديك وظائف في هذا القسم'
-                : 'You have no jobs in this section'}
-            </Text>
-            {activeTab === 'my-jobs' && role === 'poster' && (
-              <TouchableOpacity
-                style={[styles.emptyButton, { backgroundColor: theme.primary }]}
-                onPress={() => router.push('/(modals)/add-job')}
-              >
-                <Text style={[styles.emptyButtonText, { color: '#000000' }]}>
-                  {isRTL ? 'نشر وظيفة' : 'Post a Job'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* Content - ✅ TASK 14: Responsive FlatList for iPad grid layout */}
+      {loading ? (
+        <View style={[styles.loadingContainer, { flex: 1 }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: adaptiveColors.secondaryText }]}>
+            {isRTL ? 'جارٍ التحميل...' : 'Loading...'}
+          </Text>
+        </View>
+      ) : (
+        <ResponsiveFlatList
+          data={jobs}
+          renderItem={({ item }) => (
+            <JobCard job={item} onPress={() => handleJobPress(item)} showStatus />
+          )}
+          keyExtractor={(item) => item.id}
+          minColumns={1}
+          maxColumns={3}
+          itemSpacing={12}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Briefcase size={64} color={adaptiveColors.secondaryText} />
+              <Text style={[styles.emptyTitle, { color: adaptiveColors.primaryText }]}>
+                {isRTL ? 'لا توجد وظائف' : 'No Jobs Found'}
+              </Text>
+              <Text style={[styles.emptyText, { color: adaptiveColors.secondaryText }]}>
+                {activeTab === 'browse'
+                  ? isRTL
+                    ? 'لا توجد وظائف متاحة حالياً'
+                    : 'No jobs available right now'
+                  : isRTL
+                  ? 'ليس لديك وظائف في هذا القسم'
+                  : 'You have no jobs in this section'}
+              </Text>
+              {activeTab === 'my-jobs' && role === 'poster' && (
+                <TouchableOpacity
+                  style={[styles.emptyButton, { backgroundColor: theme.primary }]}
+                  onPress={() => router.push('/(modals)/add-job')}
+                >
+                  <Text style={[styles.emptyButtonText, { color: '#000000' }]}>
+                    {isRTL ? 'نشر وظيفة' : 'Post a Job'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 100,
+            flexGrow: 1,
+          }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       {/* Floating Action Button (Post Job - Poster only) */}
       {role === 'poster' && (

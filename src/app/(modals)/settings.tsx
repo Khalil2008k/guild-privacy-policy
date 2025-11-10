@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Switch, Share, ActivityIndicator, Text, StatusBar } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Switch, Share, ActivityIndicator, Text, StatusBar, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { 
@@ -33,8 +33,13 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomAlert } from '../../components/CustomAlert';
+import { CustomAlertService } from '../../services/CustomAlertService';
+import BiometricAuthService from '../../utils/biometricAuth';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '../../utils/logger';
+// ✅ TASK 14: iPad responsive layout components
+import { ResponsiveContainer } from '../../components/ResponsiveContainer';
+import { useResponsive } from '../../utils/responsive';
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -45,7 +50,7 @@ const getAdaptiveColors = (theme: any, isDark: boolean) => ({
   cardBorder: isDark ? theme.border : 'rgba(0, 0, 0, 0.08)',
   primaryText: isDark ? theme.textPrimary : '#000000',
   secondaryText: isDark ? theme.textSecondary : '#666666',
-  iconColor: isDark ? theme.textSecondary : '#666666',
+  iconColor: isDark ? theme.iconPrimary : '#000000', // Black icons in light mode
   cardShadow: isDark 
     ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 }
     : { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12 },
@@ -77,6 +82,8 @@ export default function SettingsScreen() {
   const bottom = insets?.bottom || 0;
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { language, changeLanguage, t, isRTL } = useI18n();
+  // ✅ TASK 14: Get responsive dimensions for iPad layout
+  const { isTablet, isLargeDevice } = useResponsive();
   const { signOut } = useAuth();
   
   const adaptiveColors = React.useMemo(() => getAdaptiveColors(theme, isDarkMode), [theme, isDarkMode]);
@@ -84,14 +91,16 @@ export default function SettingsScreen() {
   const [settings, setSettings] = useState<LocalSettingsState>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [showRateAlert, setShowRateAlert] = useState(false);
+  // REMOVED: showRateAlert - Now handled by handleRateApp function
+  // const [showRateAlert, setShowRateAlert] = useState(false);
   const [showAboutAlert, setShowAboutAlert] = useState(false);
   const [showLanguageAlert, setShowLanguageAlert] = useState(false);
   const [showNotificationAlert, setShowNotificationAlert] = useState(false);
   const [showBiometricAlert, setShowBiometricAlert] = useState(false);
   const [showSupportAlert, setShowSupportAlert] = useState(false);
   const [showPrivacyAlert, setShowPrivacyAlert] = useState(false);
-  const [showPaymentAlert, setShowPaymentAlert] = useState(false);
+  // COMMENTED OUT: showPaymentAlert - Payment Methods item is commented out
+  // const [showPaymentAlert, setShowPaymentAlert] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   useEffect(() => {
@@ -160,17 +169,96 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleBiometricToggle = () => {
+  const handleBiometricToggle = async () => {
     if (!settings.biometricEnabled) {
-      setShowBiometricAlert(true);
+      // Check if biometric is available before showing alert
+      try {
+        const isAvailable = await BiometricAuthService.isAvailable();
+        if (!isAvailable) {
+          CustomAlertService.showError(
+            isRTL ? 'غير مدعوم' : 'Not Supported',
+            isRTL 
+              ? 'هذا الجهاز لا يدعم المصادقة البيومترية أو لم يتم إعدادها'
+              : 'This device does not support biometric authentication or it is not set up'
+          );
+          return;
+        }
+        setShowBiometricAlert(true);
+      } catch (error) {
+        logger.error('Error checking biometric availability:', error);
+        CustomAlertService.showError(
+          isRTL ? 'خطأ' : 'Error',
+          isRTL ? 'فشل التحقق من دعم المصادقة البيومترية' : 'Failed to check biometric support'
+        );
+      }
     } else {
+      // Disable biometric - just save setting
       saveSettings({ biometricEnabled: false });
+      await AsyncStorage.removeItem('biometricEnabled');
+      await AsyncStorage.removeItem('biometricType');
+      await AsyncStorage.removeItem('biometricData');
     }
   };
   
-  const handleBiometricEnable = () => {
+  const handleBiometricEnable = async () => {
     setShowBiometricAlert(false);
-    saveSettings({ biometricEnabled: true });
+    try {
+      // Actually authenticate with biometrics before enabling
+      const promptMessage = isRTL 
+        ? 'استخدم بصمة إصبعك أو Face ID لتفعيل المصادقة البيومترية'
+        : 'Use your fingerprint or Face ID to enable biometric authentication';
+      
+      const result = await BiometricAuthService.authenticate(promptMessage);
+      
+      if (result.success) {
+        // Save biometric data
+        const biometricData = {
+          enabled: true,
+          type: result.biometricType || 'unknown',
+          setupDate: new Date().toISOString(),
+          deviceId: Platform.OS + '_' + Date.now(),
+        };
+        
+        await AsyncStorage.setItem('biometricEnabled', 'true');
+        await AsyncStorage.setItem('biometricType', result.biometricType || 'unknown');
+        await AsyncStorage.setItem('biometricData', JSON.stringify(biometricData));
+        
+        saveSettings({ biometricEnabled: true });
+        
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL 
+            ? 'تم تفعيل المصادقة البيومترية بنجاح'
+            : 'Biometric authentication has been enabled successfully'
+        );
+      } else {
+        // Handle authentication failure
+        let errorMessage = isRTL 
+          ? 'فشل المصادقة البيومترية'
+          : 'Biometric authentication failed';
+        
+        if (result.error === 'user_cancel') {
+          errorMessage = isRTL ? 'تم إلغاء المصادقة' : 'Authentication cancelled';
+        } else if (result.error === 'biometric_not_available') {
+          errorMessage = isRTL 
+            ? 'المصادقة البيومترية غير متاحة'
+            : 'Biometric authentication is not available';
+        }
+        
+        CustomAlertService.showError(
+          isRTL ? 'خطأ' : 'Error',
+          errorMessage
+        );
+      }
+    } catch (error) {
+      logger.error('Error enabling biometric authentication:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL 
+          ? 'فشل تفعيل المصادقة البيومترية'
+          : 'Failed to enable biometric authentication'
+      );
+    }
   };
 
   const handleLogout = () => {
@@ -208,14 +296,82 @@ export default function SettingsScreen() {
     setShowSupportAlert(true);
   };
   
-  const handleEmailSupport = () => {
+  const handleEmailSupport = async () => {
     setShowSupportAlert(false);
-    // Email support logic would go here
+    try {
+      const email = 'support@guild.app';
+      const subject = encodeURIComponent('Support Request');
+      const body = encodeURIComponent('Hello Guild Support Team,\n\n');
+      const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
+      
+      const canOpen = await Linking.canOpenURL(mailtoUrl);
+      if (canOpen) {
+        await Linking.openURL(mailtoUrl);
+      } else {
+        // Fallback: Show email address
+        CustomAlertService.showInfo(
+          isRTL ? 'البريد الإلكتروني للدعم' : 'Support Email',
+          `${isRTL ? 'يرجى إرسال بريد إلكتروني إلى:' : 'Please send an email to:'}\n${email}`
+        );
+      }
+    } catch (error) {
+      logger.error('Error opening email client:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل فتح عميل البريد الإلكتروني' : 'Failed to open email client'
+      );
+    }
   };
   
   const handleLiveChat = () => {
     setShowSupportAlert(false);
     router.push('/(main)/chat');
+  };
+
+  const handleRateApp = async () => {
+    try {
+      const appId = 'YOUR_APP_ID'; // TODO: Replace with actual App Store ID when app is published
+      const packageName = 'com.mazen123333.guild'; // From app.config.js
+      
+      let url = '';
+      if (Platform.OS === 'ios') {
+        url = `https://apps.apple.com/app/id${appId}?action=write-review`;
+      } else if (Platform.OS === 'android') {
+        url = `market://details?id=${packageName}`;
+        // Fallback to web if Play Store app not available
+        const canOpen = await Linking.canOpenURL(url);
+        if (!canOpen) {
+          url = `https://play.google.com/store/apps/details?id=${packageName}`;
+        }
+      }
+      
+      if (url) {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          CustomAlertService.showInfo(
+            isRTL ? 'تقييم التطبيق' : 'Rate App',
+            isRTL 
+              ? 'يرجى البحث عن "Guild" في متجر التطبيقات وتقييمه.'
+              : 'Please search for "Guild" in the app store and rate it.'
+          );
+        }
+      } else {
+        CustomAlertService.showInfo(
+          isRTL ? 'تقييم التطبيق' : 'Rate App',
+          isRTL 
+            ? 'يرجى البحث عن "Guild" في متجر التطبيقات وتقييمه.'
+            : 'Please search for "Guild" in the app store and rate it.'
+        );
+      }
+    } catch (error) {
+      logger.error('Error opening app store:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل فتح متجر التطبيقات' : 'Failed to open app store'
+      );
+    }
   };
 
   const styles = StyleSheet.create({
@@ -287,7 +443,6 @@ export default function SettingsScreen() {
       width: 40, 
       height: 40, 
       borderRadius: 12, 
-      backgroundColor: theme.primary + '20', 
       alignItems: 'center', 
       justifyContent: 'center', 
       marginRight: 12
@@ -331,7 +486,7 @@ export default function SettingsScreen() {
       marginRight: 8,
     },
     languageButtonText: {
-      color: theme.primary,
+      color: adaptiveColors.iconColor, // Black in light mode, theme color in dark mode
       fontSize: 12,
       fontFamily: FONT_FAMILY,
       fontWeight: '800',
@@ -357,7 +512,7 @@ export default function SettingsScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator color={theme.iconActive} size="large" />
+        <ActivityIndicator color={isDarkMode ? theme.iconActive : '#000000'} size="large" />
         <Text style={styles.loadingText}>Loading Settings...</Text>
       </View>
     );
@@ -372,7 +527,7 @@ export default function SettingsScreen() {
       
       <View style={[styles.headerWrap, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
-          {isRTL ? <ArrowRight size={20} color={theme.iconPrimary} /> : <ArrowLeft size={20} color={theme.iconPrimary} />}
+          {isRTL ? <ArrowRight size={20} color={adaptiveColors.iconColor} /> : <ArrowLeft size={20} color={adaptiveColors.iconColor} />}
         </TouchableOpacity>
         <Text style={[styles.title, { textAlign: isRTL ? 'right' : 'left', marginLeft: isRTL ? 0 : 12, marginRight: isRTL ? 12 : 0 }]}>{isRTL ? 'الإعدادات' : 'Settings'}</Text>
       </View>
@@ -384,7 +539,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('notifications')}</Text>
           <View style={styles.card}>
             <Item
-              icon={<Bell size={20} color={theme.iconPrimary} />}
+              icon={<Bell size={20} color={adaptiveColors.iconColor} />}
               title={t('pushNotifications')}
               subtitle={t('receiveJobAlerts')}
               right={
@@ -397,7 +552,7 @@ export default function SettingsScreen() {
               }
             />
             <Item
-              icon={<Mail size={20} color={theme.iconPrimary} />}
+              icon={<Mail size={20} color={adaptiveColors.iconColor} />}
               title={t('emailNotifications')}
               subtitle={t('getUpdatesViaEmail')}
               right={
@@ -410,7 +565,7 @@ export default function SettingsScreen() {
               }
             />
             <Item
-              icon={<SettingsIcon size={20} color={theme.iconPrimary} />}
+              icon={<SettingsIcon size={20} color={adaptiveColors.iconColor} />}
               title={t('notifications')}
               subtitle={t('settings.receiveNotifications')}
               right={<ChevronRight size={20} color={theme.textSecondary} />}
@@ -424,7 +579,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('privacySecurity')}</Text>
           <View style={styles.card}>
             <Item
-              icon={settings.showBalance ? <Eye size={20} color={theme.iconPrimary} /> : <EyeOff size={20} color={theme.iconPrimary} />}
+              icon={settings.showBalance ? <Eye size={20} color={adaptiveColors.iconColor} /> : <EyeOff size={20} color={adaptiveColors.iconColor} />}
               title={t('showBalance')}
               subtitle={t('displayWalletBalance')}
               right={
@@ -437,7 +592,7 @@ export default function SettingsScreen() {
               }
             />
             <Item
-              icon={<Fingerprint size={20} color={theme.iconPrimary} />}
+              icon={<Fingerprint size={20} color={adaptiveColors.iconColor} />}
               title={t('biometricAuthentication')}
               subtitle={t('useFingerprintFace')}
               right={
@@ -450,7 +605,7 @@ export default function SettingsScreen() {
               }
             />
             <Item
-              icon={<Lock size={20} color={theme.iconPrimary} />}
+              icon={<Lock size={20} color={adaptiveColors.iconColor} />}
               title={t('privacySettings')}
               subtitle={t('manageDataPrivacy')}
               onPress={() => setShowPrivacyAlert(true)}
@@ -463,7 +618,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('appearance')}</Text>
           <View style={styles.card}>
             <Item
-              icon={<Globe size={20} color={theme.iconPrimary} />}
+              icon={<Globe size={20} color={adaptiveColors.iconColor} />}
               title={t('language')}
               subtitle={`${language === 'ar' ? 'العربية' : 'English'} ${isRTL ? '(RTL)' : '(LTR)'}`}
               right={
@@ -477,7 +632,7 @@ export default function SettingsScreen() {
                   >
                     <Text style={[
                       styles.languageButtonText,
-                      language === 'en' && { color: '#000000' }
+                      language === 'en' && { color: isDarkMode ? '#FFFFFF' : '#000000' }
                     ]}>EN</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
@@ -489,14 +644,14 @@ export default function SettingsScreen() {
                   >
                     <Text style={[
                       styles.languageButtonText,
-                      language === 'ar' && { color: '#000000' }
+                      language === 'ar' && { color: isDarkMode ? '#FFFFFF' : '#000000' }
                     ]}>AR</Text>
                   </TouchableOpacity>
                 </View>
               }
             />
             <Item
-              icon={isDarkMode ? <Moon size={20} color={theme.iconPrimary} /> : <Sun size={20} color={theme.iconPrimary} />}
+              icon={isDarkMode ? <Moon size={20} color={adaptiveColors.iconColor} /> : <Sun size={20} color={adaptiveColors.iconColor} />}
               title={t('theme')}
               subtitle={isDarkMode ? t('darkMode') : (isRTL ? 'الوضع الفاتح' : 'Light Mode')}
               right={
@@ -515,14 +670,15 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('account')}</Text>
           <View style={styles.card}>
-            <Item
-              icon={<CreditCard size={20} color={theme.iconPrimary} />}
+            {/* COMMENTED OUT: Payment Methods - Not implemented yet */}
+            {/* <Item
+              icon={<CreditCard size={20} color={adaptiveColors.iconColor} />}
               title={t('paymentMethods')}
               subtitle={t('managePaymentOptions')}
               onPress={() => setShowPaymentAlert(true)}
-            />
+            /> */}
             <Item
-              icon={<FileText size={20} color={theme.iconPrimary} />}
+              icon={<FileText size={20} color={adaptiveColors.iconColor} />}
               title={t('transactionHistory')}
               subtitle={t('viewPaymentHistory')}
               onPress={() => router.push('/(modals)/wallet')}
@@ -535,43 +691,43 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.card}>
             <Item
-              icon={<Megaphone size={20} color={theme.iconPrimary} />}
+              icon={<Megaphone size={20} color={adaptiveColors.iconColor} />}
               title={isRTL ? 'مركز الإعلانات' : 'Announcement Center'}
               subtitle={isRTL ? 'التحديثات والإشعارات المهمة' : 'Important updates and system notifications'}
               onPress={() => router.push('/(modals)/announcement-center')}
             />
             <Item
-              icon={<MessageCircle size={20} color={theme.iconPrimary} />}
+              icon={<MessageCircle size={20} color={adaptiveColors.iconColor} />}
               title={isRTL ? 'نظام الملاحظات' : 'Feedback System'}
               subtitle={isRTL ? 'شارك أفكارك واقتراحاتك' : 'Share your thoughts and suggestions'}
               onPress={() => router.push('/(modals)/feedback-system')}
             />
             <Item
-              icon={<BookOpen size={20} color={theme.iconPrimary} />}
+              icon={<BookOpen size={20} color={adaptiveColors.iconColor} />}
               title={isRTL ? 'قاعدة المعرفة' : 'Knowledge Base'}
               subtitle={isRTL ? 'مقالات المساعدة والأسئلة الشائعة' : 'Help articles and FAQs'}
               onPress={() => router.push('/(modals)/knowledge-base')}
             />
             <Item
-              icon={<HelpCircle size={20} color={theme.iconPrimary} />}
+              icon={<HelpCircle size={20} color={adaptiveColors.iconColor} />}
               title={t('helpCenter')}
               subtitle={isRTL ? 'الأسئلة الشائعة ومقالات الدعم' : 'FAQ and support articles'}
               onPress={handleSupport}
             />
             <Item
-              icon={<Star size={20} color={theme.iconPrimary} />}
+              icon={<Star size={20} color={adaptiveColors.iconColor} />}
               title={t('rateApp')}
               subtitle={t('shareYourFeedback')}
-              onPress={() => setShowRateAlert(true)}
+              onPress={handleRateApp}
             />
             <Item
-              icon={<Share2 size={20} color={theme.iconPrimary} />}
+              icon={<Share2 size={20} color={adaptiveColors.iconColor} />}
               title={t('shareApp')}
               subtitle={t('inviteFriendsToGuild')}
               onPress={handleShareApp}
             />
             <Item
-              icon={<Info size={20} color={theme.iconPrimary} />}
+              icon={<Info size={20} color={adaptiveColors.iconColor} />}
               title={t('about')}
               subtitle={t('appVersionAndInfo')}
               onPress={() => setShowAboutAlert(true)}
@@ -660,21 +816,16 @@ export default function SettingsScreen() {
         onDismiss={() => setShowPrivacyAlert(false)}
       />
 
-      <CustomAlert
+      {/* COMMENTED OUT: Payment Methods Alert - Payment Methods item is commented out */}
+      {/* <CustomAlert
         visible={showPaymentAlert}
         title={t('settings.paymentMethods')}
         message={isRTL ? 'سيتم تطبيق إدارة الدفع هنا. يمكنك إضافة وإزالة وإدارة بطاقات الائتمان وخيارات الدفع الخاصة بك.' : 'Payment management would be implemented here. You can add, remove, and manage your credit cards and payment options.'}
         buttons={[{ text: isRTL ? 'حسناً' : 'OK', onPress: () => setShowPaymentAlert(false) }]}
         onDismiss={() => setShowPaymentAlert(false)}
-      />
+      /> */}
 
-      <CustomAlert
-        visible={showRateAlert}
-        title={t('rateApp')}
-        message={isRTL ? 'سيتم تطبيق تقييم متجر التطبيقات هنا. سيتم إعادة توجيهك إلى App Store أو Google Play لتقييم تطبيق Guild.' : 'App store rating would be implemented here. This would redirect you to the App Store or Google Play Store to rate the Guild app.'}
-        buttons={[{ text: isRTL ? 'حسناً' : 'OK', onPress: () => setShowRateAlert(false) }]}
-        onDismiss={() => setShowRateAlert(false)}
-      />
+      {/* REMOVED: Rate App Alert - Now handled by handleRateApp function */}
 
       <CustomAlert
         visible={showAboutAlert}

@@ -64,6 +64,7 @@ import { ReactionPicker } from './ReactionPicker';
 import { ReplyPreview } from './ReplyPreview';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { MessageActionsExtended } from './MessageActionsExtended';
+import { DocumentViewer } from './DocumentViewer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -184,6 +185,9 @@ export function ChatMessage({
   
   // Link preview state
   const [linkPreview, setLinkPreview] = useState<any>(null);
+  
+  // Document viewer state
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
 
   const handleLongPress = () => {
     if (message.deletedAt && !isAdmin) return; // Can't interact with deleted messages
@@ -909,22 +913,43 @@ export function ChatMessage({
             </View>
           ) : (
             <>
-              <View style={styles.fileIconContainer}>
-                <FileText size={32} color={theme.primary} />
-              </View>
-              <View style={styles.fileInfo}>
-                <Text
-                  style={[...asTextStyle(styles.fileName), { color: isOwnMessage ? '#000000' : theme.textPrimary }]}
-                  numberOfLines={1}
+              <TouchableOpacity
+                style={styles.fileContent}
+                onPress={() => {
+                  // Check if file is PDF or DOC/DOCX
+                  const fileName = message.fileMetadata?.originalName || message.attachments?.[0] || '';
+                  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+                  if (fileExtension === 'pdf' || fileExtension === 'doc' || fileExtension === 'docx') {
+                    setShowDocumentViewer(true);
+                  } else {
+                    handleDownload();
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.fileIconContainer}>
+                  <FileText size={32} color={theme.primary} />
+                </View>
+                <View style={styles.fileInfo}>
+                  <Text
+                    style={[...asTextStyle(styles.fileName), { color: isOwnMessage ? '#000000' : theme.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {message.fileMetadata?.originalName || 'Document'}
+                  </Text>
+                  <Text style={[...asTextStyle(styles.fileSize), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
+                    {message.fileMetadata?.size ? formatFileSize(message.fileMetadata.size) : ''}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDownload();
+                  }}
+                  style={styles.downloadButton}
                 >
-                  {message.fileMetadata?.originalName || 'Document'}
-                </Text>
-                <Text style={[...asTextStyle(styles.fileSize), { color: isOwnMessage ? 'rgba(0,0,0,0.6)' : theme.textSecondary }]}>
-                  {message.fileMetadata?.size ? formatFileSize(message.fileMetadata.size) : ''}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={handleDownload} style={styles.downloadButton}>
-                <Download size={20} color={isOwnMessage ? '#000000' : theme.primary} />
+                  <Download size={20} color={isOwnMessage ? '#000000' : theme.primary} />
+                </TouchableOpacity>
               </TouchableOpacity>
               <View style={styles.messageFooter}>
                 <View style={styles.footerLeft}>
@@ -1209,69 +1234,78 @@ export function ChatMessage({
             </View>
             
             {/* ✅ MODERN 2025: Animated reaction bar with pill buttons */}
-            <Animated.View
-              entering={FadeInDown.delay(100).duration(250)}
+            {/* Wrap in regular View to avoid Reanimated transform conflict */}
+            <View
               style={[
                 styles.reactionsContainer,
                 !isOwnMessage && styles.reactionsContainerRight,
               ]}
             >
-              {message.reactions && Object.keys(message.reactions).length > 0 && (
-                <>
-                  {Object.entries(message.reactions).map(([userId, emojis]: [string, any]) => {
-                    const userReactions = Array.isArray(emojis) ? emojis : [];
+              <Animated.View entering={FadeInDown.delay(100).duration(250)}>
+                {/* Check if current user has reacted - show only their reaction OR the reaction icon, not both */}
+                {(() => {
+                  const currentUserReaction = message.reactions && currentUserId 
+                    ? message.reactions[currentUserId] 
+                    : null;
+                  const userReactions = currentUserReaction 
+                    ? (Array.isArray(currentUserReaction) ? currentUserReaction : [currentUserReaction])
+                    : [];
+                  
+                  // If user has reacted, show only their reaction (not the reaction icon)
+                  if (userReactions.length > 0) {
                     return (
-                      <View key={userId}>
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.reactionPill,
-                            styles.reactionPillEmoji, // ✅ ENHANCED: Separate style for emoji pills
-                            {
-                              backgroundColor: pressed 
-                                ? 'rgba(255,255,255,0.15)' 
-                                : 'rgba(255,255,255,0.1)',
-                              transform: [{ scale: pressed ? 0.95 : 1 }],
-                            },
-                          ]}
-                          onPress={() => {
-                            if (onReaction && chatId) {
-                              onReaction(message);
-                            }
-                          }}
-                        >
-                          {userReactions.map((emoji: string, index: number) => (
-                            <Text key={`${userId}-${index}`} style={styles.reactionEmoji}>{emoji}</Text>
-                          ))}
-                        </Pressable>
-                      </View>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.reactionPill,
+                          styles.reactionPillEmoji,
+                          {
+                            backgroundColor: pressed 
+                              ? 'rgba(255,255,255,0.15)' 
+                              : 'rgba(255,255,255,0.1)',
+                            transform: [{ scale: pressed ? 0.95 : 1 }],
+                          },
+                        ]}
+                        onPress={() => {
+                          if (onReaction && chatId) {
+                            onReaction(message);
+                          }
+                        }}
+                      >
+                        {userReactions.map((emoji: string, index: number) => (
+                          <Text key={`${currentUserId}-${index}`} style={styles.reactionEmoji}>{emoji}</Text>
+                        ))}
+                      </Pressable>
                     );
-                  })}
-                </>
-              )}
-              {/* ✅ ENHANCED: Modern reaction button with icon */}
-              <View>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.reactionPill,
-                    {
-                      backgroundColor: pressed 
-                        ? 'rgba(255,255,255,0.15)' 
-                        : 'rgba(255,255,255,0.1)',
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    },
-                  ]}
-                  onPress={() => {
-                    setShowReactionPicker(true);
-                  }}
-                >
-                  <Smile 
-                    size={16} 
-                    color={theme.textSecondary} 
-                    strokeWidth={2}
-                  />
-                </Pressable>
-              </View>
-            </Animated.View>
+                  }
+                  
+                  // If user hasn't reacted, show only the reaction icon
+                  return (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.reactionPill,
+                        {
+                          backgroundColor: pressed 
+                            ? 'rgba(255,255,255,0.15)' 
+                            : 'rgba(255,255,255,0.1)',
+                          transform: [{ scale: pressed ? 0.95 : 1 }],
+                        },
+                      ]}
+                      onPress={() => {
+                        if (onReaction && chatId) {
+                          setShowReactionPicker(true);
+                        }
+                      }}
+                    >
+                      <Smile 
+                        size={16} 
+                        color={theme.textSecondary} 
+                        strokeWidth={2}
+                      />
+                    </Pressable>
+                  );
+                })()}
+              </Animated.View>
+            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -1326,6 +1360,25 @@ export function ChatMessage({
             </View>
           </View>
         </Modal>
+      )}
+
+      {/* Document Viewer Modal */}
+      {showDocumentViewer && message.attachments && message.attachments[0] && (
+        <DocumentViewer
+          visible={showDocumentViewer}
+          onClose={() => setShowDocumentViewer(false)}
+          fileUrl={message.attachments[0]}
+          fileName={message.fileMetadata?.originalName || 'Document'}
+          fileType={
+            (() => {
+              const fileName = message.fileMetadata?.originalName || message.attachments[0] || '';
+              const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+              if (fileExtension === 'pdf') return 'pdf';
+              if (fileExtension === 'doc' || fileExtension === 'docx') return 'doc';
+              return 'pdf'; // Default to PDF
+            })()
+          }
+        />
       )}
     </>
   );
@@ -1820,6 +1873,12 @@ const styles = StyleSheet.create({
     marginLeft: 0.5,
     marginRight: 0.5,
     marginBottom: 0, // 0.5px on all sides except bottom
+  },
+  fileContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   fileIconContainer: {
     padding: 8,

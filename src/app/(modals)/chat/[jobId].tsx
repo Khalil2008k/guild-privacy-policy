@@ -30,6 +30,7 @@ import { chatFileService } from '@/services/chatFileService';
 import { chatOptionsService } from '@/services/chatOptionsService';
 import { messageSearchService } from '@/services/messageSearchService';
 import { disputeLoggingService } from '@/services/disputeLoggingService';
+import { BackendAPI } from '@/config/backend';
 import MessageNotificationService from '@/services/MessageNotificationService';
 import PresenceService, { clearTyping, isTypingFresh } from '@/services/PresenceService';
 import ChatStorageProvider from '@/services/ChatStorageProvider';
@@ -575,23 +576,7 @@ export default function ChatScreen() {
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
-        // COMMENT: PRODUCTION HARDENING - Task 5.1 - Clear existing timeout and store new one
-        if (keyboardScrollTimeoutRef.current) {
-          clearTimeout(keyboardScrollTimeoutRef.current);
-        }
-        // COMMENT: PERFORMANCE FIX - Scroll to bottom (newest messages) when keyboard appears
-        keyboardScrollTimeoutRef.current = setTimeout(() => {
-          keyboardScrollTimeoutRef.current = null;
-          if (messages.length > 0) {
-            try {
-              const lastIndex = messages.length - 1;
-              flatListRef.current?.scrollToIndex({ index: lastIndex, animated: true });
-            } catch (error) {
-              // Fallback to scrollToEnd if scrollToIndex fails
-              flatListRef.current?.scrollToEnd({ animated: true });
-            }
-          }
-        }, 100);
+        // Don't auto-scroll when keyboard appears - let user control scroll position
       }
     );
 
@@ -600,7 +585,8 @@ export default function ChatScreen() {
       () => {
         setKeyboardHeight(0);
         handleKeyboardHideFromHook(); // Stop typing when keyboard hides
-        // ChatInput component now handles keyboard visibility and recalculates padding automatically
+        // Force layout update to remove space after keyboard dismisses
+        // ChatInput component handles keyboard visibility and recalculates padding automatically
       }
     );
 
@@ -637,17 +623,28 @@ export default function ChatScreen() {
   // Mark messages as read on screen focus
   useFocusEffect(
     React.useCallback(() => {
-      if (!chatId || !user || !messages.length) return;
+      if (!chatId || !user) return;
 
-      const markLatestAsRead = async () => {
-        const latestMessage = messages[messages.length - 1];
-        if (latestMessage && latestMessage.senderId !== user.uid) {
-          logger.debug('📖 Focus: Marking latest message as read');
-          await chatService.markAsRead(chatId, [latestMessage.id], user.uid);
+      const markAsRead = async () => {
+        try {
+          // Clear unread count in chat document
+          logger.debug('📖 Focus: Clearing unread count for chat', chatId);
+          await chatService.markChatAsRead(chatId, user.uid);
+          
+          // Also mark latest message as read if messages exist
+          if (messages.length > 0) {
+            const latestMessage = messages[messages.length - 1];
+            if (latestMessage && latestMessage.senderId !== user.uid) {
+              logger.debug('📖 Focus: Marking latest message as read');
+              await chatService.markAsRead(chatId, [latestMessage.id], user.uid);
+            }
+          }
+        } catch (error) {
+          logger.error('Error marking chat as read on focus:', error);
         }
       };
 
-      markLatestAsRead();
+      markAsRead();
     }, [chatId, user, messages])
   );
 
@@ -963,6 +960,88 @@ export default function ChatScreen() {
 
   // COMMENT: PRIORITY 1 - File Modularization - Duplicate handlers removed (using hooks above)
   // All chat options handlers (handleViewProfile, handleMuteChat, etc.) now provided by useChatOptions hook
+
+  // COMMENTED OUT: Voice and Video Call handlers - not implemented yet
+  /*
+  const handleVoiceCall = useCallback(async () => {
+    if (!chatId || !otherUser?.id || !user?.uid) {
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'لا يمكن بدء المكالمة' : 'Cannot initiate call',
+        isRTL
+      );
+      return;
+    }
+
+    try {
+      logger.info('Initiating voice call', { chatId, recipientId: otherUser.id });
+      
+      const response = await BackendAPI.post(`/api/chat/${chatId}/call`, {
+        recipientId: otherUser.id,
+      });
+
+      if (response.success) {
+        logger.info('Voice call initiated successfully', response.data);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم بدء المكالمة الصوتية' : 'Voice call initiated',
+          isRTL
+        );
+        // TODO: Navigate to call screen or show call UI
+      } else {
+        throw new Error(response.message || 'Failed to initiate call');
+      }
+    } catch (error: any) {
+      logger.error('Error initiating voice call:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        error.message || (isRTL ? 'فشل بدء المكالمة الصوتية' : 'Failed to initiate voice call'),
+        isRTL
+      );
+    }
+  }, [chatId, otherUser?.id, user?.uid, isRTL]);
+
+  const handleVideoCall = useCallback(async () => {
+    if (!chatId || !otherUser?.id || !user?.uid) {
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'لا يمكن بدء المكالمة' : 'Cannot initiate call',
+        isRTL
+      );
+      return;
+    }
+
+    try {
+      logger.info('Initiating video call', { chatId, recipientId: otherUser.id });
+      
+      // For now, use the same endpoint as voice call
+      // TODO: Add separate video call endpoint or parameter
+      const response = await BackendAPI.post(`/api/chat/${chatId}/call`, {
+        recipientId: otherUser.id,
+        callType: 'video', // Indicate video call
+      });
+
+      if (response.success) {
+        logger.info('Video call initiated successfully', response.data);
+        CustomAlertService.showSuccess(
+          isRTL ? 'نجح' : 'Success',
+          isRTL ? 'تم بدء المكالمة المرئية' : 'Video call initiated',
+          isRTL
+        );
+        // TODO: Navigate to call screen or show call UI
+      } else {
+        throw new Error(response.message || 'Failed to initiate call');
+      }
+    } catch (error: any) {
+      logger.error('Error initiating video call:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        error.message || (isRTL ? 'فشل بدء المكالمة المرئية' : 'Failed to initiate video call'),
+        isRTL
+      );
+    }
+  }, [chatId, otherUser?.id, user?.uid, isRTL]);
+  */
 
   // Pin/Star message handlers
   const handlePinMessage = async (messageId: string) => {
@@ -1385,10 +1464,19 @@ export default function ChatScreen() {
   const shouldShowDateSeparator = (currentMessage: any, previousMessage: any) => {
     if (!previousMessage) return true;
     
-    const currentDate = currentMessage.createdAt?.toDate?.() || new Date(currentMessage.createdAt);
-    const previousDate = previousMessage.createdAt?.toDate?.() || new Date(previousMessage.createdAt);
+    // Compare dates by day only (year-month-day), ignoring time
+    const getDateKey = (message: any) => {
+      const date = message.createdAt?.toDate?.() || new Date(message.createdAt);
+      // Normalize to start of day for date-only comparison
+      date.setHours(0, 0, 0, 0);
+      // Return date string in YYYY-MM-DD format for comparison
+      return date.toISOString().split('T')[0];
+    };
     
-    return currentDate.toDateString() !== previousDate.toDateString();
+    const currentDateKey = getDateKey(currentMessage);
+    const previousDateKey = getDateKey(previousMessage);
+    
+    return currentDateKey !== previousDateKey;
   };
 
   // Render message item
@@ -1450,9 +1538,12 @@ export default function ChatScreen() {
 
   const renderMessage = ({ item, index }: { item: any; index: number }) => {
     const isOwnMessage = item.senderId === user?.uid;
-    const previousMessage = index > 0 ? messages[index - 1] : null;
+    // Since messages array is reversed for inverted FlatList, we need to compare correctly
+    // The reversed array has oldest messages first, so previousMessage is actually the next older message
+    const reversedMessages = [...messages].reverse();
+    const previousMessage = index > 0 ? reversedMessages[index - 1] : null;
     const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
-    const isLastMessage = index === messages.length - 1;
+    const isLastMessage = index === reversedMessages.length - 1;
     
     return (
       <View>
@@ -1817,19 +1908,19 @@ export default function ChatScreen() {
 
       {/* Messages and Input Container */}
       <KeyboardAvoidingView
-        style={styles.innerContainer}
+        style={[styles.innerContainer, { paddingBottom: keyboardHeight > 0 ? 0 : 0 }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         enabled={true}
       >
         {/* COMMENT: PERFORMANCE FIX - Converted from ScrollView to FlatList for virtualization */}
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={[...messages].reverse()}
           keyExtractor={keyExtractor}
           renderItem={renderMessage}
           getItemLayout={getItemLayout}
-          inverted={false}
+          inverted={true}
           style={styles.messagesScrollView}
           contentContainerStyle={[
             styles.messagesContent,
@@ -1845,11 +1936,17 @@ export default function ChatScreen() {
           updateCellsBatchingPeriod={50}
           initialNumToRender={15}
           windowSize={10}
-          // COMMENT: PRODUCTION HARDENING - Task 3.6 - Pagination: Load more when scrolling to top (oldest messages)
+          // COMMENT: PRODUCTION HARDENING - Task 3.6 - Pagination: Load more when scrolling to bottom (oldest messages) with inverted list
           onScroll={(event) => {
-            const { contentOffset } = event.nativeEvent;
-            // Load more when scrolled near the top (within 100px)
-            if (contentOffset.y < 100 && hasMoreMessages && !isLoadingMore && messages.length > 0) {
+            const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+            const scrollPosition = contentOffset.y;
+            const contentHeight = contentSize.height;
+            const scrollViewHeight = layoutMeasurement.height;
+            // With inverted list, scrolling to bottom (high scrollPosition) means loading older messages
+            // Calculate distance from bottom
+            const distanceFromBottom = contentHeight - scrollPosition - scrollViewHeight;
+            // Load more when scrolled near the bottom (within 100px) with inverted list
+            if (distanceFromBottom < 100 && hasMoreMessages && !isLoadingMore && messages.length > 0) {
               handleLoadMore();
             }
           }}
@@ -1859,21 +1956,7 @@ export default function ChatScreen() {
           viewabilityConfig={{
             itemVisiblePercentThreshold: 50,
           }}
-          // Scroll to bottom (newest messages) when new messages arrive
-          onContentSizeChange={() => {
-            if (!isLoadingMore && messages.length > 0) {
-              // Scroll to newest message (last index in normal list)
-              setTimeout(() => {
-                try {
-                  const lastIndex = messages.length - 1;
-                  flatListRef.current?.scrollToIndex({ index: lastIndex, animated: true });
-                } catch (error) {
-                  // Fallback to scrollToEnd if scrollToIndex fails
-                  flatListRef.current?.scrollToEnd({ animated: true });
-                }
-              }, 100);
-            }
-          }}
+          // With inverted={true}, new messages automatically appear at bottom, no need for onContentSizeChange
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -1882,19 +1965,20 @@ export default function ChatScreen() {
               colors={[theme.primary]}
             />
           }
-          // COMMENT: PRODUCTION HARDENING - Task 3.6 - Loading indicator for pagination (at top for older messages)
-          ListHeaderComponent={
-            isLoadingMore ? (
-              <View style={styles.loadMoreContainer}>
-                <ActivityIndicator size="small" color={theme.primary} />
-                <Text style={[styles.loadMoreText, { color: theme.textSecondary }]}>
-                  {isRTL ? 'جاري تحميل المزيد...' : 'Loading more messages...'}
-                </Text>
-              </View>
-            ) : null
+          // COMMENT: PRODUCTION HARDENING - Task 3.6 - Loading indicator for pagination (at bottom for older messages with inverted list)
+          ListFooterComponent={
+            <>
+              {isLoadingMore ? (
+                <View style={styles.loadMoreContainer}>
+                  <ActivityIndicator size="small" color={theme.primary} />
+                  <Text style={[styles.loadMoreText, { color: theme.textSecondary }]}>
+                    {isRTL ? 'جاري تحميل المزيد...' : 'Loading more messages...'}
+                  </Text>
+                </View>
+              ) : null}
+              {renderTypingIndicator()}
+            </>
           }
-          // Typing indicator at bottom (newest messages area)
-          ListFooterComponent={renderTypingIndicator()}
         />
 
         {/* Chat Input - Fixed at bottom */}
@@ -2159,22 +2243,22 @@ const styles = StyleSheet.create({
   dateSeparatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 16,
+    marginVertical: 16,
+    paddingHorizontal: 12.8,
   },
   dateSeparatorLine: {
     flex: 1,
-    height: 1,
+    height: 0.8,
   },
   dateSeparatorBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginHorizontal: 12,
+    paddingHorizontal: 12.8,
+    paddingVertical: 4.8,
+    borderRadius: 12.8,
+    borderWidth: 0.8,
+    marginHorizontal: 9.6,
   },
   dateSeparatorText: {
-    fontSize: 12,
+    fontSize: 9.6,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
@@ -2182,6 +2266,7 @@ const styles = StyleSheet.create({
   // COMMENT: PRIORITY 1 - File Modularization - Search modal styles moved to ChatSearchModal component
   innerContainer: {
     flex: 1,
+    paddingBottom: 0, // Ensure no padding that could cause space when keyboard closes
   },
   messagesScrollView: {
     flex: 1,
@@ -2206,6 +2291,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.1)',
     paddingBottom: 0, // No padding here - ChatInput handles it with safe area insets
+    marginBottom: 0, // Ensure no margin that could cause space
   },
   cameraContainer: {
     flex: 1,

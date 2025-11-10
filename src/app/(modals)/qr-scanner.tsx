@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   StatusBar,
 } from 'react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import QRCodeScanner from '../../components/QRCodeScanner';
 import * as Haptics from 'expo-haptics';
+import { logger } from '../../utils/logger'; // ✅ Added for proper logging
 
 const FONT_FAMILY = 'Signika Negative SC';
 
@@ -30,16 +31,31 @@ export default function QRScannerScreen() {
 
   const [isScanning, setIsScanning] = useState(true);
 
-  console.log('QRScannerScreen rendered, isScanning:', isScanning);
+  logger.debug('QRScannerScreen rendered, isScanning:', isScanning);
+
+  // ✅ FIX: Reset scanner when screen comes back into focus
+  // This prevents black screen when user goes back from scanned-user-profile
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset scanning state when screen is focused
+      setIsScanning(true);
+      logger.debug('QRScannerScreen focused, resetting scanner');
+      
+      return () => {
+        // Optional cleanup when screen loses focus
+        logger.debug('QRScannerScreen unfocused');
+      };
+    }, [])
+  );
 
   const handleScan = async (data: string) => {
     try {
-      console.log('QR Scanner received data:', data);
+      logger.info('QR Scanner received data:', data);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       
       // Parse QR code data
       const parsedData = JSON.parse(data);
-      console.log('Parsed data in scanner:', parsedData);
+      logger.info('Parsed data in scanner:', parsedData);
       
       if (parsedData.gid || parsedData.name) {
         // Navigate to scanned user profile screen
@@ -55,7 +71,7 @@ export default function QRScannerScreen() {
         throw new Error('Invalid QR code format');
       }
     } catch (error) {
-      console.error('Error processing QR scan:', error);
+      logger.error('Error processing QR scan:', error);
       CustomAlertService.showError(
         isRTL ? 'خطأ في المسح' : 'Scan Error',
         isRTL ? 'رمز QR غير صالح أو تالف' : 'Invalid or corrupted QR code',

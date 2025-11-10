@@ -44,6 +44,7 @@ import { roundToProperCoinValue } from '../../utils/coinUtils';
 import { useHomeAnimations } from './_hooks/useHomeAnimations';
 import { useJobs } from './_hooks/useJobs';
 import { useAdminTestHandlers } from './_hooks/useAdminTestHandlers';
+import { BackendAPI } from '../../config/backend';
 
 const { width, height } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -51,7 +52,7 @@ const FONT_FAMILY = 'Signika Negative SC';
 // COMMENT: PRIORITY 1 - File Modularization - roundToProperCoinValue utility function extracted to utils/coinUtils.ts
 
 export default function HomeScreen() {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   // COMMENT: PRODUCTION HARDENING - Task 4.10 - Get responsive dimensions
   const { isTablet, isLargeDevice, width } = useResponsive();
   const { t, isRTL, changeLanguage, language } = useI18n();
@@ -70,6 +71,112 @@ export default function HomeScreen() {
   // useRenderCounter('HomeScreen'); // Temporarily disabled
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  
+  // Top Announcement State - Initialize with current user
+  const [topGuild, setTopGuild] = useState<{ name: string; rank: string }>({ name: 'SOLOS', rank: 'A' });
+  const [topFreelancer, setTopFreelancer] = useState<{ name: string; rank: string }>(() => {
+    // Initialize with current user's name
+    if (profile?.fullName) {
+      return { name: profile.fullName, rank: 'G' };
+    } else if (user?.displayName) {
+      return { name: user.displayName, rank: 'G' };
+    } else {
+      return { name: user?.email?.split('@')[0] || user?.uid?.substring(0, 8) || 'Elite Pro', rank: 'G' };
+    }
+  });
+  const [currentAnnouncement, setCurrentAnnouncement] = useState<'guild' | 'freelancer'>('guild');
+  
+  // Fetch top guild and update current user as top ranker
+  useEffect(() => {
+    const fetchTopData = async () => {
+      try {
+        // Fetch top guild from leaderboard
+        try {
+          const guildResponse = await BackendAPI.get('/api/guilds/leaderboard?limit=1');
+          if (guildResponse?.success && guildResponse?.data?.length > 0) {
+            const topGuildData = guildResponse.data[0];
+            setTopGuild({
+              name: topGuildData.guildName || 'SOLOS',
+              rank: topGuildData.guildRank || 'G',
+            });
+          } else {
+            // Fallback data
+            setTopGuild({
+              name: 'SOLOS',
+              rank: 'A',
+            });
+          }
+        } catch (guildError) {
+          logger.error('Failed to fetch top guild:', guildError);
+          // Fallback data
+          setTopGuild({
+            name: 'SOLOS',
+            rank: 'A',
+          });
+        }
+        
+        // Set current user as top ranker
+        if (profile?.fullName) {
+          setTopFreelancer({
+            name: profile.fullName,
+            rank: profile.currentRank || 'G',
+          });
+        } else if (user?.displayName) {
+          setTopFreelancer({
+            name: user.displayName,
+            rank: 'G',
+          });
+        } else {
+          // Fallback to current user's email or uid
+          setTopFreelancer({
+            name: user?.email?.split('@')[0] || user?.uid?.substring(0, 8) || 'Elite Pro',
+            rank: 'G',
+          });
+        }
+      } catch (error) {
+        logger.error('Failed to fetch top data:', error);
+        // Set fallback data if all fails
+        if (!topGuild) {
+          setTopGuild({ name: 'SOLOS', rank: 'A' });
+        }
+        // Always update top ranker to current user
+        if (profile?.fullName) {
+          setTopFreelancer({ name: profile.fullName, rank: 'G' });
+        } else if (user?.displayName) {
+          setTopFreelancer({ name: user.displayName, rank: 'G' });
+        } else if (user?.email || user?.uid) {
+          setTopFreelancer({ name: user?.email?.split('@')[0] || user?.uid?.substring(0, 8) || 'Elite Pro', rank: 'G' });
+        }
+      }
+    };
+    
+    fetchTopData();
+    
+    // Refresh data every 30 seconds
+    const refreshInterval = setInterval(fetchTopData, 30000);
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  // Update top ranker when profile or user changes
+  useEffect(() => {
+    if (profile?.fullName) {
+      setTopFreelancer({ name: profile.fullName, rank: 'G' });
+    } else if (user?.displayName) {
+      setTopFreelancer({ name: user.displayName, rank: 'G' });
+    } else if (user?.email || user?.uid) {
+      setTopFreelancer({ name: user?.email?.split('@')[0] || user?.uid?.substring(0, 8) || 'Elite Pro', rank: 'G' });
+    }
+  }, [profile?.fullName, user?.displayName, user?.email, user?.uid]);
+  
+  // Rotate announcement every 10 seconds
+  useEffect(() => {
+    const rotationInterval = setInterval(() => {
+      setCurrentAnnouncement((prev) => prev === 'guild' ? 'freelancer' : 'guild');
+    }, 10000);
+    
+    return () => clearInterval(rotationInterval);
+  }, []);
   const [showFilter, setShowFilter] = useState(false);
   const [filterOptions, setFilterOptions] = useState({
     category: '',
@@ -538,10 +645,17 @@ Check console for full details.
           />
         }
       >
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { marginTop: 8, alignItems: 'center' }]}>
+        {/* Row 1: Search Bar + Add Job Button */}
+        <View style={[styles.searchContainer, { marginTop: 8, flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'flex-start', gap: 8 }]}>
           <TouchableOpacity
-            style={[styles.searchBar, { backgroundColor: theme.surface, paddingVertical: 7.5, borderRadius: 25, width: '78%' }]}
+            style={[styles.searchBar, { 
+              backgroundColor: theme.surface, 
+              paddingVertical: 10.416, 
+              borderRadius: 25, 
+              flex: 1,
+              borderWidth: isDarkMode ? 0 : 0.5, // Thinner border in light mode only
+              borderColor: isDarkMode ? 'transparent' : '#000000' // Black border in light mode only
+            }]}
             onPress={() => setShowSearch(true)}
             activeOpacity={0.7}
           >
@@ -560,27 +674,98 @@ Check console for full details.
               <Ionicons name="search" size={20} color={theme.textSecondary} />
             </View>
           </TouchableOpacity>
+
+          {/* Add Job Button */}
+          <TouchableOpacity
+            style={[
+              styles.guildMapButton,
+              {
+                backgroundColor: theme.primary,
+                borderColor: theme.primary,
+                width: 108, // 10% reduced width
+              },
+            ]}
+            onPress={handleAddJob}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle" size={16} color="#000000" />
+            <Text style={[styles.guildMapButtonText, { color: '#000000' }]}>
+              {t('addJob')}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Action Buttons */}
-        <HomeActionButtons
-          button1Anim={button1Anim}
-          button2Anim={button2Anim}
-          onCreateJobPress={handleAddJob}
-          onGuildMapPress={handleGuildMap}
-        />
+        {/* Row 2: Rotating Top Announcement (Guild/Freelancer) + Guild Map Button */}
+        <View style={[styles.announcementRow, { paddingHorizontal: 14.08, flexDirection: isRTL ? 'row-reverse' : 'row', gap: 8 }]}>
+          {/* Rotating Top Announcement - Shows both Guild and Freelancer */}
+          <View style={[styles.announcementContent, { 
+            backgroundColor: theme.surface, 
+            borderColor: theme.primary, 
+            flex: 1,
+            flexDirection: 'row' // Always LTR, no RTL
+          }]}>
+            <Ionicons 
+              name={currentAnnouncement === 'guild' ? 'people' : 'person'} 
+              size={16} 
+              color={isDarkMode ? theme.primary : '#000000'} // Black in light mode, theme color in dark mode
+              style={{ marginRight: 8 }}
+            />
+            <Text 
+              style={[styles.announcementText, { 
+                color: theme.textPrimary,
+                textAlign: 'left' // Always left-aligned, no RTL
+              }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {currentAnnouncement === 'guild' 
+                ? `Top GUILD: ${topGuild?.name || 'SOLOS'}`
+                : `Top RANKER: ${topFreelancer?.name || 'Elite Pro'}`
+              }
+            </Text>
+          </View>
+
+          {/* Guild Map Button */}
+          <TouchableOpacity
+            style={[
+              styles.guildMapButton,
+              {
+                borderWidth: isDarkMode ? 0 : 0.5, // Thinner border in light mode only
+                borderColor: isDarkMode ? 'transparent' : '#000000', // Black border in light mode only
+                backgroundColor: theme.surface,
+                width: 108, // 10% reduced width
+              },
+            ]}
+            onPress={handleGuildMap}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="map" size={16} color={theme.textPrimary} />
+            <Text style={[styles.guildMapButtonText, { color: theme.textPrimary }]}>
+              {t('guildMap')}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Admin Portal Test Buttons - REMOVED FOR PRODUCTION */}
 
 
         {/* Available Jobs */}
         <View style={styles.jobsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          <View style={[styles.sectionHeader, { 
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+            justifyContent: 'space-between' // Re-add for proper spacing
+          }]}>
+            <Text style={[styles.sectionTitle, { 
+              color: theme.textPrimary,
+              textAlign: isRTL ? 'right' : 'left'
+            }]}>
               {t('availableJobs')}
             </Text>
-            <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-              {availableJobs.length} Jobs
+            <Text style={[styles.sectionCount, { 
+              color: theme.textSecondary,
+              textAlign: isRTL ? 'right' : 'left'
+            }]}>
+              {availableJobs.length} {isRTL ? 'مهمات' : 'Jobs'}
             </Text>
           </View>
 
@@ -601,12 +786,12 @@ Check console for full details.
             <View style={styles.emptyContainer}>
               {jobError ? (
                 <>
-                  <Ionicons name="alert-circle-outline" size={48} color={theme.error} />
-                  <Text style={[styles.emptyText, { color: theme.textPrimary, marginTop: 16 }]}>
+                  <Ionicons name="alert-circle-outline" size={42.24} color={theme.error} /> {/* 48 * 0.88 = 42.24 (12% reduction) */}
+                  <Text style={[styles.emptyText, { color: theme.textPrimary, marginTop: 14.08 }]}> {/* 16 * 0.88 = 14.08 (12% reduction) */}
                     {jobError}
                   </Text>
                   <TouchableOpacity 
-                    style={[styles.refreshButton, { backgroundColor: theme.primary, marginTop: 16 }]}
+                    style={[styles.refreshButton, { backgroundColor: theme.primary, marginTop: 14.08 }]}> {/* 16 * 0.88 = 14.08 (12% reduction) */}
                     onPress={loadJobs}
                   >
                     <Text style={[styles.refreshText, { color: theme.buttonText }]}>
@@ -775,7 +960,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 12, // 12px distance to next row
   },
   searchBar: {
     paddingHorizontal: 16,
@@ -790,22 +975,90 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchPlaceholder: {
-    fontSize: 16,
+    fontSize: 11.2, // 16 * 0.7 = 11.2 (30% reduction)
     marginRight: 8,
   },
-  sectionHeader: {
+  userPicsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  userPicWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+  },
+  userPic: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  userPicPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userPicText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  announcementRow: {
+    marginTop: 0, // No top margin, spacing handled by searchContainer marginBottom
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  announcementContainer: {
+    marginTop: 0,
+    marginBottom: 12,
+  },
+  announcementContent: {
+    // flexDirection removed - set dynamically based on RTL
+    alignItems: 'center',
+    paddingVertical: 10.416,
+    paddingHorizontal: 12,
+    borderRadius: 25, // Same as search bar
+    borderWidth: 1,
+    opacity: 0.9, // High opacity
+  },
+  announcementText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  guildMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10.416,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  guildMapButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sectionHeader: {
+    // flexDirection and justifyContent removed - set dynamically based on RTL
+    alignItems: 'center',
+    paddingHorizontal: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
+    marginBottom: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
   },
   sectionCount: {
-    fontSize: 14,
+    fontSize: 12.32, // 14 * 0.88 = 12.32 (12% reduction)
     fontWeight: '500',
   },
   jobInfoContainer: {
-    padding: 12,
+    padding: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   cardHeader: {
     flexDirection: 'row',
@@ -906,81 +1159,81 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   actionsContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    gap: 12,
+    paddingHorizontal: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
+    marginBottom: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    gap: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 15.5,
-    borderRadius: 12,
+    paddingVertical: 18.6, // 15.5 * 1.2 = 18.6 (20% increase for buttons)
+    borderRadius: 14.4, // 12 * 1.2 = 14.4 (20% increase for buttons)
     borderWidth: 1,
-    gap: 8,
+    gap: 9.6, // 8 * 1.2 = 9.6 (20% increase for buttons)
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: 19.2, // 16 * 1.2 = 19.2 (20% increase for buttons)
     fontWeight: '600',
   },
   jobsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
+    paddingHorizontal: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
+    marginBottom: 17.6, // 20 * 0.88 = 17.6 (12% reduction)
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 15.84, // 18 * 0.88 = 15.84 (12% reduction)
     fontWeight: '900',
     fontFamily: FONT_FAMILY,
   },
   jobCard: {
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    marginBottom: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1.76 }, // 2 * 0.88 = 1.76 (12% reduction)
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 7.04, // 8 * 0.88 = 7.04 (12% reduction)
     elevation: 4,
   },
   jobTitle: {
-    fontSize: 16,
+    fontSize: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
     fontWeight: '700',
-    marginBottom: 6,
-    lineHeight: 20,
+    marginBottom: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
+    lineHeight: 17.6, // 20 * 0.88 = 17.6 (12% reduction)
   },
   jobDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
+    fontSize: 11.44, // 13 * 0.88 = 11.44 (12% reduction)
+    lineHeight: 15.84, // 18 * 0.88 = 15.84 (12% reduction)
+    marginBottom: 7.04, // 8 * 0.88 = 7.04 (12% reduction)
   },
   jobFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   urgentBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
+    top: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    left: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    paddingHorizontal: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
+    paddingVertical: 2.64, // 3 * 0.88 = 2.64 (12% reduction)
+    borderRadius: 7.04, // 8 * 0.88 = 7.04 (12% reduction)
   },
   urgentText: {
-    fontSize: 10,
+    fontSize: 8.8, // 10 * 0.88 = 8.8 (12% reduction)
     fontWeight: '700',
   },
   jobLocation: {
-    fontSize: 11,
+    fontSize: 9.68, // 11 * 0.88 = 9.68 (12% reduction)
     fontWeight: '500',
   },
   jobTimeNeeded: {
-    fontSize: 12,
+    fontSize: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   bottomSpacer: {
-    height: 100,
+    height: 88, // 100 * 0.88 = 88 (12% reduction)
   },
   // COMMENT: PRIORITY 1 - File Modularization - Search modal styles moved to _components/SearchScreen.tsx
   // Old styles commented out - now in extracted component file
@@ -1038,13 +1291,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: 44, // 50 * 0.88 = 44 (12% reduction)
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 35.2, // 40 * 0.88 = 35.2 (12% reduction)
   },
   testSection: {
     marginHorizontal: 16,
@@ -1082,17 +1335,17 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
     fontFamily: 'Signika Negative SC',
-    marginBottom: 16,
+    marginBottom: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
   },
   refreshButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 28.8, // 24 * 1.2 = 28.8 (20% increase for buttons)
+    paddingVertical: 14.4, // 12 * 1.2 = 14.4 (20% increase for buttons)
+    borderRadius: 24, // 20 * 1.2 = 24 (20% increase for buttons)
   },
   refreshText: {
-    fontSize: 14,
+    fontSize: 16.8, // 14 * 1.2 = 16.8 (20% increase for buttons)
     fontFamily: 'Signika Negative SC',
     fontWeight: '600',
   },

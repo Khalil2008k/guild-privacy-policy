@@ -59,9 +59,6 @@ export default function WelcomeScreen() {
   const taglineScale = useRef(new Animated.Value(1)).current;
   const taglineRotation = useRef(new Animated.Value(0)).current;
   
-  // Sign in button fill animation
-  const signInFillAnim = useRef(new Animated.Value(0)).current;
-  const [isSignInPressed, setIsSignInPressed] = useState(false);
 
   useEffect(() => {
     // Staggered entrance animation
@@ -163,18 +160,7 @@ export default function WelcomeScreen() {
 
   const handleSignIn = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    // Start fill animation
-    setIsSignInPressed(true);
-    Animated.timing(signInFillAnim, {
-      toValue: 1,
-      duration: 400, // Faster animation
-      easing: Easing.out(Easing.cubic), // Smooth easing
-      useNativeDriver: false, // We need layout animations for the fill effect
-    }).start(() => {
-      // Navigate after animation completes
-      router.push('/(auth)/sign-in');
-    });
+    router.push('/(auth)/sign-in');
   };
 
   const handleSignUp = async () => {
@@ -282,22 +268,6 @@ export default function WelcomeScreen() {
       justifyContent: 'center',
       flexDirection: 'row',
       gap: 12,
-      position: 'relative',
-    },
-    signInButtonFill: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      borderRadius: 14, // Slightly smaller than button border radius
-      transformOrigin: 'center', // Start from center for proper border-to-center effect
-    },
-    signInButtonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      zIndex: 1, // Ensure content stays above the fill
     },
     signInButtonText: {
       fontSize: 18,
@@ -412,53 +382,26 @@ export default function WelcomeScreen() {
             <TouchableOpacity
               style={[styles.signInButton, {
                 flexDirection: isRTL ? 'row-reverse' : 'row',
-                overflow: 'hidden', // Important for the fill effect
               }]}
               onPress={handleSignIn}
               activeOpacity={0.7}
             >
-              {/* Animated fill background - water fill effect from border to center */}
-              <Animated.View
-                style={[
-                  styles.signInButtonFill,
-                  {
-                    backgroundColor: theme.primary,
-                    transform: [
-                      {
-                        scale: signInFillAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [1.1, 0.1], // Start from 1.1 (beyond border) and shrink to 0.1 (almost center)
-                        }),
-                      },
-                    ],
-                    opacity: signInFillAnim.interpolate({
-                      inputRange: [0, 0.1, 1],
-                      outputRange: [0, 1, 1],
-                    }),
-                  },
-                ]}
+              <LogIn 
+                size={20} 
+                color={adaptiveColors.signInButtonText}
+                style={{ 
+                  marginRight: isRTL ? 0 : 8,
+                  marginLeft: isRTL ? 8 : 0,
+                }}
               />
-              
-              {/* Button content */}
-              <View style={styles.signInButtonContent}>
-                <LogIn 
-                  size={20} 
-                  color={isSignInPressed ? getContrastTextColor(theme.primary) : adaptiveColors.signInButtonText}
-                  style={{ 
-                    marginRight: isRTL ? 0 : 8,
-                    marginLeft: isRTL ? 8 : 0,
-                  }}
-                />
-                <Text style={[
-                  styles.signInButtonText, 
-                  {
-                    textAlign: isRTL ? 'right' : 'left',
-                    color: isSignInPressed ? getContrastTextColor(theme.primary) : adaptiveColors.signInButtonText,
-                  }
-                ]}>
-                  {isRTL ? 'تسجيل الدخول' : 'Sign In'}
-                </Text>
-              </View>
+              <Text style={[
+                styles.signInButtonText, 
+                {
+                  textAlign: isRTL ? 'right' : 'left',
+                }
+              ]}>
+                {isRTL ? 'تسجيل الدخول' : 'Sign In'}
+              </Text>
             </TouchableOpacity>
           </View>
 

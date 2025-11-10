@@ -1,0 +1,107 @@
+# Kubernetes Ingress Configuration for Socket.IO with Sticky Sessions
+# This enables horizontal scaling with session affinity
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: guild-backend-ingress
+  annotations:
+    # Enable sticky sessions
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "guild-backend"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-path: "/"
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: "guild-backend-service"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    
+    # SSL/TLS
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.guild.example.com
+    secretName: guild-backend-tls
+  rules:
+  - host: api.guild.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: guild-backend-service
+            port:
+              number: 4000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guild-backend-service
+spec:
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+  ports:
+  - port: 4000
+    targetPort: 4000
+    protocol: TCP
+    name: http
+  selector:
+    app: guild-backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guild-backend
+spec:
+  replicas: 3  # Start with 3 instances
+  selector:
+    matchLabels:
+      app: guild-backend
+  template:
+    metadata:
+      labels:
+        app: guild-backend
+    spec:
+      containers:
+      - name: backend
+        image: guild-backend:latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: guild-secrets
+              key: redis-url
+        - name: FRONTEND_URL
+          value: "https://guild.example.com"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+

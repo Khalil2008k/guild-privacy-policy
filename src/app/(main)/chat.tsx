@@ -39,6 +39,10 @@ import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '../../utils/logger';
+// ✅ TASK 14: iPad responsive layout components
+import { ResponsiveFlatList } from '../../components/ResponsiveFlatList';
+import { ResponsiveContainer } from '../../components/ResponsiveContainer';
+import { useResponsive } from '../../utils/responsive';
 import * as Haptics from 'expo-haptics';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import AdminChatService from '../../services/AdminChatService';
@@ -83,7 +87,6 @@ import {
   Meh,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
@@ -109,10 +112,16 @@ function DateSeparator({ date, theme, isRTL, t }: any) {
     const today = new Date();
     const chatDate = new Date(dateStr);
     
-    const isToday = chatDate.toDateString() === today.toDateString();
-    const yesterday = new Date(today);
+    // Normalize to start of day for comparison
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    const chatDateStart = new Date(chatDate);
+    chatDateStart.setHours(0, 0, 0, 0);
+    
+    const isToday = chatDateStart.getTime() === todayStart.getTime();
+    const yesterday = new Date(todayStart);
     yesterday.setDate(yesterday.getDate() - 1);
-    const isYesterday = chatDate.toDateString() === yesterday.toDateString();
+    const isYesterday = chatDateStart.getTime() === yesterday.getTime();
     
     if (isToday) return t('today');
     if (isYesterday) return t('yesterday');
@@ -135,6 +144,25 @@ function DateSeparator({ date, theme, isRTL, t }: any) {
   );
 }
 
+// 🎨 Adaptive Color Helper for Chat Screen
+const getAdaptiveChatColors = (theme: any, isDark: boolean) => ({
+  // Text colors - black in light mode, theme colors in dark mode
+  primaryText: isDark ? theme.textPrimary : '#000000',
+  secondaryText: isDark ? theme.textSecondary : '#666666',
+  chatNameText: isDark ? theme.textPrimary : '#000000',
+  chatTimeText: isDark ? '#FFFFFF' : '#000000', // Time text
+  lastMessageText: isDark ? '#FFFFFF' : '#000000', // Last message text
+  unreadBadgeText: '#FFFFFF', // Always white on colored badge
+  messageCountText: isDark ? '#FFFFFF' : '#000000', // Message count text
+  
+  // Icon colors - black in light mode, white in dark mode
+  messageTypeIcon: isDark ? '#FFFFFF' : '#000000',
+  statusIcon: isDark ? '#FFFFFF' : '#000000',
+  
+  // Chat item background
+  chatItemBackground: isDark ? 'rgba(229, 229, 234, 0.01)' : 'rgba(229, 229, 234, 0.3)',
+});
+
 // 🎯 Premium Chat Item Component
 function PremiumChatItem({
   chat,
@@ -145,6 +173,8 @@ function PremiumChatItem({
   t,
 }: any) {
   const { user } = useAuth();
+  const { isDarkMode } = useTheme();
+  const adaptiveColors = getAdaptiveChatColors(theme, isDarkMode);
   const isSupportChat = chat.id?.startsWith('support_') || chat.type === 'support';
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -209,8 +239,12 @@ function PremiumChatItem({
           }),
         ])
       ).start();
+    } else {
+      // Stop glow animation when unread count becomes 0
+      glowAnim.stopAnimation();
+      glowAnim.setValue(0);
     }
-  }, [chat.unread]);
+  }, [chat.unread, glowAnim]);
 
   const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -279,6 +313,7 @@ function PremiumChatItem({
         styles.premiumChatItem,
         {
           transform: [{ scale: scaleAnim }],
+          borderColor: theme.primary + '40', // Theme color border with 40% opacity
         },
       ]}
     >
@@ -313,7 +348,11 @@ function PremiumChatItem({
             <View style={styles.avatarBorder}>
               <View style={[styles.avatar, { backgroundColor: theme.primary + '20' }]}>
                 {chat.avatar ? (
-                  <Image source={{ uri: chat.avatar }} style={styles.avatarImage} />
+                  <Image 
+                    source={{ uri: chat.avatar }} 
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
                 ) : (
                   <Text style={[styles.avatarText, { color: theme.primary }]}>
                     {chat.name?.charAt(0).toUpperCase() || '?'}
@@ -340,6 +379,7 @@ function PremiumChatItem({
                   style={[
                     styles.chatName,
                     {
+                      color: adaptiveColors.chatNameText,
                       fontWeight: chat.unread > 0 ? '700' : '600',
                     },
                   ]}
@@ -383,7 +423,7 @@ function PremiumChatItem({
                   style={[
                     styles.chatTime,
                     {
-                      color: chat.unread > 0 ? theme.primary : '#8E8E93',
+                      color: chat.unread > 0 ? theme.primary : adaptiveColors.chatTimeText,
                       fontWeight: chat.unread > 0 ? '600' : '400',
                     },
                   ]}
@@ -416,16 +456,16 @@ function PremiumChatItem({
 
                 {/* Message type icon */}
                 {chat.lastMessageType === 'voice' && (
-                  <Mic size={13} color="#8E8E93" style={{ marginRight: 4 }} />
+                  <Mic size={13} color={adaptiveColors.messageTypeIcon} style={{ marginRight: 4 }} />
                 )}
                 {chat.lastMessageType === 'image' && (
-                  <ImageIcon size={13} color="#8E8E93" style={{ marginRight: 4 }} />
+                  <ImageIcon size={13} color={adaptiveColors.messageTypeIcon} style={{ marginRight: 4 }} />
                 )}
                 {chat.lastMessageType === 'file' && (
-                  <FileText size={13} color="#8E8E93" style={{ marginRight: 4 }} />
+                  <FileText size={13} color={adaptiveColors.messageTypeIcon} style={{ marginRight: 4 }} />
                 )}
                 {chat.lastMessageType === 'location' && (
-                  <MapPin size={13} color="#8E8E93" style={{ marginRight: 4 }} />
+                  <MapPin size={13} color={adaptiveColors.messageTypeIcon} style={{ marginRight: 4 }} />
                 )}
 
                 {/* Message text */}
@@ -433,7 +473,7 @@ function PremiumChatItem({
                   style={[
                     styles.lastMessage,
                     {
-                      color: chat.unread > 0 ? '#1A1A1A' : '#8E8E93',
+                      color: adaptiveColors.lastMessageText,
                       fontWeight: chat.unread > 0 ? '500' : '400',
                     },
                   ]}
@@ -461,13 +501,13 @@ function PremiumChatItem({
               <View style={styles.rightColumn}>
                 {chat.unread > 0 ? (
                   <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
-                    <Text style={[styles.unreadText, { color: '#FFFFFF' }]}>
+                    <Text style={[styles.unreadText, { color: adaptiveColors.unreadBadgeText }]}>
                       {chat.unread > 99 ? '99+' : chat.unread}
                     </Text>
                   </View>
                 ) : chat.totalMessages ? (
                   <View style={[styles.messageCountBadge, { backgroundColor: theme.primary }]}>
-                    <Text style={[styles.messageCountText, { color: '#000000' }]}>
+                    <Text style={[styles.messageCountText, { color: adaptiveColors.messageCountText }]}>
                       {chat.totalMessages > 999 ? '999+' : chat.totalMessages}
                     </Text>
                   </View>
@@ -482,7 +522,7 @@ function PremiumChatItem({
 }
 
 // 🎨 Premium Header Component
-function PremiumHeader({ theme, isRTL, onSearch, onMenu, onToggleArchive, showArchived, t }: any) {
+function PremiumHeader({ theme, isRTL, onSearch, onMenu, t }: any) {
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -531,29 +571,19 @@ function PremiumHeader({ theme, isRTL, onSearch, onMenu, onToggleArchive, showAr
               onPress={onSearch}
               onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             >
-              <View style={[styles.headerButtonInner, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+              <View style={styles.headerButtonInner}>
                 <Search size={20} color="#000000" />
               </View>
             </TouchableOpacity>
 
-            {onToggleArchive && (
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={onToggleArchive}
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-              >
-                <View style={[styles.headerButtonInner, { backgroundColor: showArchived ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.1)' }]}>
-                  <Archive size={20} color="#000000" />
-                </View>
-              </TouchableOpacity>
-            )}
-
+            {/* REMOVED: Archive icon - functionality moved to 3 dots menu */}
+            
             <TouchableOpacity
               style={styles.headerButton}
               onPress={onMenu}
               onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             >
-              <View style={[styles.headerButtonInner, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+              <View style={styles.headerButtonInner}>
                 <MoreVertical size={20} color="#000000" />
               </View>
             </TouchableOpacity>
@@ -566,16 +596,19 @@ function PremiumHeader({ theme, isRTL, onSearch, onMenu, onToggleArchive, showAr
 
 // 🎯 Main Component
 export default function PremiumChatScreen() {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useI18n();
   const insets = useSafeAreaInsets();
   const { currentGuild } = useGuild();
   const { chats, isConnected } = useChat();
   const { user } = useAuth();
+  // ✅ TASK 14: Get responsive dimensions for iPad layout
+  const { isTablet, isLargeDevice, deviceType } = useResponsive();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showChatListMenu, setShowChatListMenu] = useState(false); // General chat list menu
   const [showNewChatOptions, setShowNewChatOptions] = useState(false);
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -616,8 +649,20 @@ export default function PremiumChatScreen() {
   // COMMENT: PRODUCTION HARDENING - Task 5.2 - Memoized chat item renderer with useCallback
   const memoizedRenderItem = useCallback(({ item, index }: { item: any; index: number }) => {
     // Show date separator if it's a new day
-    const showDateSeparator = index === 0 || 
-      (filteredChats[index - 1]?.date !== item.date);
+    // Compare dates by day only (year-month-day), ignoring time
+    const getDateKey = (dateStr: string) => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      // Normalize to start of day for date-only comparison
+      date.setHours(0, 0, 0, 0);
+      // Return date string in YYYY-MM-DD format for comparison
+      return date.toISOString().split('T')[0];
+    };
+    
+    const currentDateKey = getDateKey(item.date);
+    const previousDateKey = index > 0 ? getDateKey(filteredChats[index - 1]?.date) : '';
+    // Show separator if it's the first item or if the date changed (different day)
+    const showDateSeparator = index === 0 || (previousDateKey !== currentDateKey);
     
     return (
       <>
@@ -646,8 +691,20 @@ export default function PremiumChatScreen() {
     };
   }, []);
 
-  const handleChatPress = (chat: any) => {
+  const handleChatPress = async (chat: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Immediately clear unread count when chat is opened
+    if (chat.unread > 0 && user?.uid) {
+      try {
+        await chatService.markChatAsRead(chat.id, user.uid);
+        logger.debug('✅ Cleared unread count for chat:', chat.id);
+      } catch (error) {
+        logger.error('Error clearing unread count:', error);
+      }
+    }
+    
+    // Navigate to chat
     if (chat.id?.startsWith('support_') || chat.type === 'support') {
       router.push(`/(modals)/support-chat` as any);
     } else if (chat.type === 'guild') {
@@ -802,6 +859,98 @@ export default function PremiumChatScreen() {
     setShowQuickActions(false);
   };
 
+  // General chat list menu handlers
+  const handleMarkAllAsRead = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      let markedCount = 0;
+      for (const chat of chats) {
+        const unreadCount = typeof chat.unreadCount === 'object' 
+          ? chat.unreadCount[user.uid] || 0
+          : chat.unreadCount || 0;
+        
+        if (unreadCount > 0) {
+          await chatService.markChatAsRead(chat.id, user.uid);
+          markedCount++;
+        }
+      }
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم تحديد ${markedCount} محادثة كمقروءة`
+          : `Marked ${markedCount} chat${markedCount !== 1 ? 's' : ''} as read`,
+        isRTL
+      );
+      
+      setShowChatListMenu(false);
+      await loadChats();
+    } catch (error) {
+      logger.error('Error marking all chats as read:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل تحديد جميع المحادثات كمقروءة' : 'Failed to mark all chats as read',
+        isRTL
+      );
+    }
+  };
+
+  const handleClearAllUnread = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      let clearedCount = 0;
+      for (const chat of chats) {
+        const unreadCount = typeof chat.unreadCount === 'object' 
+          ? chat.unreadCount[user.uid] || 0
+          : chat.unreadCount || 0;
+        
+        if (unreadCount > 0) {
+          const chatRef = doc(db, 'chats', chat.id);
+          await updateDoc(chatRef, {
+            [`unreadCount.${user.uid}`]: 0,
+            updatedAt: serverTimestamp(),
+          });
+          clearedCount++;
+        }
+      }
+      
+      CustomAlertService.showSuccess(
+        isRTL ? 'نجح' : 'Success',
+        isRTL 
+          ? `تم مسح ${clearedCount} محادثة من العداد`
+          : `Cleared unread count for ${clearedCount} chat${clearedCount !== 1 ? 's' : ''}`,
+        isRTL
+      );
+      
+      setShowChatListMenu(false);
+      await loadChats();
+    } catch (error) {
+      logger.error('Error clearing all unread counts:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل مسح عداد المحادثات' : 'Failed to clear unread counts',
+        isRTL
+      );
+    }
+  };
+
+  const handleViewArchived = () => {
+    setShowArchived(!showArchived);
+    setShowChatListMenu(false);
+  };
+
+  const handleNewChat = () => {
+    setShowNewChatOptions(true);
+    setShowChatListMenu(false);
+  };
+
+  const handleChatSettings = () => {
+    setShowChatListMenu(false);
+    router.push('/(modals)/settings');
+  };
+
   // Transform chats data
   const transformedChats = chats.map((chat: any) => {
     const isJobChat = chat.type === 'job';
@@ -835,6 +984,7 @@ export default function PremiumChatScreen() {
       : chat.lastMessageSenderId;
 
     // Get date for separator - with proper error handling
+    // We use date only (year-month-day) to group chats by day, ignoring time
     let messageDate: Date;
     try {
       if (chat.lastMessage?.timestamp) {
@@ -851,10 +1001,13 @@ export default function PremiumChatScreen() {
       } else {
         messageDate = new Date();
       }
+      // Normalize to start of day for date-only comparison
+      messageDate.setHours(0, 0, 0, 0);
     } catch (error) {
       // COMMENT: PRIORITY 1 - Replace console.warn with logger
       logger.warn('Error parsing message date:', error);
       messageDate = new Date();
+      messageDate.setHours(0, 0, 0, 0);
     }
 
     // Get unread count for current user
@@ -943,22 +1096,24 @@ export default function PremiumChatScreen() {
         onSearch={() => {
           setShowSearch(!showSearch);
         }}
-        onMenu={() => setShowQuickActions(true)}
-        onToggleArchive={() => setShowArchived(!showArchived)}
-        showArchived={showArchived}
+        onMenu={() => {
+          // Open general chat list menu (not per-chat menu)
+          setSelectedChat(null); // Clear selected chat for general menu
+          setShowChatListMenu(true);
+        }}
       />
       {showSearch && (
         <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
           <TextInput
-            style={[styles.searchInput, { color: theme.textPrimary }]}
+            style={[styles.searchInput, { color: isDarkMode ? theme.textPrimary : '#000000' }]}
             placeholder={isRTL ? 'البحث...' : 'Search...'}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={isDarkMode ? theme.textSecondary : '#999999'}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
           />
           <TouchableOpacity onPress={() => setShowSearch(false)}>
-            <X size={20} color={theme.textSecondary} />
+            <X size={20} color={isDarkMode ? theme.textSecondary : '#000000'} />
           </TouchableOpacity>
         </View>
       )}
@@ -967,8 +1122,8 @@ export default function PremiumChatScreen() {
       {pinnedChats.length > 0 && (
         <View style={styles.pinnedSection}>
           <View style={[styles.sectionHeader, { backgroundColor: theme.surface }]}>
-            <Pin size={16} color={theme.primary} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+            <Pin size={16} color={isDarkMode ? theme.primary : '#000000'} />
+            <Text style={[styles.sectionTitle, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
               {t('pinnedChats')}
             </Text>
           </View>
@@ -985,7 +1140,11 @@ export default function PremiumChatScreen() {
               >
                 <View style={[styles.pinnedAvatar, { backgroundColor: theme.primary + '20' }]}>
                   {chat.avatar ? (
-                    <Image source={{ uri: chat.avatar }} style={styles.pinnedAvatarImage} />
+                    <Image 
+                      source={{ uri: chat.avatar }} 
+                      style={styles.pinnedAvatarImage}
+                      resizeMode="cover"
+                    />
                   ) : (
                     <Text style={[styles.pinnedAvatarText, { color: theme.primary }]}>
                       {chat.name?.charAt(0).toUpperCase() || '?'}
@@ -1000,7 +1159,7 @@ export default function PremiumChatScreen() {
                   )}
                 </View>
                 <Text
-                  style={[styles.pinnedName, { color: theme.textPrimary }]}
+                  style={[styles.pinnedName, { color: isDarkMode ? theme.textPrimary : '#000000' }]}
                   numberOfLines={1}
                 >
                   {chat.name}
@@ -1008,6 +1167,8 @@ export default function PremiumChatScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          {/* Grey separator line underneath pinned chat items */}
+          <View style={styles.pinnedSeparatorLine} />
         </View>
       )}
 
@@ -1018,8 +1179,8 @@ export default function PremiumChatScreen() {
         </View>
       ) : filteredChats.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <MessageCircle size={64} color={theme.textSecondary} />
-          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+          <MessageCircle size={64} color={isDarkMode ? theme.textSecondary : '#666666'} />
+          <Text style={[styles.emptyText, { color: isDarkMode ? theme.textSecondary : '#666666' }]}>
             {searchQuery
               ? t('noResultsFound')
               : t('noChatsYet')}
@@ -1069,8 +1230,8 @@ export default function PremiumChatScreen() {
               style={styles.quickAction}
               onPress={handlePinChat}
             >
-              <Pin size={20} color={theme.textPrimary} />
-              <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
+              <Pin size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
                 {selectedChat?.isPinned
                   ? t('unpin')
                   : t('pin')}
@@ -1082,11 +1243,11 @@ export default function PremiumChatScreen() {
               onPress={handleMuteChat}
             >
               {selectedChat?.isMuted ? (
-                <Bell size={20} color={theme.textPrimary} />
+                <Bell size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
               ) : (
-                <BellOff size={20} color={theme.textPrimary} />
+                <BellOff size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
               )}
-              <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
                 {selectedChat?.isMuted
                   ? t('unmute')
                   : t('mute')}
@@ -1097,8 +1258,8 @@ export default function PremiumChatScreen() {
               style={styles.quickAction}
               onPress={handlePokeUser}
             >
-              <Zap size={20} color={theme.textPrimary} />
-              <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
+              <Zap size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
                 {t('poke')}
               </Text>
             </TouchableOpacity>
@@ -1107,8 +1268,8 @@ export default function PremiumChatScreen() {
               style={styles.quickAction}
               onPress={handleArchiveChat}
             >
-              <Archive size={20} color={theme.textPrimary} />
-              <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>
+              <Archive size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
                 {t('archive')}
               </Text>
             </TouchableOpacity>
@@ -1120,6 +1281,74 @@ export default function PremiumChatScreen() {
               <Trash2 size={20} color={theme.error} />
               <Text style={[styles.quickActionText, { color: theme.error }]}>
                 {t('delete')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* General Chat List Menu Modal */}
+      <Modal
+        visible={showChatListMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChatListMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowChatListMenu(false)}
+        >
+          <View style={[styles.quickActionsMenu, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={handleNewChat}
+            >
+              <Plus size={20} color={isDarkMode ? theme.primary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
+                {isRTL ? 'محادثة جديدة' : 'New Chat'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={handleMarkAllAsRead}
+            >
+              <CheckCheck size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
+                {isRTL ? 'تحديد الكل كمقروء' : 'Mark All as Read'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={handleClearAllUnread}
+            >
+              <Check size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
+                {isRTL ? 'مسح العداد' : 'Clear All Unread'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={handleViewArchived}
+            >
+              <Archive size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
+                {showArchived 
+                  ? (isRTL ? 'إخفاء الأرشيف' : 'Hide Archived')
+                  : (isRTL ? 'عرض الأرشيف' : 'View Archived')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={handleChatSettings}
+            >
+              <Settings size={20} color={isDarkMode ? theme.textPrimary : '#000000'} />
+              <Text style={[styles.quickActionText, { color: isDarkMode ? theme.textPrimary : '#000000' }]}>
+                {isRTL ? 'إعدادات المحادثة' : 'Chat Settings'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1244,6 +1473,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
 
   // Search
@@ -1267,14 +1497,23 @@ const styles = StyleSheet.create({
 
   // Pinned Section
   pinnedSection: {
-    marginTop: 8,
+    marginTop: -10,
+    marginBottom: -12,
+    paddingHorizontal: 31,
+    paddingVertical: 6,
+    overflow: 'hidden',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 6,
     gap: 8,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
   },
   sectionTitle: {
     fontSize: 14,
@@ -1284,18 +1523,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   pinnedChatsScroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 0,
+    paddingBottom: 2,
+    paddingTop: 2,
     gap: 16,
   },
   pinnedChatItem: {
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
   },
   pinnedAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -1303,10 +1543,10 @@ const styles = StyleSheet.create({
   pinnedAvatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 32,
+    borderRadius: 27.5,
   },
   pinnedAvatarText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     fontFamily: FONT_FAMILY,
   },
@@ -1314,39 +1554,50 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: -4,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
   pinnedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     fontFamily: FONT_FAMILY,
   },
   pinnedName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     fontFamily: FONT_FAMILY,
-    maxWidth: 64,
+    maxWidth: 58,
+  },
+  pinnedSeparatorLine: {
+    height: 0.4,
+    backgroundColor: '#E5E5EA',
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 8,
   },
 
   // Premium Chat Item
   premiumChatItem: {
     marginHorizontal: 16,
-    marginVertical: 6,
+    marginTop: 4,
+    marginBottom: 4,
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(229, 229, 234, 0.01)',
+    borderWidth: 0.4,
+    borderColor: 'transparent', // Will be set dynamically with theme color
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    minHeight: 56,
   },
   glowEffect: {
     position: 'absolute',
@@ -1362,7 +1613,7 @@ const styles = StyleSheet.create({
   chatItemContent: {
     flexDirection: 'row',
     paddingHorizontal: 14,
-    paddingVertical: 9.5,
+    paddingVertical: 3.11296,
     gap: 12,
   },
   
@@ -1371,9 +1622,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatarBorder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: '#000000',
     alignItems: 'center',
@@ -1381,9 +1632,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -1393,7 +1644,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     fontFamily: FONT_FAMILY,
   },
@@ -1401,9 +1652,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1411,15 +1662,15 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   onlineIndicator: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 
   // Chat Info
   chatInfo: {
     flex: 1,
-    gap: 6,
+    gap: 1.96608,
   },
   topRow: {
     flexDirection: 'row',
@@ -1433,10 +1684,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chatName: {
-    fontSize: 16,
+    fontSize: 12.8,
     fontFamily: FONT_FAMILY,
     letterSpacing: -0.2,
-    color: '#1A1A1A',
+    color: '#FFFFFF',
   },
   badge: {
     paddingHorizontal: 6,
@@ -1445,9 +1696,9 @@ const styles = StyleSheet.create({
   },
   timeContainer: {},
   chatTime: {
-    fontSize: 12,
+    fontSize: 9.6,
     fontFamily: FONT_FAMILY,
-    color: '#8E8E93',
+    color: '#FFFFFF',
   },
   bottomRow: {
     flexDirection: 'row',
@@ -1465,10 +1716,10 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   lastMessage: {
-    fontSize: 14,
+    fontSize: 11.2,
     fontFamily: FONT_FAMILY,
     flex: 1,
-    color: '#8E8E93',
+    color: '#FFFFFF',
   },
   unreadBadge: {
     minWidth: 22,
@@ -1513,12 +1764,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
     gap: 12,
   },
   dateSeparatorLine: {
     flex: 1,
-    height: 1,
+    height: 0.4,
     backgroundColor: '#E5E5EA',
   },
   dateSeparatorText: {
@@ -1532,7 +1784,7 @@ const styles = StyleSheet.create({
 
   // Chat List
   chatList: {
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 100,
   },
 

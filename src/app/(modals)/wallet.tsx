@@ -22,10 +22,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
 import { useRealPayment } from '../../contexts/RealPaymentContext';
 import { Ionicons } from '@expo/vector-icons';
-import { Shield, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag, Coins, Wallet as WalletIcon } from 'lucide-react-native';
+import { Shield, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag, Coins, Wallet as WalletIcon, ExternalLink } from 'lucide-react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
 // COMMENT: PRIORITY 1 - Replace console statements with logger
 import { logger } from '../../utils/logger';
+// 🌐 External Payment: Open Safari for credit top-up (Apple Guideline 3.1.5a)
+import { openExternalPayment } from '../../utils/deepLinkHandler';
+import { isFeatureEnabled } from '../../config/featureFlags';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -49,6 +53,7 @@ export default function WalletScreen() {
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useI18n();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const { wallet, isLoading, refreshWallet } = useRealPayment();
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
@@ -144,15 +149,46 @@ export default function WalletScreen() {
     }
   };
 
-  const handleStore = () => {
-    router.push('/(modals)/coin-store');
+  /**
+   * 🌐 External Payment: Open Safari for credit top-up
+   * ⚖️ Apple Compliance: Uses external browser (not WebView) per Guideline 3.1.5(a)
+   */
+  const handleStore = async () => {
+    try {
+      // Check feature flag
+      const useExternalPayment = isFeatureEnabled('GUILD_EXTERNAL_PAYMENT');
+      
+      if (useExternalPayment) {
+        // 🌐 External Payment: Open Safari (App Store compliant)
+        if (!user?.uid) {
+          CustomAlertService.showError(
+            isRTL ? 'خطأ' : 'Error',
+            isRTL ? 'يجب تسجيل الدخول لإدارة الرصيد' : 'Please log in to manage your credits'
+          );
+          return;
+        }
+        
+        logger.info('💰 Opening external payment (Safari)...');
+        await openExternalPayment(user.uid);
+        
+      } else {
+        // Legacy: Use in-app coin store (fallback if external payment disabled)
+        router.push('/(modals)/coin-store');
+      }
+    } catch (error: any) {
+      logger.error('❌ Failed to open external payment:', error);
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'فشل فتح صفحة الدفع' : 'Failed to open payment page'
+      );
+    }
   };
 
   const handleWithdraw = () => {
     router.push('/(modals)/coin-withdrawal');
   };
 
-  const handleMyCoins = () => {
+  const handleMyCredits = () => {
     router.push('/(modals)/coin-wallet');
   };
 
@@ -239,7 +275,7 @@ export default function WalletScreen() {
         <View style={[styles.balanceCard, { backgroundColor: theme.primary }]}>
           <View style={[styles.balanceHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[styles.balanceLabel, { textAlign: isRTL ? 'right' : 'left', color: '#000000' }]}>
-              {isRTL ? 'قيمة العملات' : 'Coins Worth'}
+              {isRTL ? 'قيمة الرصيد' : 'Credits Worth'}
             </Text>
             <View style={[styles.percentageChange, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Coins size={16} color="#000000" />
@@ -326,10 +362,17 @@ export default function WalletScreen() {
             onPress={handleStore}
           >
             <View style={[styles.actionButtonIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-              <ShoppingBag size={24} color="#000000" />
+              {isFeatureEnabled('GUILD_EXTERNAL_PAYMENT') ? (
+                <ExternalLink size={24} color="#000000" />
+              ) : (
+                <ShoppingBag size={24} color="#000000" />
+              )}
             </View>
             <Text style={[styles.actionButtonText, { color: '#000000' }]}>
-              {isRTL ? 'متجر' : 'Store'}
+              {isFeatureEnabled('GUILD_EXTERNAL_PAYMENT') 
+                ? (isRTL ? 'إدارة الرصيد' : 'Manage Credits')
+                : (isRTL ? 'متجر' : 'Store')
+              }
             </Text>
           </TouchableOpacity>
           
@@ -347,16 +390,29 @@ export default function WalletScreen() {
           
           <TouchableOpacity 
             style={[styles.actionButtonCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-            onPress={handleMyCoins}
+            onPress={handleMyCredits}
           >
             <View style={[styles.actionButtonIcon, { backgroundColor: theme.primary }]}>
               <Coins size={24} color="#000000" />
             </View>
             <Text style={[styles.actionButtonText, { color: theme.textPrimary || '#000000' }]}>
-              {isRTL ? 'عملاتي' : 'My Coins'}
+              {isRTL ? 'رصيدي' : 'My Credits'}
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* 🌐 External Payment Disclaimer (Apple Compliance) */}
+        {isFeatureEnabled('GUILD_EXTERNAL_PAYMENT') && (
+          <View style={[styles.disclaimerContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Shield size={16} color={theme.textSecondary} />
+            <Text style={[styles.disclaimerText, { color: theme.textSecondary }]}>
+              {isRTL 
+                ? 'الرصيد يُستخدم لتوظيف المستقلين ونشر الوظائف. يتم الدفع بشكل آمن عبر guild-app.net'
+                : 'Credits are used to hire freelancers and post jobs. Payments are securely processed at guild-app.net'
+              }
+            </Text>
+          </View>
+        )}
 
         {/* Transaction Activities */}
         <View style={styles.transactionsSection}>
@@ -451,7 +507,7 @@ export default function WalletScreen() {
                     {isRTL ? 'المبلغ' : 'Amount'}
                   </Text>
                   <Text style={[styles.detailAmount, { color: selectedTransaction.type === 'credit' ? '#00C9A7' : '#FF6B6B', textAlign: isRTL ? 'right' : 'left' }]}>
-                    {selectedTransaction.type === 'credit' ? '+' : '-'}{selectedTransaction.amount.toLocaleString()} {isRTL ? 'عملة' : 'Coins'}
+                    {selectedTransaction.type === 'credit' ? '+' : '-'}{selectedTransaction.amount.toLocaleString()} {isRTL ? 'رصيد' : 'Credits'}
                   </Text>
                 </View>
 
@@ -831,6 +887,23 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  // 🌐 External Payment Disclaimer
+  disclaimerContainer: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
+    opacity: 0.8,
   },
   transactionsSection: {
     paddingHorizontal: 20,

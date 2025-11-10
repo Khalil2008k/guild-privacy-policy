@@ -32,16 +32,16 @@ interface PosterProfile {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { t, isRTL, language } = useI18n();
   const [posterProfile, setPosterProfile] = useState<PosterProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Get job content in current language (Arabic if available and language is Arabic)
-  const jobTitle = (language === 'ar' && job.titleAr) ? job.titleAr : job.title;
+  const jobTitle = (language === 'ar' && job.titleAr) ? job.titleAr : (job.title || '');
   
   // Get description - check for Arabic field first, then fallback to English
-  let jobDescription = job.description;
+  let jobDescription = job.description || '';
   if (language === 'ar' && job.descriptionAr && job.descriptionAr.trim()) {
     jobDescription = job.descriptionAr;
   }
@@ -51,7 +51,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
   if (language === 'ar' && job.locationAr) {
     jobLocation = job.locationAr;
   } else if (typeof job.location === 'object' && job.location?.address) {
-    jobLocation = job.location.address;
+    jobLocation = job.location.address || '';
   } else if (typeof job.location === 'string') {
     jobLocation = job.location;
   }
@@ -156,9 +156,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
         {/* Rating in corner - Always show */}
         <View style={[
           styles.ratingContainer,
-          { [isRTL ? 'left' : 'right']: 12 }
+          { [isRTL ? 'left' : 'right']: 10.56 } // 12 * 0.88 = 10.56 (12% reduction)
         ]}>
-          <Ionicons name="star" size={12} color={theme.primary} />
+          <Ionicons name="star" size={10.56} color={isDarkMode ? theme.primary : '#000000'} /> {/* Black in light mode, theme color in dark mode */}
           <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
             {(posterProfile?.rating || job.rating || 0).toFixed(1)}
           </Text>
@@ -169,7 +169,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           styles.priceTagBottom,
           { 
             backgroundColor: theme.primary,
-            [isRTL ? 'left' : 'right']: 12,
+            [isRTL ? 'left' : 'right']: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
             flexDirection: isRTL ? 'row-reverse' : 'row',
           },
           isHighlighted && {
@@ -186,7 +186,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
             { color: '#000000', textAlign: isRTL ? 'right' : 'left' },
             isHighlighted && {
               fontSize: 13,
-              color: theme.primary,
+              color: '#000000', // Black in both modes
               fontWeight: '700',
             }
           ]}>
@@ -195,7 +195,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           <Text style={[
             styles.currencyLabel, 
             { 
-              color: isHighlighted ? theme.primary : '#000000',
+              color: '#000000', // Black in both modes
               [isRTL ? 'marginRight' : 'marginLeft']: 4,
             }
           ]}>
@@ -208,7 +208,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           <View style={[styles.companyInfo, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <View style={[
               styles.authorAvatar,
-              { [isRTL ? 'marginLeft' : 'marginRight']: 12 }
+              { [isRTL ? 'marginLeft' : 'marginRight']: 10.56 } // 12 * 0.88 = 10.56 (12% reduction)
             ]}>
               {(job.clientAvatar || posterProfile?.profileImage) ? (
                 <OptimizedImage 
@@ -255,7 +255,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
             textAlign: isRTL ? 'right' : 'left'
           }
         ]} numberOfLines={2}>
-          {jobTitle}
+          {jobTitle || ''}
         </Text>
 
         {/* Job Description - RTL support */}
@@ -277,9 +277,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
             <View style={[styles.metaItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Ionicons 
                 name="location-outline" 
-                size={12} 
+                size={10.56} 
                 color={theme.textSecondary}
-                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 4 }}
+                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 3.52 }} // 12 * 0.88 = 10.56, 4 * 0.88 = 3.52 (12% reduction)
               />
               <Text style={[
                 styles.metaText, 
@@ -300,9 +300,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
             <View style={[styles.metaItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Ionicons 
                 name="time-outline" 
-                size={12} 
+                size={10.56} 
                 color={theme.textSecondary}
-                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 4 }}
+                style={{ [isRTL ? 'marginLeft' : 'marginRight']: 3.52 }} // 12 * 0.88 = 10.56, 4 * 0.88 = 3.52 (12% reduction)
               />
               <Text style={[
                 styles.metaText, 
@@ -323,131 +323,131 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
 
 const styles = StyleSheet.create({
   jobCard: {
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    marginBottom: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1.76 }, // 2 * 0.88 = 1.76 (12% reduction)
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 7.04, // 8 * 0.88 = 7.04 (12% reduction)
     elevation: 4,
-    padding: 16,
+    padding: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
     position: 'relative',
   },
   ratingContainer: {
     position: 'absolute',
-    top: 12,
+    top: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   priceTagBottom: {
     position: 'absolute',
-    bottom: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    bottom: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    paddingHorizontal: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
+    paddingVertical: 1.76, // 2 * 0.88 = 1.76 (12% reduction)
+    borderRadius: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 0.88 }, // 1 * 0.88 = 0.88 (12% reduction)
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2.64, // 3 * 0.88 = 2.64 (12% reduction)
     elevation: 2,
     alignItems: 'center',
-    minWidth: 50,
+    minWidth: 44, // 50 * 0.88 = 44 (12% reduction)
   },
   ratingText: {
-    fontSize: 11,
+    fontSize: 9.68, // 11 * 0.88 = 9.68 (12% reduction)
     fontWeight: '600',
   },
   currentPrice: {
-    fontSize: 12,
+    fontSize: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
     fontWeight: '700',
   },
   currencyLabel: {
-    fontSize: 11,
+    fontSize: 9.68, // 11 * 0.88 = 9.68 (12% reduction)
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   cardHeader: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   companyInfo: {
     alignItems: 'center',
     flex: 1,
   },
   authorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 35.2, // 40 * 0.88 = 35.2 (12% reduction)
+    height: 35.2, // 40 * 0.88 = 35.2 (12% reduction)
+    borderRadius: 17.6, // 20 * 0.88 = 17.6 (12% reduction)
     backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 35.2, // 40 * 0.88 = 35.2 (12% reduction)
+    height: 35.2, // 40 * 0.88 = 35.2 (12% reduction)
+    borderRadius: 17.6, // 20 * 0.88 = 17.6 (12% reduction)
   },
   authorInitial: {
-    fontSize: 18,
+    fontSize: 15.84, // 18 * 0.88 = 15.84 (12% reduction)
     fontWeight: '700',
   },
   companyDetails: {
     flex: 1,
   },
   jobAuthor: {
-    fontSize: 14,
+    fontSize: 12.32, // 14 * 0.88 = 12.32 (12% reduction)
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 1.76, // 2 * 0.88 = 1.76 (12% reduction)
   },
   posterGID: {
-    fontSize: 11,
+    fontSize: 9.68, // 11 * 0.88 = 9.68 (12% reduction)
     opacity: 0.7,
   },
   jobTitle: {
-    fontSize: 16,
+    fontSize: 14.08, // 16 * 0.88 = 14.08 (12% reduction)
     fontWeight: '700',
-    marginBottom: 6,
-    lineHeight: 20,
+    marginBottom: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
+    lineHeight: 17.6, // 20 * 0.88 = 17.6 (12% reduction)
   },
   jobDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
+    fontSize: 11.44, // 13 * 0.88 = 11.44 (12% reduction)
+    lineHeight: 15.84, // 18 * 0.88 = 15.84 (12% reduction)
+    marginBottom: 7.04, // 8 * 0.88 = 7.04 (12% reduction)
   },
   jobFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   jobMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
     flex: 1,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   metaText: {
-    fontSize: 12,
+    fontSize: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
   },
   urgentBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    top: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    left: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
+    paddingHorizontal: 5.28, // 6 * 0.88 = 5.28 (12% reduction)
+    paddingVertical: 1.76, // 2 * 0.88 = 1.76 (12% reduction)
+    borderRadius: 3.52, // 4 * 0.88 = 3.52 (12% reduction)
   },
   urgentText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 8.8, // 10 * 0.88 = 8.8 (12% reduction)
     fontWeight: '700',
   },
 });

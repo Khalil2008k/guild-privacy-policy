@@ -6,6 +6,30 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.EXPO_P
 
 const config = getDefaultConfig(__dirname);
 
+// CRITICAL: Exclude backend directory from Metro bundler
+// Backend is Node.js server code and should NOT be bundled in the mobile app
+// Set projectRoot to src to prevent Metro from scanning backend
+config.projectRoot = path.resolve(__dirname, 'src');
+
+// Configure resolver with aggressive backend exclusion
+config.resolver = config.resolver || {};
+// Use blacklistRE (works better than blockList in some Metro versions)
+// Exclude backend, test files, and spec files (match both / and \ for Windows compatibility)
+config.resolver.blacklistRE = /(backend[\\/].*|__tests__[\\/].*|\.test\.(ts|tsx|js|jsx)$|\.spec\.(ts|tsx|js|jsx)$)/;
+config.resolver.blockList = [
+  // Block all backend files (absolute and relative paths)
+  /.*[\\/]backend[\\/].*/,
+  /backend[\\/].*/,
+  // Block backend in node_modules
+  /node_modules\/.*\/backend\/.*/,
+  // Block server.ts files
+  /.*[\\/]server\.ts$/,
+  // Block test files (should not be bundled in production)
+  /.*[\\/]__tests__[\\/].*/,
+  /.*\.test\.(ts|tsx|js|jsx)$/,
+  /.*\.spec\.(ts|tsx|js|jsx)$/,
+];
+
 // Configure path aliases
 config.resolver.alias = {
   '@': path.resolve(__dirname, 'src'),
@@ -91,5 +115,11 @@ config.resolver = {
     unstable_enablePackageExports: true, // Enable package.json exports field for tree-shaking
   }),
 };
+
+// CRITICAL: Only watch src directory to prevent Metro from scanning backend
+config.watchFolders = [
+  path.resolve(__dirname, 'src'),
+  path.resolve(__dirname, 'node_modules'),
+];
 
 module.exports = config;

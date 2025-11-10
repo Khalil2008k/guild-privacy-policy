@@ -95,24 +95,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0)', // Fully transparent rgba
   },
   scrollContent: {
-    gap: 8,
+    gap: 6, // Increased by 50% (from 4)
     backgroundColor: 'rgba(0,0,0,0)', // Fully transparent rgba
   },
   replyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4, // Reduced further
-    borderRadius: 20,
-    gap: 6,
-    minHeight: 26, // Reduced to 26
+    paddingHorizontal: 6, // Increased by 50% (from 4)
+    paddingVertical: 3, // Increased by 50% (from 2)
+    borderRadius: 15, // Increased by 50% (from 10)
+    gap: 5, // Increased by 50% (rounded from 4.5)
+    minHeight: 20, // Increased by 50% (rounded from 19.5)
     // Removed all borders and backgrounds - buttons are transparent
   },
   emoji: {
-    fontSize: 16,
+    fontSize: 12, // Increased by 50% (from 8)
   },
   replyText: {
-    fontSize: 14,
+    fontSize: 11, // Increased by 50% (rounded from 10.5)
     fontWeight: '500',
   },
 });

@@ -74,11 +74,20 @@ export const useMessageRenderer = ({
   const shouldShowDateSeparator = useCallback((message: any, previousMessage: any | null): boolean => {
     if (!previousMessage) return true;
     
-    const messageDate = message.createdAt?.toDate?.() || new Date(message.createdAt);
-    const previousDate = previousMessage.createdAt?.toDate?.() || new Date(previousMessage.createdAt);
+    // Compare dates by day only (year-month-day), ignoring time
+    const getDateKey = (msg: any) => {
+      const date = msg.createdAt?.toDate?.() || new Date(msg.createdAt);
+      // Normalize to start of day for date-only comparison
+      date.setHours(0, 0, 0, 0);
+      // Return date string in YYYY-MM-DD format for comparison
+      return date.toISOString().split('T')[0];
+    };
+    
+    const currentDateKey = getDateKey(message);
+    const previousDateKey = getDateKey(previousMessage);
     
     // Show separator if messages are on different days
-    return messageDate.toDateString() !== previousDate.toDateString();
+    return currentDateKey !== previousDateKey;
   }, []);
 
   // Check if message is seen by all participants
@@ -149,22 +158,22 @@ const styles = StyleSheet.create({
   dateSeparatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 16,
-    paddingHorizontal: 16,
+    marginVertical: 12.8,
+    paddingHorizontal: 12.8,
   },
   dateSeparatorLine: {
     flex: 1,
-    height: 1,
+    height: 0.8,
   },
   dateSeparatorBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginHorizontal: 8,
+    paddingHorizontal: 9.6,
+    paddingVertical: 3.2,
+    borderRadius: 9.6,
+    borderWidth: 0.8,
+    marginHorizontal: 6.4,
   },
   dateSeparatorText: {
-    fontSize: 12,
+    fontSize: 9.6,
     fontWeight: '500',
   },
   seenIndicator: {

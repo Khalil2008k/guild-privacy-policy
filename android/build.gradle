@@ -20,5 +20,14 @@ allprojects {
   }
 }
 
+// Define Android SDK versions BEFORE plugins (fallback if expo-root-project doesn't provide them)
+ext {
+  minSdkVersion = 23
+  targetSdkVersion = 34
+  compileSdkVersion = 34
+  buildToolsVersion = "34.0.0"
+  ndkVersion = "27.0.12077973"
+}
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"

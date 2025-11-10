@@ -68,3 +68,4 @@ After updating environment variables in Render:
 **Note:** Make sure your sandbox merchant account is properly configured in Sadad dashboard.
 
 
+

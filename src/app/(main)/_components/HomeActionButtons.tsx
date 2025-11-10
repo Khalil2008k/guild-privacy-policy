@@ -35,7 +35,7 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
   const { t, isRTL } = useI18n();
 
   return (
-    <View style={[styles.actionsContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+    <View style={styles.actionsContainer}>
       {/* Create Job Button */}
       <TouchableOpacity
         style={[
@@ -43,8 +43,6 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
           {
             backgroundColor: theme.primary,
             borderColor: theme.primary,
-            marginRight: isRTL ? 0 : 6,
-            marginLeft: isRTL ? 6 : 0,
           },
         ]}
         onPress={onCreateJobPress}
@@ -56,7 +54,7 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
             transform: [{ scale: button1Anim }],
           }}
         >
-          <Ionicons name="add-circle" size={20} color="#000000" />
+          <Ionicons name="add-circle" size={16} color="#000000" />
         </Animated.View>
         <Text style={[styles.actionButtonText, { color: '#000000' }]}>
           {t('addJob')}
@@ -71,8 +69,6 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
             {
               backgroundColor: theme.surface,
               borderColor: theme.border,
-              marginRight: isRTL ? 6 : 0,
-              marginLeft: isRTL ? 0 : 6,
             },
           ]}
           onPress={onGuildMapPress}
@@ -84,7 +80,7 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
               transform: [{ scale: button2Anim }],
             }}
           >
-            <Ionicons name="map" size={20} color={theme.textPrimary} />
+            <Ionicons name="map" size={16} color={theme.textPrimary} />
           </Animated.View>
           <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>
             {t('guildMap')}
@@ -100,8 +96,6 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
             {
               backgroundColor: theme.surface,
               borderColor: theme.border,
-              marginRight: isRTL ? 6 : 0,
-              marginLeft: isRTL ? 0 : 6,
             },
           ]}
           onPress={onFindJobsPress}
@@ -113,7 +107,7 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
               transform: [{ scale: button2Anim }],
             }}
           >
-            <Ionicons name="search" size={20} color={theme.textPrimary} />
+            <Ionicons name="search" size={16} color={theme.textPrimary} />
           </Animated.View>
           <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>
             {t('findJobs')}
@@ -126,22 +120,26 @@ export const HomeActionButtons: React.FC<HomeActionButtonsProps> = ({
 
 const styles = StyleSheet.create({
   actionsContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    gap: 12,
+    paddingHorizontal: 0, // No padding when inline with search bar
+    marginBottom: 0, // No margin when inline with search bar
+    gap: 12, // 12px space between buttons
+    flexDirection: 'column', // Stack buttons vertically
+    width: 108, // 120 * 0.9 = 108 (10% reduction)
+    justifyContent: 'center', // Center align buttons vertically
   },
   actionButton: {
-    flex: 1,
+    width: '100%', // Full width of container
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 15.5,
-    borderRadius: 12,
+    paddingVertical: 10, // Increased vertical padding
+    paddingHorizontal: 12, // Increased horizontal padding
+    borderRadius: 8.064, // 5.76 * 1.4 = 8.064 (40% increase from current)
     borderWidth: 1,
-    gap: 8,
+    gap: 6, // Increased gap between icon and text
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: 12, // Increased font size
     fontWeight: '600',
   },
 });

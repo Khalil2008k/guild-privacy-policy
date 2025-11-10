@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
+import { logger } from '../../utils/logger'; // ✅ Added for proper logging
 
 const { width } = Dimensions.get('window');
 const FONT_FAMILY = 'Signika Negative SC';
@@ -60,7 +61,7 @@ export default function ScannedUserProfileScreen() {
         setScannedUser(userData);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error parsing scanned user data:', error);
+        logger.error('Error parsing scanned user data:', error);
         CustomAlertService.showError(
           isRTL ? 'خطأ في البيانات' : 'Data Error',
           isRTL ? 'تعذر تحليل بيانات المستخدم' : 'Could not parse user data',
@@ -149,7 +150,7 @@ export default function ScannedUserProfileScreen() {
           );
         }
       } catch (error) {
-        console.error('Error sharing profile:', error);
+        logger.error('Error sharing profile:', error);
         CustomAlertService.showError(
           isRTL ? 'خطأ' : 'Error',
           isRTL ? 'تعذر مشاركة الملف الشخصي' : 'Could not share profile'
@@ -244,7 +245,7 @@ export default function ScannedUserProfileScreen() {
                 source={{ uri: scannedUser.profileImage }} 
                 style={styles.userAvatarImage}
                 onError={(error) => {
-                  console.log('Image load error:', error);
+                  logger.warn('Image load error:', error);
                 }}
               />
             ) : (

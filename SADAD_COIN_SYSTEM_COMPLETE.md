@@ -243,3 +243,4 @@ Update your frontend to handle the new response structure:
 **Your complete Guild coin system with 10% platform fee is NOW LIVE!** 🚀💰
 
 
+

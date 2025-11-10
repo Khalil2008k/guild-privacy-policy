@@ -130,9 +130,9 @@
   "initializingGuild": "Initializing Guild...",
   
   "insufficientBalance": "Insufficient Balance",
-  "insufficientBalanceMessage": "Insufficient balance for this option. Required: {required} coins. Current balance: {current} coins.",
-  "buyCoins": "Buy Coins",
-  "coinStore": "Coin Store",
+  "insufficientBalanceMessage": "Insufficient balance for this option. Required: {required} credits. Current balance: {current} credits.",
+  "buyCoins": "Manage Credits",
+  "coinStore": "Credit Management",
   "neverExpire": "Never Expire",
   "canBeWithdrawn": "Can Be Withdrawn",
   "fullValueRetained": "Full Value Retained",

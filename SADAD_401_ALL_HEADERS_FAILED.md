@@ -142,3 +142,4 @@ When contacting Sadad support, provide:
 **Conclusion:** This is a **Sadad account configuration issue**, not a code problem. All header formats have been tried and all return 401. The merchant account needs to be verified and configured properly in Sadad's system.
 
 
+

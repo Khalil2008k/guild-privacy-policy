@@ -155,3 +155,4 @@ Then reload your app (Ctrl+R or Cmd+R in Expo Go).
 **All modal issues fixed! Just rebuild your app!** 🎉
 
 
+

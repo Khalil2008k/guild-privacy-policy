@@ -288,3 +288,4 @@ eas build
 **All issues are fixed! Just rebuild your app to see the changes!** 🎉
 
 
+

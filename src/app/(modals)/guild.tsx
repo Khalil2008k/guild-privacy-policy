@@ -195,7 +195,7 @@ export default function GuildScreen() {
 
         <TouchableOpacity 
           style={styles.createGuildButton}
-          onPress={() => router.push('/(modals)/create-guild')}
+          onPress={() => router.push('/(modals)/guild-creation-rules')}
         >
           <View style={styles.buttonGlow} />
           <RTLText style={styles.createGuildText}>CREATE NEW GUILD</RTLText>

@@ -6,15 +6,19 @@
  * Purpose: Renders the main header card with GUILD logo, buttons, and user greeting
  */
 
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Shield } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useI18n } from '../../../contexts/I18nProvider';
 import { useUserProfile } from '../../../contexts/UserProfileContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { logger } from '../../../utils/logger';
 import { 
   createHeaderAccessibility,
   createButtonAccessibility,
@@ -48,7 +52,51 @@ export const HomeHeaderCard: React.FC<HomeHeaderCardProps> = ({
   const { theme } = useTheme();
   const { isRTL } = useI18n();
   const { profile } = useUserProfile();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const [showRankerBadge, setShowRankerBadge] = useState(false);
+  
+  // Check if user is top ranker and badge should be shown (72 hours)
+  useEffect(() => {
+    const checkRankerBadge = async () => {
+      try {
+        // Check if current user is top ranker (they are, since we set it to show current user)
+        const isTopRanker = profile?.fullName || user?.displayName || user?.email;
+        
+        if (isTopRanker) {
+          const badgeTimestampKey = `ranker_badge_${user?.uid}`;
+          const storedTimestamp = await AsyncStorage.getItem(badgeTimestampKey);
+          const now = Date.now();
+          const seventyTwoHours = 72 * 60 * 60 * 1000; // 72 hours in milliseconds
+          
+          if (!storedTimestamp) {
+            // First time becoming top ranker - store timestamp
+            await AsyncStorage.setItem(badgeTimestampKey, now.toString());
+            setShowRankerBadge(true);
+          } else {
+            const badgeTime = parseInt(storedTimestamp, 10);
+            const timeElapsed = now - badgeTime;
+            
+            if (timeElapsed < seventyTwoHours) {
+              // Still within 72 hours
+              setShowRankerBadge(true);
+            } else {
+              // 72 hours passed - remove badge
+              await AsyncStorage.removeItem(badgeTimestampKey);
+              setShowRankerBadge(false);
+            }
+          }
+        } else {
+          setShowRankerBadge(false);
+        }
+      } catch (error) {
+        logger.error('Error checking ranker badge:', error);
+        setShowRankerBadge(false);
+      }
+    };
+    
+    checkRankerBadge();
+  }, [profile?.fullName, user?.displayName, user?.email, user?.uid]);
 
   return (
     <View style={[styles.mainHeaderCard, { paddingTop: insets.top + 14, marginHorizontal: 3 }]}>
@@ -204,6 +252,21 @@ export const HomeHeaderCard: React.FC<HomeHeaderCardProps> = ({
             }
           </Text>
         </View>
+        
+        {/* Ranker Badge - Opposite side of name and picture */}
+        {showRankerBadge && (
+          <LinearGradient
+            colors={['#000000', '#1a1a1a']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.rankerBadge}
+          >
+            <Shield size={14.4} color="#BCFF31" style={styles.rankerBadgeIcon} />
+            <Text style={styles.rankerBadgeText}>
+              TOP Ranker
+            </Text>
+          </LinearGradient>
+        )}
       </View>
     </View>
   );
@@ -301,7 +364,40 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Signika Negative SC',
   },
+  rankerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8.5,
+    paddingVertical: 6.3,
+    borderRadius: 16,
+    gap: 5.7,
+    borderWidth: 1.6,
+    borderColor: '#BCFF31',
+    marginTop: 14,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#BCFF31',
+        shadowOffset: { width: 0, height: 1.6 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6.4,
+      },
+      android: {
+        elevation: 4.8,
+      },
+    }),
+  },
+  rankerBadgeIcon: {
+    marginRight: 1.6,
+  },
+  rankerBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    fontFamily: 'Signika Negative SC',
+    color: '#BCFF31',
+    letterSpacing: 0.4,
+  },
 });
+
 
 
 
