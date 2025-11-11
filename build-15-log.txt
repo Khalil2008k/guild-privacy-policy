@@ -1,0 +1,2 @@
+{"name":"turtle-launcher","hostname":"launcher-android-66777586b-842kh","pid":1,"service":"launcher","phase":"SPIN_UP_BUILDER","level":30,"marker":"START_PHASE","msg":"Start phase: SPIN_UP_BUILDER","time":"2025-11-11T05:11:08.166Z","v":0}
+{"name":"turtle-launcher","hostname":"launcher-android-66777586b-842kh","pid":1,"service":"launcher","phase":"SPIN_UP_BUILDER","level":30,"workerName":"turtle-worker-e517ddc6be","msg":"Creating new worker instance","time":"2025-11-11T05:11:08.166Z","v":0}

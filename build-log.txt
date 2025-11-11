@@ -1,2 +1,2 @@
-{"name":"turtle-launcher","hostname":"launcher-android-6679c4cc6-k49h6","pid":1,"service":"launcher","phase":"SPIN_UP_BUILDER","level":30,"marker":"START_PHASE","msg":"Start phase: SPIN_UP_BUILDER","time":"2025-10-24T22:10:59.391Z","v":0}
-{"name":"turtle-launcher","hostname":"launcher-android-6679c4cc6-k49h6","pid":1,"service":"launcher","phase":"SPIN_UP_BUILDER","level":30,"workerName":"turtle-worker-a9ce8d82e0","msg":"Creating new worker instance","time":"2025-10-24T22:10:59.391Z","v":0}
+{"name":"turtle-api","hostname":"turtle-api-86859f5c78-9r8vq","pid":1,"service":"turtle-api","phase":"QUEUE","level":30,"marker":"START_PHASE","msg":"Start phase: QUEUE","time":"2025-11-10T21:50:48.009Z","v":0}
+{"name":"turtle-api","hostname":"turtle-api-86859f5c78-9r8vq","pid":1,"service":"turtle-api","phase":"QUEUE","level":30,"msg":"Build is waiting in the priority queue","time":"2025-11-10T21:50:48.009Z","v":0}
