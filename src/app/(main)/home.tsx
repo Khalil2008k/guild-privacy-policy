@@ -790,10 +790,10 @@ Check console for full details.
                   <Text style={[styles.emptyText, { color: theme.textPrimary, marginTop: 14.08 }]}> {/* 16 * 0.88 = 14.08 (12% reduction) */}
                     {jobError}
                   </Text>
-                  <TouchableOpacity 
-                    style={[styles.refreshButton, { backgroundColor: theme.primary, marginTop: 14.08 }]}> {/* 16 * 0.88 = 14.08 (12% reduction) */}
-                    onPress={loadJobs}
-                  >
+                <TouchableOpacity 
+                  style={[styles.refreshButton, { backgroundColor: theme.primary, marginTop: 14.08 }]}
+                  onPress={loadJobs}
+                >
                     <Text style={[styles.refreshText, { color: theme.buttonText }]}>
                       {stableLanguage === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
                     </Text>
