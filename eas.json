@@ -24,8 +24,7 @@
         "simulator": false
       },
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundlePlayRelease"
+        "buildType": "app-bundle"
       }
     }
   },
