@@ -33,9 +33,6 @@ import { logger } from '../../utils/logger';
 import { openExternalPayment, requiresExternalBrowser } from '../../utils/externalPayment';
 // ✅ SADAD WEB CHECKOUT 2.1: Firebase Auth for user data
 import { auth } from '../../config/firebase';
-// 🍎 Apple IAP: In-App Purchase service for iOS (Guideline 3.1.1)
-import { appleIAPService, IAP_COIN_MAP } from '../../services/AppleIAPService';
-import type { Product } from 'react-native-iap';
 
 // 🍎 Apple Compliance: External browser payment component for iOS
 const ExternalBrowserPaymentView: React.FC<{
@@ -150,34 +147,7 @@ export default function CoinStoreScreen() {
     });
   };
 
-  // 🍎 iOS IAP: Load IAP products on mount (iOS only)
-  useEffect(() => {
-    if (Platform.OS === 'ios') {
-      loadIAPProducts();
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (Platform.OS === 'ios') {
-        appleIAPService.cleanup();
-      }
-    };
-  }, []);
-
-  const loadIAPProducts = async () => {
-    try {
-      setIapLoading(true);
-      logger.info('[IAP] Loading products...');
-      const products = await appleIAPService.getAvailableProducts();
-      setIapProducts(products);
-      logger.info('[IAP] Products loaded:', products);
-    } catch (error) {
-      logger.error('[IAP] Failed to load products:', error);
-      // Don't block the UI, allow fallback to Sadad if needed
-    } finally {
-      setIapLoading(false);
-    }
-  };
+  // Note: Using Sadad PSP for both iOS and Android (no IAP)
 
   const handleCheckout = () => {
     if (totalQty === 0) {
@@ -195,13 +165,8 @@ export default function CoinStoreScreen() {
     setLoading(true);
 
     try {
-      // 🍎 iOS: Use Apple IAP (Apple Guideline 3.1.1)
-      if (Platform.OS === 'ios') {
-        await handleIOSIAPPurchase();
-      } else {
-        // Android/Web: Use Sadad PSP
-        await handleSadadPurchase();
-      }
+      // Use Sadad PSP for all platforms (iOS + Android)
+      await handleSadadPurchase();
     } catch (error: any) {
       logger.error('❌ Payment failed:', error);
       
@@ -223,61 +188,7 @@ export default function CoinStoreScreen() {
     }
   };
 
-  // 🍎 iOS IAP: Handle Apple In-App Purchase (Guideline 3.1.1)
-  const handleIOSIAPPurchase = async () => {
-    try {
-      logger.info('🍎 [iOS IAP] Starting purchase flow...');
-
-      // Determine which product to purchase based on cart total
-      const totalAmount = total;
-      let productId = '';
-
-      // Map amount to IAP product ID
-      if (totalAmount <= 5) {
-        productId = 'com.guild.coins.bronze';
-      } else if (totalAmount <= 10) {
-        productId = 'com.guild.coins.silver';
-      } else if (totalAmount <= 50) {
-        productId = 'com.guild.coins.gold';
-      } else if (totalAmount <= 100) {
-        productId = 'com.guild.coins.platinum';
-      } else {
-        productId = 'com.guild.coins.diamond';
-      }
-
-      logger.info(`🍎 [iOS IAP] Purchasing product: ${productId} for ${totalAmount} QAR`);
-
-      // Initiate purchase
-      await appleIAPService.purchaseProduct(productId);
-
-      // Purchase listener will handle verification and coin crediting
-      logger.info('🍎 [iOS IAP] Purchase initiated, waiting for completion...');
-
-      // Show processing message
-      CustomAlertService.showSuccess(
-        isRTL ? 'جاري المعالجة' : 'Processing',
-        isRTL ? 'جاري معالجة الدفع...' : 'Processing payment...'
-      );
-
-      // Clear cart after successful initiation
-      setCart({});
-
-      // Refresh wallet after a delay (to allow backend to process)
-      setTimeout(async () => {
-        await refreshWallet();
-        CustomAlertService.showSuccess(
-          t('paymentSuccess'),
-          isRTL ? 'تم إضافة العملات إلى محفظتك' : 'Coins added to your wallet'
-        );
-      }, 3000);
-
-    } catch (error: any) {
-      logger.error('❌ [iOS IAP] Purchase failed:', error);
-      throw error;
-    }
-  };
-
-  // Sadad PSP: Handle payment for Android/Web
+  // Sadad PSP: Handle payment for all platforms (iOS + Android)
   const handleSadadPurchase = async () => {
     // Import BackendAPI with comprehensive error handling
     let BackendAPI;
