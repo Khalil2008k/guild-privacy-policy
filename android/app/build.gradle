@@ -131,6 +131,13 @@ android {
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
+
+    flavorDimensions "store"
+    productFlavors {
+        play {
+            dimension "store"
+        }
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`
