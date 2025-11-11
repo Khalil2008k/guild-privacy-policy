@@ -89,8 +89,8 @@ android {
 
     namespace 'com.mazen123333.guild'
     defaultConfig {
-missingDimensionStrategy "store", "play"
         applicationId 'com.mazen123333.guild'
+        missingDimensionStrategy "store", "play"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
