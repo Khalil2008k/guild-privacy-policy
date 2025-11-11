@@ -7,7 +7,6 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "postinstall": "node scripts/fix-iap-gradle.js",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -174,6 +173,7 @@
     "expo-audio": "~1.0.14",
     "expo-av": "^16.0.7",
     "expo-blur": "~15.0.7",
+    "expo-build-properties": "~1.0.9",
     "expo-camera": "~17.0.8",
     "expo-clipboard": "^8.0.7",
     "expo-constants": "~18.0.8",
