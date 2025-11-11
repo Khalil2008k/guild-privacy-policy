@@ -339,7 +339,7 @@ export default function JobsIndex() {
         </ScrollView>
       </View>
 
-      {/* Content - ✅ TASK 14: Responsive FlatList for iPad grid layout */}
+      {/* Content - ✅ TASK 14: Horizontal grid on iPad (2 rows), vertical list on phone */}
       {loading ? (
         <View style={[styles.loadingContainer, { flex: 1 }]}>
           <ActivityIndicator size="large" color={theme.primary} />
@@ -347,16 +347,42 @@ export default function JobsIndex() {
             {isRTL ? 'جارٍ التحميل...' : 'Loading...'}
           </Text>
         </View>
+      ) : isTablet ? (
+        // iPad: Horizontal scroll with 2 rows
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingVertical: 16,
+          }}
+        >
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            {/* Split jobs into columns of 2 */}
+            {Array.from({ length: Math.ceil(jobs.length / 2) }).map((_, columnIndex) => (
+              <View key={columnIndex} style={{ gap: 16 }}>
+                {jobs.slice(columnIndex * 2, columnIndex * 2 + 2).map((job) => (
+                  <View key={job.id} style={{ width: 350 }}>
+                    <JobCard job={job} onPress={() => handleJobPress(job)} showStatus />
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       ) : (
-        <ResponsiveFlatList
+        // Phone: Vertical list
+        <FlatList
           data={jobs}
           renderItem={({ item }) => (
             <JobCard job={item} onPress={() => handleJobPress(item)} showStatus />
           )}
           keyExtractor={(item) => item.id}
-          minColumns={1}
-          maxColumns={3}
-          itemSpacing={12}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            gap: 12,
+          }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Briefcase size={64} color={adaptiveColors.secondaryText} />

@@ -440,16 +440,16 @@ export default function Guilds() {
 
       <View style={styles.header}>
         <Text style={styles.title}>
-          {activeTab === 'discover' && (isRTL ? 'اكتشف النقابات' : 'Discover Guilds')}
-          {activeTab === 'my-guild' && (isRTL ? 'نقابتي' : 'My Guild')}
+          {activeTab === 'discover' && (isRTL ? 'اكتشف Guilds' : 'Discover Guilds')}
+          {activeTab === 'my-guild' && (isRTL ? 'Guild الخاص بي' : 'My Guild')}
           {activeTab === 'leaderboard' && (isRTL ? 'المتصدرون' : 'Leaderboard')}
-          {activeTab === 'create' && (isRTL ? 'إنشاء نقابة' : 'Create Guild')}
+          {activeTab === 'create' && (isRTL ? 'إنشاء Guild' : 'Create Guild')}
         </Text>
         <Text style={styles.sub}>
           {activeTab === 'discover' && (isRTL ? 'انضم إلى مجموعات موثوقة لتنمية شبكتك' : 'Join trusted groups to grow your network')}
-          {activeTab === 'my-guild' && (isRTL ? 'إدارة نقابتك وأعضائها' : 'Manage your guild and members')}
-          {activeTab === 'leaderboard' && (isRTL ? 'تصنيف أفضل النقابات' : 'Top performing guilds')}
-          {activeTab === 'create' && (isRTL ? 'أنشئ نقابة جديدة' : 'Create a new guild')}
+          {activeTab === 'my-guild' && (isRTL ? 'إدارة Guild الخاص بك وأعضائه' : 'Manage your guild and members')}
+          {activeTab === 'leaderboard' && (isRTL ? 'تصنيف أفضل Guilds' : 'Top performing guilds')}
+          {activeTab === 'create' && (isRTL ? 'أنشئ Guild جديد' : 'Create a new guild')}
         </Text>
       </View>
 
@@ -526,16 +526,16 @@ export default function Guilds() {
               <View style={styles.emptyContainer}>
                 <Users size={56.32} color={theme.textSecondary} />
                 <Text style={styles.emptyTitle}>
-                  {activeTab === 'discover' && (isRTL ? 'لا توجد نقابات' : 'No Guilds Found')}
-                  {activeTab === 'my-guild' && (isRTL ? 'ليس لديك نقابة' : 'No Guild Membership')}
+                  {activeTab === 'discover' && (isRTL ? 'لا توجد Guilds' : 'No Guilds Found')}
+                  {activeTab === 'my-guild' && (isRTL ? 'ليس لديك Guild' : 'No Guild Membership')}
                   {activeTab === 'leaderboard' && (isRTL ? 'لا توجد بيانات' : 'No Data Available')}
-                  {activeTab === 'create' && (isRTL ? 'إنشاء نقابة جديدة' : 'Create New Guild')}
+                  {activeTab === 'create' && (isRTL ? 'إنشاء Guild جديد' : 'Create New Guild')}
                 </Text>
                 <Text style={styles.emptyText}>
-                  {activeTab === 'discover' && (isRTL ? 'لا توجد نقابات متاحة حالياً' : 'No guilds available right now')}
-                  {activeTab === 'my-guild' && (isRTL ? 'انضم إلى نقابة أو أنشئ واحدة جديدة' : 'Join a guild or create a new one')}
+                  {activeTab === 'discover' && (isRTL ? 'لا توجد Guilds متاحة حالياً' : 'No guilds available right now')}
+                  {activeTab === 'my-guild' && (isRTL ? 'انضم إلى Guild أو أنشئ واحد جديد' : 'Join a guild or create a new one')}
                   {activeTab === 'leaderboard' && (isRTL ? 'لا توجد بيانات تصنيف متاحة' : 'No ranking data available')}
-                  {activeTab === 'create' && (isRTL ? 'املأ النموذج أدناه لإنشاء نقابة' : 'Fill the form below to create a guild')}
+                  {activeTab === 'create' && (isRTL ? 'املأ النموذج أدناه لإنشاء Guild' : 'Fill the form below to create a guild')}
                 </Text>
                 {activeTab === 'discover' && (
                   <TouchableOpacity
@@ -543,7 +543,7 @@ export default function Guilds() {
                     onPress={() => router.push('/(modals)/guild-creation-rules')}
                   >
                     <Text style={styles.emptyButtonText}>
-                      {isRTL ? 'إنشاء نقابة' : 'Create Guild'}
+                      {isRTL ? 'إنشاء Guild' : 'Create Guild'}
                     </Text>
                   </TouchableOpacity>
                 )}

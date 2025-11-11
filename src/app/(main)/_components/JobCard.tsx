@@ -164,29 +164,24 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           </Text>
         </View>
 
-        {/* Price tag in bottom corner - RTL support */}
+        {/* Price tag in bottom corner - RTL support - Always black background with white text */}
         <View style={[
           styles.priceTagBottom,
           { 
-            backgroundColor: theme.primary,
+            backgroundColor: '#000000', // Always black background
             [isRTL ? 'left' : 'right']: 10.56, // 12 * 0.88 = 10.56 (12% reduction)
             flexDirection: isRTL ? 'row-reverse' : 'row',
-          },
-          isHighlighted && {
-            backgroundColor: theme.surface,
             paddingVertical: 6,
             paddingHorizontal: 10,
             borderRadius: 8,
-            borderWidth: 2,
-            borderColor: theme.primary,
           }
         ]}>
           <Text style={[
             styles.currentPrice,
-            { color: '#000000', textAlign: isRTL ? 'right' : 'left' },
-            isHighlighted && {
+            { 
+              color: '#FFFFFF', // Always white text
+              textAlign: isRTL ? 'right' : 'left',
               fontSize: 13,
-              color: '#000000', // Black in both modes
               fontWeight: '700',
             }
           ]}>
@@ -195,7 +190,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, animValue }) => {
           <Text style={[
             styles.currencyLabel, 
             { 
-              color: '#000000', // Black in both modes
+              color: '#FFFFFF', // Always white text
               [isRTL ? 'marginRight' : 'marginLeft']: 4,
             }
           ]}>

@@ -60,7 +60,7 @@ export default function GuildCreationRulesScreen() {
       icon: Award,
       title: isRTL ? 'الرتبة المطلوبة' : 'Minimum Rank Required',
       description: isRTL 
-        ? `يجب أن تكون رتبتك ${MINIMUM_RANK} على الأقل لإنشاء نقابة`
+        ? `يجب أن تكون رتبتك ${MINIMUM_RANK} على الأقل لإنشاء Guild`
         : `You must have a minimum rank of ${MINIMUM_RANK} to create a guild`,
       met: hasMinimumRank,
       currentValue: currentRank,
@@ -78,15 +78,15 @@ export default function GuildCreationRulesScreen() {
     },
     {
       icon: Shield,
-      title: isRTL ? 'مسؤوليات النقابة' : 'Guild Responsibilities',
+      title: isRTL ? 'مسؤوليات Guild' : 'Guild Responsibilities',
       description: isRTL 
-        ? 'أنت مسؤول عن إدارة النقابة، الأعضاء، والمهام. يجب الحفاظ على معايير عالية من الجودة والاحترافية.'
+        ? 'أنت مسؤول عن إدارة Guild، الأعضاء، والمهام. يجب الحفاظ على معايير عالية من الجودة والاحترافية.'
         : 'You are responsible for managing the guild, members, and tasks. You must maintain high standards of quality and professionalism.',
       met: true, // Always shown as informational
     },
     {
       icon: Shield,
-      title: isRTL ? 'قواعد النقابة' : 'Guild Rules',
+      title: isRTL ? 'قواعد Guild' : 'Guild Rules',
       description: isRTL 
         ? 'يجب أن تلتزم بجميع قواعد المنصة وأن تحافظ على بيئة عمل إيجابية وآمنة لجميع الأعضاء.'
         : 'You must comply with all platform rules and maintain a positive and safe working environment for all members.',
@@ -313,8 +313,9 @@ export default function GuildCreationRulesScreen() {
       borderRadius: 16,
       paddingVertical: 16,
       alignItems: 'center',
-      marginHorizontal: 16,
-      marginBottom: bottom + 16,
+      alignSelf: 'center',
+      width: '40%', // 40% of original width
+      marginBottom: bottom + 110, // Extra space for bottom nav bar
       flexDirection: 'row',
       justifyContent: 'center',
       gap: 8,
@@ -351,7 +352,7 @@ export default function GuildCreationRulesScreen() {
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>
-          {isRTL ? 'قواعد إنشاء النقابة' : 'Guild Creation Rules'}
+          {isRTL ? 'قواعد إنشاء Guild' : 'Guild Creation Rules'}
         </Text>
         
         <View style={styles.headerActionButton} />
@@ -365,11 +366,11 @@ export default function GuildCreationRulesScreen() {
         {/* Title */}
         <View style={styles.titleContainer}>
           <Text style={styles.title}>
-            {isRTL ? 'متطلبات إنشاء النقابة' : 'Guild Creation Requirements'}
+            {isRTL ? 'متطلبات إنشاء Guild' : 'Guild Creation Requirements'}
           </Text>
           <Text style={styles.subtitle}>
             {isRTL 
-              ? 'قبل إنشاء نقابة جديدة، يرجى مراجعة المتطلبات والموافقة على الشروط أدناه.'
+              ? 'قبل إنشاء Guild جديد، يرجى مراجعة المتطلبات والموافقة على الشروط أدناه.'
               : 'Before creating a new guild, please review the requirements and agree to the terms below.'}
           </Text>
         </View>
@@ -442,7 +443,7 @@ export default function GuildCreationRulesScreen() {
             </View>
             <Text style={styles.agreementText}>
               {isRTL 
-                ? 'أوافق على جميع الشروط والأحكام المتعلقة بإنشاء النقابة وأتحمل المسؤولية الكاملة عن إدارتها.'
+                ? 'أوافق على جميع الشروط والأحكام المتعلقة بإنشاء Guild وأتحمل المسؤولية الكاملة عن إدارته.'
                 : 'I agree to all terms and conditions related to guild creation and take full responsibility for managing it.'}
             </Text>
           </TouchableOpacity>
