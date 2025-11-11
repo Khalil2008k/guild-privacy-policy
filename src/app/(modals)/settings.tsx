@@ -26,7 +26,9 @@ import {
   LogOut,
   Settings as SettingsIcon,
   ChevronRight,
-  Trash2
+  Trash2,
+  Shield,
+  FileCheck
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -731,6 +733,25 @@ export default function SettingsScreen() {
               title={t('about')}
               subtitle={t('appVersionAndInfo')}
               onPress={() => setShowAboutAlert(true)}
+            />
+          </View>
+        </View>
+
+        {/* Legal & Privacy */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{isRTL ? 'القانونية والخصوصية' : 'Legal & Privacy'}</Text>
+          <View style={styles.card}>
+            <Item
+              icon={<Shield size={20} color={adaptiveColors.iconColor} />}
+              title={isRTL ? 'سياسة الخصوصية' : 'Privacy Policy'}
+              subtitle={isRTL ? 'كيف نجمع ونستخدم بياناتك' : 'How we collect and use your data'}
+              onPress={() => Linking.openURL('https://khalil2008k.github.io/guild-privacy-policy/')}
+            />
+            <Item
+              icon={<FileCheck size={20} color={adaptiveColors.iconColor} />}
+              title={isRTL ? 'شروط الخدمة' : 'Terms of Service'}
+              subtitle={isRTL ? 'شروط استخدام التطبيق' : 'App usage terms and conditions'}
+              onPress={() => Linking.openURL('https://khalil2008k.github.io/guild-privacy-policy/')}
             />
           </View>
         </View>

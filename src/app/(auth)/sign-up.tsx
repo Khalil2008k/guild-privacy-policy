@@ -7,7 +7,8 @@ import {
   Platform, 
   ScrollView,
   Text,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking
 } from 'react-native';
 import { CustomAlertService } from '../../services/CustomAlertService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +22,8 @@ import {
   User,
   Mail,
   Lock,
-  CheckCircle
+  CheckCircle,
+  ExternalLink
 } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useI18n } from '../../contexts/I18nProvider';
@@ -46,6 +48,7 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -91,6 +94,14 @@ export default function SignUpScreen() {
       CustomAlertService.showError(
         isRTL ? 'خطأ' : 'Error',
         isRTL ? 'كلمات المرور غير متطابقة' : 'Passwords do not match'
+      );
+      return false;
+    }
+
+    if (!agreedToPrivacy) {
+      CustomAlertService.showError(
+        isRTL ? 'خطأ' : 'Error',
+        isRTL ? 'يرجى الموافقة على سياسة الخصوصية' : 'Please agree to the Privacy Policy'
       );
       return false;
     }
@@ -351,6 +362,40 @@ export default function SignUpScreen() {
           </View>
         </View>
 
+        {/* Privacy Policy Consent */}
+        <TouchableOpacity
+          style={[styles.privacyContainer, { 
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+            backgroundColor: isDarkMode ? '#1b1b1b' : theme.surface,
+            borderColor: agreedToPrivacy ? theme.primary : (isDarkMode ? '#262626' : theme.border),
+          }]}
+          onPress={() => setAgreedToPrivacy(!agreedToPrivacy)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.checkbox, { 
+            borderColor: agreedToPrivacy ? theme.primary : theme.textSecondary,
+            backgroundColor: agreedToPrivacy ? theme.primary : 'transparent',
+          }]}>
+            {agreedToPrivacy && <CheckCircle size={16} color="#000000" />}
+          </View>
+          <View style={styles.privacyTextContainer}>
+            <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
+              {isRTL ? 'أوافق على ' : 'I agree to the '}
+              <Text 
+                style={[styles.privacyLink, { color: theme.primary }]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  Linking.openURL('https://khalil2008k.github.io/guild-privacy-policy/');
+                }}
+              >
+                {isRTL ? 'سياسة الخصوصية' : 'Privacy Policy'}
+              </Text>
+              {isRTL ? '' : ' and understand that GUILD collects basic personal information (name, phone, email) for account creation and authentication only.'}
+              {isRTL ? ' وأفهم أن GUILD يجمع معلومات شخصية أساسية (الاسم، الهاتف، البريد الإلكتروني) لإنشاء الحساب والمصادقة فقط.' : ''}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Sign Up Button */}
         <TouchableOpacity
           style={[styles.signUpButton, { 
@@ -527,6 +572,36 @@ const styles = StyleSheet.create({
   requirementText: {
     fontSize: 13,
     fontFamily: FONT_FAMILY,
+  },
+  privacyContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 2,
+    marginBottom: 24,
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  privacyTextContainer: {
+    flex: 1,
+  },
+  privacyText: {
+    fontSize: 14,
+    fontFamily: FONT_FAMILY,
+    lineHeight: 20,
+  },
+  privacyLink: {
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   signUpButton: {
     height: 56,
