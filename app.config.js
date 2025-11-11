@@ -85,6 +85,14 @@ export default {
       EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
     },
     plugins: [
+      [
+        "expo-build-properties",
+        {
+          android: {
+            // Android build properties
+          }
+        }
+      ],
       "expo-router",
       "expo-font",
       "expo-localization",

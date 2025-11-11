@@ -26,8 +26,7 @@
       "android": {
         "buildType": "app-bundle",
         "gradleCommand": ":app:bundlePlayRelease"
-      },
-      "prebuildCommand": "npx expo prebuild --clean"
+      }
     }
   },
   "submit": {
