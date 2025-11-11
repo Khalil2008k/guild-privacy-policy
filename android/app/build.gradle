@@ -90,7 +90,6 @@ android {
     namespace 'com.mazen123333.guild'
     defaultConfig {
         applicationId 'com.mazen123333.guild'
-        missingDimensionStrategy "store", "play"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -130,13 +129,6 @@ android {
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
-    }
-
-    flavorDimensions "store"
-    productFlavors {
-        play {
-            dimension "store"
-        }
     }
 }
 
