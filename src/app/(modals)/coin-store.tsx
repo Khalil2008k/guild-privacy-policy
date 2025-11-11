@@ -118,9 +118,6 @@ export default function CoinStoreScreen() {
   const [paymentUrl, setPaymentUrl] = useState('');
   const [paymentId, setPaymentId] = useState('');
   const paymentHandledRef = useRef(false);
-  // 🍎 iOS IAP: State for Apple In-App Purchase products
-  const [iapProducts, setIapProducts] = useState<Product[]>([]);
-  const [iapLoading, setIapLoading] = useState(false);
 
   const total = Object.entries(cart).reduce((sum, [sym, qty]) => {
     const coin = COINS.find(c => c.symbol === sym);
